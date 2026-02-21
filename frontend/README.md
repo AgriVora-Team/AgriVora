@@ -1,257 +1,88 @@
-🌱 AgriVora
-AI Powered Smart Crop Recommendation System for Sri Lankan Agriculture
-
-AgriVora is a mobile, IoT-enabled, AI-powered crop recommendation system designed to assist Sri Lankan farmers and home gardeners in selecting the most suitable crops based on soil and environmental conditions.
-
-The system integrates computer vision, real-time pH sensing, GPS-based soil data, weather APIs, and machine learning models into a unified intelligent platform.
-________________________________________________________________________________________________________________________________________________________________________________
-
-📌 Project Purpose
-
-Agricultural decision-making in Sri Lanka often relies on traditional knowledge without precise soil and environmental analysis.
-
-AgriVora addresses this challenge by:
-
-Analyzing soil images using Computer Vision
-
-Collecting real-time soil pH using IoT sensors
-
-Fetching location-based soil and weather data
-
-Applying Machine Learning to recommend suitable crops
-
-Providing ranked crop suggestions with suitability scores and improvement tips
-________________________________________________________________________________________________________________________________________________________________________________
-
-🏗️ System Architecture
-ESP32 + pH Sensor
-        ↓
-Flutter Mobile App
-        ↓
-Backend (FastAPI / Node.js)
-        ↓
-ML Models + External APIs
-        ↓
-Crop Recommendations → Mobile App
-Architecture Flow
-
-ESP32 collects real-time soil pH data
-
-User uploads soil image via mobile app
-
-App sends data to backend
-
-Backend processes:
-
-CNN model (soil classification)
-
-Random Forest model (crop recommendation)
-
-SoilGrids API (soil properties)
-
-OpenWeather API (weather data)
-
-Ranked crop recommendations are returned to the app
-________________________________________________________________________________________________________________________________________________________________________________
-
-
-
-📱 Core Features
-
-1️- Soil Image Analysis (Computer Vision)
-
-Soil texture classification (Sandy, Clayey, Loamy, etc.)
-
-HSV Colour Histogram Analysis
-
-Texture Analysis (GLCM, LBP)
-
-Lightweight CNN (MobileNet / EfficientNet)
-
-
-2️- Real-Time Soil pH Testing (IoT)
-
-ESP32 Microcontroller
-
-Gravity Analog pH Sensor (calibrated)
-
-Bluetooth / WiFi communication with mobile app
-
-
-3️- Location-Based Soil Data
-
-GPS integration
-
-Soil property retrieval via SoilGrids API
-
-
-4️- Weather-Based Insights
-
-Real-time weather data from OpenWeather API
-
-Rainfall, temperature, humidity analysis
-
-
-5️- Machine Learning Crop Recommendation
-
-Random Forest Model
-
-Ranked crop suggestions
-
-Suitability scores
-
-Soil improvement recommendations
-
-
-6️- Additional Functionalities
-
-Manual soil entry mode
-
-Weather insights dashboard
-
-Map-based view
-
-AI chatbot support
-
-Historical data tracking
-________________________________________________________________________________________________________________________________________________________________________________
-
-
-🧠 Machine Learning Models
-🌾 Soil Classification Model
-
-Input: Soil image
-
-Techniques:
-
-HSV Colour Analysis
-
-GLCM Texture Features
-
-LBP Features
-
-Lightweight CNN
-
-Output: Soil type category
-________________________________________________________________________________________________________________________________________________________________________________
-
-
-🌱 Crop Recommendation Model
-
-Algorithm: Random Forest
-
-Input Features:
-
-Soil type
-
-Soil pH
-
-Temperature
-
-Humidity
-
-Rainfall
-
-Output:
-
-Ranked crop list
-
-Suitability score (%)
-________________________________________________________________________________________________________________________________________________________________________________
-
-🛠️ Technology Stack
-📱 Frontend
-
-Flutter (Dart)
-
-Firebase Firestore
-
-Figma (UI/UX Design)
-
-⚙️ Backend
-
-FastAPI / Node.js
-
-Python (scikit-learn, TensorFlow/Keras, OpenCV)
-
-🌍 APIs
-
-SoilGrids API
-
-OpenWeather API
-
-🔌 Hardware
-
-ESP32
-
-Gravity Analog pH Sensor
-________________________________________________________________________________________________________________________________________________________________________________
-
-
-📂 Repository Structure (Example)
-AgriVora/
-│
-├── frontend/               # Flutter mobile app
-├── backend/                # API & ML integration
-├── ml-models/              # CNN + Random Forest models
-├── hardware/               # ESP32 code
-├── docs/                   # Diagrams & documentation
-└── README.md
-
-________________________________________________________________________________________________________________________________________________________________________________
-
-
-🎯 Target Users
-
-Sri Lankan farmers
-
-Home gardeners
-
-Agricultural students
-
-Smart farming researchers
-
-🌍 Sustainability Impact
-
-AgriVora contributes to:
-
-🌱 Improved crop productivity
-
-💧 Efficient soil management
-
-📉 Reduced crop failure risk
-
-🌏 Sustainable agriculture practices
-
-
-Aligned with:
-
-UN SDG 2 – Zero Hunger
-
-UN SDG 12 – Responsible Consumption & Production
-________________________________________________________________________________________________________________________________________________________________________________
-
-
-🚀 Future Enhancements
-
-Sinhala / Tamil language support
-
-Cloud-based ML deployment
-
-Government agricultural dataset integration
-
-Marketplace integration for farmers
-
-AI-based fertilizer optimization
-________________________________________________________________________________________________________________________________________________________________________________
-
-
-👨‍💻 Development Team
-
-AgriVora is developed as a Software Development group project, integrating mobile development, IoT engineering, machine learning, and backend systems.
-________________________________________________________________________________________________________________________________________________________________________________
-
-
-📌 Status
-
-🔧 Currently under active development.
+# 🌿 AgriVora – Smart Farming Flutter App
+
+AgriVora is a Flutter-based mobile application designed to assist farmers and home gardeners with soil analysis, crop recommendations, and smart farming insights powered by AI.
+
+## 📱 Features
+
+- **Welcome & Onboarding** – Clean onboarding flow with permissions
+- **Authentication** – Login & Signup system
+- **Role Selection** – Farmer / Home Gardener mode
+- **Home Dashboard** – Central hub for all features
+- **Soil Analysis** – Camera-based and manual soil input analysis
+- **Crop Recommendations** – AI-powered crop suggestions with detailed overview
+- **Map View** – Location-based farming insights using Google Maps
+- **AI Chat** – Conversational AI assistant for farming queries
+- **Profile** – User profile management
+
+## 🗂️ Project Structure
+
+```
+lib/
+├── main.dart               # App entry point & routes
+├── theme.dart              # App theme configuration
+├── pages/
+│   ├── welcome_page.dart
+│   ├── permission_page.dart
+│   ├── login_page.dart
+│   ├── signup_page.dart
+│   ├── role_select_page.dart
+│   ├── home_page.dart
+│   ├── soil_analysis_page.dart
+│   ├── manual_soil_analysis_page.dart
+│   ├── crop_recom_page.dart
+│   ├── crop_overview_page.dart
+│   ├── map_page.dart
+│   ├── ai_chat_page.dart
+│   └── profile_page.dart
+└── scan_flow/
+    ├── start_scan_screen.dart
+    ├── gps_step_screen.dart
+    ├── ph_step_screen.dart
+    └── image_step_screen.dart
+
+assets/
+└── images/                 # App images and logo
+```
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Flutter SDK `^3.0.0`
+- Android Studio / Xcode
+- Google Maps API Key (for map features)
+
+### Setup
+
+1. **Clone the repository:**
+   ```bash
+   git clone <your-repo-url>
+   cd Frontend
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   flutter pub get
+   ```
+
+3. **Add Google Maps API Key:**
+   - Open `android/app/src/main/AndroidManifest.xml`
+   - Replace `YOUR_GOOGLE_MAPS_API_KEY` with your actual key
+
+4. **Run the app:**
+   ```bash
+   flutter run
+   ```
+
+## 📦 Dependencies
+
+| Package | Purpose |
+|---|---|
+| `google_maps_flutter` | Map integration |
+| `location` | GPS location access |
+| `image_picker` | Camera & gallery access |
+| `google_fonts` | Premium typography |
+| `cupertino_icons` | iOS-style icons |
+
+## 🤝 Team
+
+Built as part of the **SDGP (Software Development Group Project)** — AgriVora Team.

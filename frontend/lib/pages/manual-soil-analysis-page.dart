@@ -1,5 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
+import '../services/location_service.dart';
+import '../widgets/agri_bottom_nav_bar.dart';
 
 class ManualSoilAnalysisPage extends StatefulWidget {
   const ManualSoilAnalysisPage({super.key});
@@ -10,6 +13,46 @@ class ManualSoilAnalysisPage extends StatefulWidget {
 
 class _ManualSoilAnalysisPageState extends State<ManualSoilAnalysisPage> {
   int _navIndex = 0;
+  bool _isLoading = false;
+  String _cityName = "Locating...";
+  String _temperature = "--°C";
+  String _rainfall = "--mm";
+  String _humidity = "--%";
+  double _rawTemp = 27.0;
+  double _rawRain = 75.0;
+  double _rawHumid = 82.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchWeatherData();
+  }
+
+  Future<void> _fetchWeatherData() async {
+    try {
+      final pos = await LocationService.getCurrentLocation();
+      final summary = await ApiService.getLocationSummary(pos.latitude, pos.longitude);
+      final weather = summary['weatherSummary'];
+
+      if (mounted) {
+        setState(() {
+          _cityName = "My Fields";
+          _rawTemp = (weather['temperature'] ?? 27.0).toDouble();
+          _rawRain = (weather['rainfall'] ?? 75.0).toDouble();
+          _rawHumid = (weather['humidity'] ?? 82.0).toDouble();
+          _temperature = "${_rawTemp}°C";
+          _rainfall = "${_rawRain}mm";
+          _humidity = "${_rawHumid}%";
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _cityName = "Location Error";
+        });
+      }
+    }
+  }
 
   String? _selectedSoilType;
   final TextEditingController _phController = TextEditingController();
@@ -18,6 +61,53 @@ class _ManualSoilAnalysisPageState extends State<ManualSoilAnalysisPage> {
   void dispose() {
     _phController.dispose();
     super.dispose();
+  }
+
+  Future<void> _analyzeSoil() async {
+    final phText = _phController.text.trim();
+    if (_selectedSoilType == null || phText.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select soil type and enter pH')),
+      );
+      return;
+    }
+
+    final ph = double.tryParse(phText);
+    if (ph == null || ph < 0 || ph > 14) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid pH (0-14)')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await ApiService.getRecommendations(
+        soilType: _selectedSoilType!,
+        ph: ph,
+        temperature: _rawTemp,
+        rainfall: _rawRain,
+        humidity: _rawHumid,
+      );
+
+      if (mounted) {
+        final crops = response['data']['crops'] as List;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Recommendation successful! Found ${crops.length} crops.')),
+        );
+        // For now just navigate to the page (it will show hardcoded data for now)
+        Navigator.pushNamed(context, '/crop_recom');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -142,48 +232,48 @@ class _ManualSoilAnalysisPageState extends State<ManualSoilAnalysisPage> {
                           color: const Color(0xFFEAF3EA).withOpacity(0.65),
                           borderRadius: BorderRadius.circular(28),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: const [
-                            Row(
-                              children: [
-                                Icon(Icons.cloud, color: Color(0xFF2E7D32), size: 28),
-                                SizedBox(width: 8),
-                                Text(
-                                  "Colombo",
-                                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
-                                ),
-                              ],
-                            ),
-                            Column(
-                              children: [
-                                Text("Temperature",
-                                    style: TextStyle(fontSize: 12, color: Colors.black54)),
-                                SizedBox(height: 4),
-                                Text("27°C",
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                              ],
-                            ),
-                            Column(
-                              children: [
-                                Text("Rainfall",
-                                    style: TextStyle(fontSize: 12, color: Colors.black54)),
-                                SizedBox(height: 4),
-                                Text("75%",
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                              ],
-                            ),
-                            Column(
-                              children: [
-                                Text("Humidity",
-                                    style: TextStyle(fontSize: 12, color: Colors.black54)),
-                                SizedBox(height: 4),
-                                Text("82%",
-                                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                              ],
-                            ),
-                          ],
-                        ),
+                         child: Row(
+                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                           children: [
+                             Row(
+                               children: [
+                                 const Icon(Icons.cloud, color: Color(0xFF2E7D32), size: 28),
+                                 const SizedBox(width: 8),
+                                 Text(
+                                   _cityName,
+                                   style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+                                 ),
+                               ],
+                             ),
+                             Column(
+                               children: [
+                                 const Text("Temperature",
+                                     style: TextStyle(fontSize: 12, color: Colors.black54)),
+                                 const SizedBox(height: 4),
+                                 Text(_temperature,
+                                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                               ],
+                             ),
+                             Column(
+                               children: [
+                                 const Text("Rainfall",
+                                     style: TextStyle(fontSize: 12, color: Colors.black54)),
+                                 const SizedBox(height: 4),
+                                 Text(_rainfall,
+                                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                               ],
+                             ),
+                             Column(
+                               children: [
+                                 const Text("Humidity",
+                                     style: TextStyle(fontSize: 12, color: Colors.black54)),
+                                 const SizedBox(height: 4),
+                                 Text(_humidity,
+                                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                               ],
+                             ),
+                           ],
+                         ),
                       ),
                     ),
                   ),
@@ -322,9 +412,7 @@ class _ManualSoilAnalysisPageState extends State<ManualSoilAnalysisPage> {
                           width: double.infinity,
                           height: 58,
                           child: ElevatedButton(
-                            onPressed: () {
-                              // TODO: manual analyze action
-                            },
+                            onPressed: _isLoading ? null : _analyzeSoil,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF2E7D32),
                               elevation: 10,
@@ -333,32 +421,27 @@ class _ManualSoilAnalysisPageState extends State<ManualSoilAnalysisPage> {
                                 borderRadius: BorderRadius.circular(34),
                               ),
                             ),
-                            child: const Text(
-                              "Analyze Soil",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
-                              ),
-                            ),
+                            child: _isLoading
+                                ? const CircularProgressIndicator(color: Colors.white)
+                                : const Text(
+                                    "Analyze Soil",
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w900,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
-
-                // Bottom nav
-                Padding(
-                  padding: EdgeInsets.fromLTRB(16, 0, 16, bottomPad + 12),
-                  child: _BottomNav(
-                    index: _navIndex,
-                    onTap: (i) => setState(() => _navIndex = i),
-                  ),
-                ),
               ],
             ),
           ),
+          // ✅ Bottom nav (Now outside Column for consistent alignment)
+          const AgriBottomNavBar(activeIndex: 0),
         ],
       ),
     );
@@ -440,71 +523,6 @@ class _InputPill extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(child: child),
         ],
-      ),
-    );
-  }
-}
-
-/// Bottom nav (same as your other pages)
-class _BottomNav extends StatelessWidget {
-  final int index;
-  final ValueChanged<int> onTap;
-
-  const _BottomNav({required this.index, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    Widget item(IconData icon, String label, int i) {
-      final selected = index == i;
-      return InkWell(
-        onTap: () => onTap(i),
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                icon,
-                size: 26,
-                color: selected ? const Color(0xFF004D40) : Colors.black45,
-              ),
-              const SizedBox(height: 3),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
-                  color: selected ? const Color(0xFF004D40) : Colors.black45,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          height: 80,
-          decoration: BoxDecoration(
-            color: const Color(0xFFEAF3EA).withOpacity(0.55),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withOpacity(0.22)),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              item(Icons.home_rounded, "Home", 0),
-              item(Icons.map_outlined, "Map", 1),
-              item(Icons.smart_toy_outlined, "AI Chat", 2),
-              item(Icons.person_outline, "Profile", 3),
-            ],
-          ),
-        ),
       ),
     );
   }

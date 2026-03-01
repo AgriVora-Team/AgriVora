@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../widgets/agri_bottom_nav_bar.dart';
 
 class CropRecomPage extends StatelessWidget {
   const CropRecomPage({super.key});
@@ -35,7 +36,7 @@ class CropRecomPage extends StatelessWidget {
               ],
             ),
           ),
-          _buildFloatingBottomNav(context, 0), // Index 0 is Home
+          AgriBottomNavBar(activeIndex: 0), // Index 0 is Home
         ],
       ),
     );
@@ -115,42 +116,4 @@ class CropRecomPage extends StatelessWidget {
   }
 
   Widget _buildFilterRow() => const SizedBox(height: 10);
-
-  // UPDATED NAVIGATION BAR
-  Widget _buildFloatingBottomNav(BuildContext context, int activeIndex) {
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(20, 0, 20, 30),
-        height: 90,
-        decoration: BoxDecoration(
-          color: const Color(0xFFE8F5E9).withOpacity(0.9),
-          borderRadius: BorderRadius.circular(40),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20)],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _navItem(context, Icons.home_filled, "Home", activeIndex == 0, '/home'),
-            _navItem(context, Icons.alt_route_rounded, "Map", false, '/map'),
-            _navItem(context, Icons.memory_rounded, "AI Chat", false, '/ai-chat'),
-            _navItem(context, Icons.person_pin_rounded, "Profile", activeIndex == 2, '/profile'),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _navItem(BuildContext context, IconData icon, String label, bool active, String route) {
-    return GestureDetector(
-      onTap: () => Navigator.pushReplacementNamed(context, route),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 35, color: active ? const Color(0xFF2E7D32) : Colors.green.withOpacity(0.6)),
-          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: active ? const Color(0xFF2E7D32) : Colors.green.withOpacity(0.6))),
-        ],
-      ),
-    );
-  }
 }

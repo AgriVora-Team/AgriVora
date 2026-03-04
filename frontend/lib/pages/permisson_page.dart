@@ -198,7 +198,7 @@ class SoilWaveClipper extends CustomClipper<Path> {
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
 
-// ✅ Permission item that matches login-field vibe
+// ✅ Permission iteam that matches login-field vibe
 class PermissionTile extends StatefulWidget {
   final IconData icon;
   final String title;

@@ -151,18 +151,12 @@ class _WelcomePageState extends State<WelcomePage>
                           ),
                         ),
                         const SizedBox(height: 12),
-                        Center(
-                          child: TextButton(
-                            onPressed: () {
-                              Navigator.pushNamed(context, '/permission', arguments: {'isGuest': true});
-                            },
-                            child: const Text(
-                              'Continue as Guest',
-                              style: TextStyle(
-                                color: Colors.black45,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
+                        const Center(
+                          child: Text(
+                            'Continue as Guest',
+                            style: TextStyle(
+                              color: Colors.black38,
+                              fontSize: 14,
                             ),
                           ),
                         ),

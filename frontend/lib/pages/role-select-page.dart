@@ -1,7 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class RoleSelectPage extends StatefulWidget {
   const RoleSelectPage({super.key});
@@ -39,22 +38,7 @@ class _RoleSelectPageState extends State<RoleSelectPage> {
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
     final args = ModalRoute.of(context)?.settings.arguments;
-    String displayGreeting = "Hi";
-    String? userName;
-
-    if (args is String && args.isNotEmpty) {
-      userName = args;
-    } else {
-      userName = "User";
-    }
-
-    if (userName.toLowerCase() == "guest") {
-      displayGreeting = "Hi Guest";
-      userName = ""; // so it doesn't show "Hi Guest Guest"
-    } else {
-      displayGreeting = "Hi $userName";
-      userName = ""; // already included in greeting
-    }
+    final userName = (args is String && args.trim().isNotEmpty) ? args : "Steve";
 
     final canContinue = _selectedRole != null && _agreeTerms;
 
@@ -120,7 +104,7 @@ class _RoleSelectPageState extends State<RoleSelectPage> {
                                 color: Color(0xFF1B1B1B),
                               ),
                               children: [
-                                TextSpan(text: "$displayGreeting, "),
+                                TextSpan(text: "Hi $userName, "),
                                 const TextSpan(
                                   text: "Welcome!",
                                   style: TextStyle(color: Color(0xFF2E7D32)),
@@ -205,15 +189,14 @@ class _RoleSelectPageState extends State<RoleSelectPage> {
                                             decoration: TextDecoration.underline,
                                           ),
                                           recognizer: TapGestureRecognizer()
-                                            ..onTap = () async {
-                                              final Uri url = Uri.parse('https://github.com/AgriVora-Team/AgriVora/blob/main/docs/AgriVora_Terms_and_Conditions.pdf');
-                                              if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-                                                if (mounted) {
-                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                    const SnackBar(content: Text('Could not launch Terms & Conditions')),
-                                                  );
-                                                }
-                                              }
+                                            ..onTap = () {
+                                              ScaffoldMessenger.of(context)
+                                                  .showSnackBar(
+                                                const SnackBar(
+                                                  content: Text(
+                                                      "Terms & Conditions clicked"),
+                                                ),
+                                              );
                                             },
                                         ),
                                       ],

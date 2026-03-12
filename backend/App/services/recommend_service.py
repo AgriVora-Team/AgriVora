@@ -4,6 +4,8 @@ import os
 
 MODEL_PATH = os.path.join("app", "models", "rf_model.pkl")
 
+TOP_K = 3
+
 rf_model = None
 model_error = None
 
@@ -17,7 +19,6 @@ CROP_LABELS = ["Rice", "Maize", "Wheat", "Chili", "Potato"]
 def recommend_crops(features: dict):
     try:
         if rf_model is None:
-            # Fallback if model fails to load
             return [
                 {
                     "name": "Rice",
@@ -46,7 +47,8 @@ def recommend_crops(features: dict):
         )
 
         recommendations = []
-        for crop, score in ranked[:3]:
+
+        for crop, score in ranked[:TOP_K]:
             recommendations.append({
                 "name": crop,
                 "score": round(float(score), 2),

@@ -3,12 +3,19 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
 
+# =====================================================
+# EMAIL CONFIGURATION
+# =====================================================
+
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-
 SENDER_EMAIL = os.getenv("SENDER_EMAIL", "your-email@gmail.com")
 SENDER_PASSWORD = os.getenv("SENDER_PASSWORD", "your-app-password")
 
+
+# =====================================================
+# HELPER FUNCTIONS
+# =====================================================
 
 def using_default_credentials() -> bool:
     return (
@@ -16,13 +23,11 @@ def using_default_credentials() -> bool:
         or SENDER_PASSWORD == "your-app-password"
     )
 
-
 def print_debug_otp(receiver_email: str, otp: str):
     print("\n" + "=" * 50)
     print("DEBUG: SMTP Credentials not set in email.py")
     print(f"DEBUG: OTP for {receiver_email} is: {otp}")
     print("=" * 50 + "\n")
-
 
 def build_otp_email_body(otp: str) -> str:
     return f"""
@@ -43,7 +48,6 @@ def build_otp_email_body(otp: str) -> str:
     </html>
     """
 
-
 def build_otp_message(receiver_email: str, otp: str):
     msg = MIMEMultipart()
     msg["From"] = f"AgriVora Support <{SENDER_EMAIL}>"
@@ -52,6 +56,10 @@ def build_otp_message(receiver_email: str, otp: str):
     msg.attach(MIMEText(build_otp_email_body(otp), "html"))
     return msg
 
+
+# =====================================================
+# SEND OTP EMAIL
+# =====================================================
 
 def send_otp_email(receiver_email: str, otp: str):
     if using_default_credentials():
@@ -67,7 +75,6 @@ def send_otp_email(receiver_email: str, otp: str):
         server.send_message(msg)
         server.quit()
         return True
-
     except Exception as e:
         print(f"Error sending email: {str(e)}")
         return False

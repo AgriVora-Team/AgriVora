@@ -6,26 +6,22 @@ import 'image_step_screen.dart';
 class PhStepScreen extends StatefulWidget {
   final ScanSession session;
 
-  const PhStepScreen({
-    super.key,
-    required this.session,
-  });
+  const PhStepScreen({super.key, required this.session});
 
   @override
   State<PhStepScreen> createState() => _PhStepScreenState();
 }
 
 class _PhStepScreenState extends State<PhStepScreen> {
-  late ScanSession _session;
+  late ScanSession _currentSession;
   final TextEditingController _phController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _session = widget.session;
-
-    if (_session.ph != null) {
-      _phController.text = _session.ph!.toString();
+    _currentSession = widget.session;
+    if (_currentSession.ph != null) {
+      _phController.text = _currentSession.ph!.toStringAsFixed(2);
     }
   }
 
@@ -35,35 +31,30 @@ class _PhStepScreenState extends State<PhStepScreen> {
     super.dispose();
   }
 
-  void _continue() {
+  void _saveAndNext() {
     final input = _phController.text.trim();
-
     if (input.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a pH value')),
+        const SnackBar(content: Text('Enter a pH value before continuing')),
       );
       return;
     }
 
     final phValue = double.tryParse(input);
-
     if (phValue == null || phValue < 0 || phValue > 14) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid pH between 0 and 14'),
-        ),
+        const SnackBar(content: Text('pH must be a number between 0 and 14')),
       );
       return;
     }
 
-    _session = _session.copyWith(ph: phValue);
-
-    print('pH updated: ${_session.toJson()}');
+    _currentSession = _currentSession.copyWith(ph: phValue);
+    print('Updated pH: ${_currentSession.toJson()}');
 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ImageStepScreen(session: _session),
+        builder: (_) => ImageStepScreen(session: _currentSession),
       ),
     );
   }
@@ -82,7 +73,7 @@ class _PhStepScreenState extends State<PhStepScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
-              'Enter Soil pH',
+              'Soil pH Input',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -90,17 +81,16 @@ class _PhStepScreenState extends State<PhStepScreen> {
             ),
             const SizedBox(height: 12),
             const Text(
-              'You can connect the pH sensor or manually enter the pH value from a soil test strip.',
+              'Provide the soil pH manually or from a test strip. This will help in recommending suitable crops.',
               style: TextStyle(fontSize: 14, height: 1.4),
             ),
             const SizedBox(height: 24),
             TextField(
               controller: _phController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               decoration: const InputDecoration(
-                labelText: 'pH value',
+                labelText: 'Soil pH',
                 hintText: 'e.g. 6.5',
                 border: OutlineInputBorder(),
               ),
@@ -115,9 +105,9 @@ class _PhStepScreenState extends State<PhStepScreen> {
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                onPressed: _continue,
+                onPressed: _saveAndNext,
                 child: const Text(
-                  'Next – Image step',
+                  'Next: Image Step',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

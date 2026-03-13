@@ -44,17 +44,22 @@ def build_otp_email_body(otp: str) -> str:
     """
 
 
+def build_otp_message(receiver_email: str, otp: str):
+    msg = MIMEMultipart()
+    msg["From"] = f"AgriVora Support <{SENDER_EMAIL}>"
+    msg["To"] = receiver_email
+    msg["Subject"] = "AgriVora Password Reset OTP"
+    msg.attach(MIMEText(build_otp_email_body(otp), "html"))
+    return msg
+
+
 def send_otp_email(receiver_email: str, otp: str):
     if using_default_credentials():
         print_debug_otp(receiver_email, otp)
         return True
 
     try:
-        msg = MIMEMultipart()
-        msg["From"] = f"AgriVora Support <{SENDER_EMAIL}>"
-        msg["To"] = receiver_email
-        msg["Subject"] = "AgriVora Password Reset OTP"
-        msg.attach(MIMEText(build_otp_email_body(otp), "html"))
+        msg = build_otp_message(receiver_email, otp)
 
         server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
         server.starttls()

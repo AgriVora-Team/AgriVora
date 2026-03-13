@@ -51,12 +51,27 @@ def _pw_digest(password: str) -> bytes:
 
 
 def hash_password(password: str) -> str:
-    hashed = bcrypt.hashpw(_pw_digest(password), bcrypt.gensalt())
-    return hashed.decode("utf-8")
+    return bcrypt.hashpw(_pw_digest(password), bcrypt.gensalt()).decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(_pw_digest(plain_password), hashed_password.encode("utf-8"))
+
+
+def get_user_by_email(email: str):
+    users_ref = db.collection("users")
+    query = users_ref.where("email", "==", email).limit(1).stream()
+    for doc in query:
+        return doc
+    return None
+
+
+def get_user_by_phone(phone: str):
+    users_ref = db.collection("users")
+    query = users_ref.where("phone", "==", phone).limit(1).stream()
+    for doc in query:
+        return doc
+    return None
 
 
 @router.post("/signup")
@@ -68,22 +83,19 @@ def create_account(data: SignUpRequest):
         email = normalize_email(data.email)
         phone = normalize_phone(data.phone)
 
-        existing_email = users_ref.where("email", "==", email).limit(1).stream()
-        for _ in existing_email:
+        if get_user_by_email(email):
             raise HTTPException(status_code=400, detail="Email already registered")
 
-        existing_phone = users_ref.where("phone", "==", phone).limit(1).stream()
-        for _ in existing_phone:
+        if get_user_by_phone(phone):
             raise HTTPException(status_code=400, detail="Phone number already registered")
 
         user_id = str(uuid.uuid4())
-        password_hash = hash_password(data.password)
 
         users_ref.document(user_id).set({
             "full_name": full_name,
             "email": email,
             "phone": phone,
-            "password_hash": password_hash,
+            "password_hash": hash_password(data.password),
             "role": None,
             "acceptedTerms": False,
             "onboardingCompleted": False,
@@ -105,22 +117,12 @@ def create_account(data: SignUpRequest):
 @router.post("/login")
 def login_user(data: LoginRequest):
     try:
-        users_ref = db.collection("users")
-
         identifier = data.email_or_phone.strip()
         password = data.password
-        user_doc = None
 
-        query = users_ref.where("email", "==", identifier.lower()).limit(1).stream()
-        for doc in query:
-            user_doc = doc
-            break
-
+        user_doc = get_user_by_email(identifier.lower())
         if not user_doc:
-            query = users_ref.where("phone", "==", identifier).limit(1).stream()
-            for doc in query:
-                user_doc = doc
-                break
+            user_doc = get_user_by_phone(identifier)
 
         if not user_doc:
             raise HTTPException(status_code=404, detail="User not found")
@@ -155,24 +157,18 @@ def login_user(data: LoginRequest):
 def request_otp(data: RequestOTPRequest):
     try:
         email = normalize_email(data.email)
-        users_ref = db.collection("users")
 
-        user_query = users_ref.where("email", "==", email).limit(1).stream()
-        user_found = False
-        for _ in user_query:
-            user_found = True
-            break
-
-        if not user_found:
+        if not get_user_by_email(email):
             raise HTTPException(status_code=404, detail="User with this email not found")
 
         otp = str(random.randint(100000, 999999))
+        now = datetime.utcnow()
 
         db.collection("otps").document(email).set({
             "email": email,
             "otp": otp,
-            "createdAt": datetime.utcnow(),
-            "expiresAt": datetime.utcnow() + timedelta(minutes=10),
+            "createdAt": now,
+            "expiresAt": now + timedelta(minutes=10),
         })
 
         success = send_otp_email(email, otp)
@@ -224,7 +220,6 @@ def reset_password_endpoint(data: ResetPasswordRequest):
     try:
         email = normalize_email(data.email)
         otp = data.otp.strip()
-        new_password = data.new_password
 
         otp_doc = db.collection("otps").document(email).get()
         if not otp_doc.exists:
@@ -234,19 +229,12 @@ def reset_password_endpoint(data: ResetPasswordRequest):
         if otp_data["otp"] != otp or datetime.utcnow().timestamp() > otp_data["expiresAt"].timestamp():
             raise HTTPException(status_code=400, detail="OTP expired or invalid")
 
-        users_ref = db.collection("users")
-        user_query = users_ref.where("email", "==", email).limit(1).stream()
-
-        user_id = None
-        for doc in user_query:
-            user_id = doc.id
-            break
-
-        if not user_id:
+        user_doc = get_user_by_email(email)
+        if not user_doc:
             raise HTTPException(status_code=404, detail="User not found")
 
-        users_ref.document(user_id).update({
-            "password_hash": hash_password(new_password)
+        db.collection("users").document(user_doc.id).update({
+            "password_hash": hash_password(data.new_password)
         })
 
         db.collection("otps").document(email).delete()

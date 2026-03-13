@@ -13,6 +13,12 @@ def get_current_time():
     return datetime.utcnow()
 
 
+def format_scan_history_item(doc):
+    item = doc.to_dict()
+    item["id"] = doc.id
+    return item
+
+
 def save_scan_history(data: dict):
     try:
         data["createdAt"] = get_current_time()
@@ -34,9 +40,7 @@ def get_scan_history(user_id: str):
 
         results = []
         for doc in docs:
-            item = doc.to_dict()
-            item["id"] = doc.id
-            results.append(item)
+            results.append(format_scan_history_item(doc))
 
         def get_sort_key(x):
             ts = x.get("createdAt")

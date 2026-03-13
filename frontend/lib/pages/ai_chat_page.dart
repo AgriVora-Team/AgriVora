@@ -13,7 +13,7 @@ class _AIChatPageState extends State<AIChatPage> {
   final List<Map<String, dynamic>> _messages = [
     {
       "text":
-          "Hey! I am the AgriVora AI Assistant. How can I help with your farm today?",
+          "Hey! I'm the AgriVora AI Assistant. How can I help with your farm today?",
       "isUser": false,
     },
     {"text": "What is the best fertilizer for paddy fields?", "isUser": true},

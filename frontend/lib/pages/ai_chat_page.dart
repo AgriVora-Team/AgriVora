@@ -10,52 +10,51 @@ class AIChatPage extends StatefulWidget {
 class _AIChatPageState extends State<AIChatPage> {
   final TextEditingController _controller = TextEditingController();
 
+  final List<Map<String, dynamic>> _messages = [
+    {
+      "text":
+          "Hello! I am the AgriVora AI Assistant. How can I help with your farm today?",
+      "isUser": false,
+    },
+    {"text": "What's the best fertilizer for paddy fields?", "isUser": true},
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          const BackgroundImage(),
+          _buildBackground(),
           SafeArea(
             child: Column(
               children: [
-                const HeaderSection(),
-                const Expanded(child: ChatSection()),
-                InputSection(controller: _controller),
+                _buildHeader(),
+                Expanded(child: _buildChatList()),
+                _buildInputBox(),
                 const SizedBox(height: 110),
               ],
             ),
           ),
-          const FloatingBottomNav(),
+          _buildBottomNavigation(),
         ],
       ),
     );
   }
-}
 
-class BackgroundImage extends StatelessWidget {
-  const BackgroundImage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildBackground() {
     return Positioned.fill(
       child: Image.asset('assets/images/bg.png', fit: BoxFit.cover),
     );
   }
-}
 
-class HeaderSection extends StatelessWidget {
-  const HeaderSection({super.key});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
       child: Row(
-        children: const [
+        children: [
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+            children: const [
               Text(
                 "AgriVora",
                 style: TextStyle(
@@ -78,38 +77,19 @@ class HeaderSection extends StatelessWidget {
       ),
     );
   }
-}
 
-class ChatSection extends StatelessWidget {
-  const ChatSection({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
+  Widget _buildChatList() {
+    return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      children: const [
-        ChatBubble(
-          text:
-              "Hello! I am the AgriVora AI Assistant. How can I help with your farm today?",
-          isUser: false,
-        ),
-        ChatBubble(
-          text: "What's the best fertilizer for paddy fields?",
-          isUser: true,
-        ),
-      ],
+      itemCount: _messages.length,
+      itemBuilder: (context, index) {
+        final message = _messages[index];
+        return _messageBubble(message["text"], message["isUser"]);
+      },
     );
   }
-}
 
-class ChatBubble extends StatelessWidget {
-  final String text;
-  final bool isUser;
-
-  const ChatBubble({super.key, required this.text, required this.isUser});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _messageBubble(String text, bool isUser) {
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -131,15 +111,8 @@ class ChatBubble extends StatelessWidget {
       ),
     );
   }
-}
 
-class InputSection extends StatelessWidget {
-  final TextEditingController controller;
-
-  const InputSection({super.key, required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildInputBox() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -151,7 +124,7 @@ class InputSection extends StatelessWidget {
         children: [
           Expanded(
             child: TextField(
-              controller: controller,
+              controller: _controller,
               decoration: const InputDecoration(
                 hintText: "Ask your question...",
                 border: InputBorder.none,
@@ -163,13 +136,15 @@ class InputSection extends StatelessWidget {
       ),
     );
   }
-}
 
-class FloatingBottomNav extends StatelessWidget {
-  const FloatingBottomNav({super.key});
+  Widget _buildBottomNavigation() {
+    final List<Map<String, dynamic>> navItems = [
+      {"icon": Icons.home_filled, "route": "/home", "active": false},
+      {"icon": Icons.alt_route_rounded, "route": "/map", "active": false},
+      {"icon": Icons.memory_rounded, "route": "/ai-chat", "active": true},
+      {"icon": Icons.person_pin_rounded, "route": "/profile", "active": false},
+    ];
 
-  @override
-  Widget build(BuildContext context) {
     return Align(
       alignment: Alignment.bottomCenter,
       child: Container(
@@ -184,51 +159,21 @@ class FloatingBottomNav extends StatelessWidget {
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: const [
-            NavIcon(icon: Icons.home_filled, route: '/home', active: false),
-            NavIcon(
-              icon: Icons.alt_route_rounded,
-              route: '/map',
-              active: false,
-            ),
-            NavIcon(
-              icon: Icons.memory_rounded,
-              route: '/ai-chat',
-              active: true,
-            ),
-            NavIcon(
-              icon: Icons.person_pin_rounded,
-              route: '/profile',
-              active: false,
-            ),
-          ],
+          children: navItems.map((item) {
+            return IconButton(
+              icon: Icon(
+                item["icon"],
+                size: 30,
+                color: item["active"]
+                    ? const Color(0xFF2E7D32)
+                    : Colors.green.withOpacity(0.5),
+              ),
+              onPressed: () =>
+                  Navigator.pushReplacementNamed(context, item["route"]),
+            );
+          }).toList(),
         ),
       ),
-    );
-  }
-}
-
-class NavIcon extends StatelessWidget {
-  final IconData icon;
-  final String route;
-  final bool active;
-
-  const NavIcon({
-    super.key,
-    required this.icon,
-    required this.route,
-    required this.active,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return IconButton(
-      icon: Icon(
-        icon,
-        size: 30,
-        color: active ? const Color(0xFF2E7D32) : Colors.green.withOpacity(0.5),
-      ),
-      onPressed: () => Navigator.pushReplacementNamed(context, route),
     );
   }
 }

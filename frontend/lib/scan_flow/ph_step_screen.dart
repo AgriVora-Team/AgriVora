@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../main.dart'; // ScanSession
+import '../main.dart';
 import 'image_step_screen.dart';
 
 class PhStepScreen extends StatefulWidget {
@@ -16,15 +16,16 @@ class PhStepScreen extends StatefulWidget {
 }
 
 class _PhStepScreenState extends State<PhStepScreen> {
-  late ScanSession _currentSession;
+  late ScanSession _session;
   final TextEditingController _phController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _currentSession = widget.session;
-    if (_currentSession.ph != null) {
-      _phController.text = _currentSession.ph!.toString();
+    _session = widget.session;
+
+    if (_session.ph != null) {
+      _phController.text = _session.ph!.toString();
     }
   }
 
@@ -34,32 +35,35 @@ class _PhStepScreenState extends State<PhStepScreen> {
     super.dispose();
   }
 
-  void _saveAndContinue() {
-    final text = _phController.text.trim();
-    if (text.isEmpty) {
+  void _continue() {
+    final input = _phController.text.trim();
+
+    if (input.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a pH value.')),
+        const SnackBar(content: Text('Please enter a pH value')),
       );
       return;
     }
 
-    final value = double.tryParse(text);
-    if (value == null || value < 0 || value > 14) {
+    final phValue = double.tryParse(input);
+
+    if (phValue == null || phValue < 0 || phValue > 14) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please enter a valid pH between 0–14.'),
+          content: Text('Please enter a valid pH between 0 and 14'),
         ),
       );
       return;
     }
 
-    _currentSession = _currentSession.copyWith(ph: value);
-    print('pH updated: ${_currentSession.toJson()}');
+    _session = _session.copyWith(ph: phValue);
+
+    print('pH updated: ${_session.toJson()}');
 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => ImageStepScreen(session: _currentSession),
+        builder: (_) => ImageStepScreen(session: _session),
       ),
     );
   }
@@ -86,15 +90,15 @@ class _PhStepScreenState extends State<PhStepScreen> {
             ),
             const SizedBox(height: 12),
             const Text(
-              'You can connect the pH sensor or manually type the pH value from a soil test strip. '
-              'For Dev1 we are using manual input.',
+              'You can connect the pH sensor or manually enter the pH value from a soil test strip.',
               style: TextStyle(fontSize: 14, height: 1.4),
             ),
             const SizedBox(height: 24),
             TextField(
               controller: _phController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: const InputDecoration(
                 labelText: 'pH value',
                 hintText: 'e.g. 6.5',
@@ -111,7 +115,7 @@ class _PhStepScreenState extends State<PhStepScreen> {
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                onPressed: _saveAndContinue,
+                onPressed: _continue,
                 child: const Text(
                   'Next – Image step',
                   style: TextStyle(

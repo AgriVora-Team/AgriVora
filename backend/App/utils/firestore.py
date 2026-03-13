@@ -13,6 +13,10 @@ def get_current_time():
     return datetime.utcnow()
 
 
+def get_scan_history_collection():
+    return db.collection("scan_history")
+
+
 def format_scan_history_item(doc):
     item = doc.to_dict()
     item["id"] = doc.id
@@ -32,7 +36,7 @@ def get_history_sort_key(item):
 def save_scan_history(data: dict):
     try:
         data["createdAt"] = get_current_time()
-        db.collection("scan_history").add(data)
+        get_scan_history_collection().add(data)
         print("Scan saved to Firestore")
         return True
     except Exception as e:
@@ -43,7 +47,7 @@ def save_scan_history(data: dict):
 def get_scan_history(user_id: str):
     try:
         docs = (
-            db.collection("scan_history")
+            get_scan_history_collection()
             .where("userId", "==", user_id)
             .stream()
         )

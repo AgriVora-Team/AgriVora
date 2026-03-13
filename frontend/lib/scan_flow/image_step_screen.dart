@@ -1,9 +1,7 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-
-import '../main.dart'; // ScanSession
+import '../main.dart';
 
 class ImageStepScreen extends StatefulWidget {
   final ScanSession session;
@@ -20,8 +18,7 @@ class ImageStepScreen extends StatefulWidget {
 class _ImageStepScreenState extends State<ImageStepScreen> {
   late ScanSession _currentSession;
 
-  // For picking image
-  final ImagePicker _picker = ImagePicker();
+  final ImagePicker _imagePicker = ImagePicker();
   File? _selectedImage;
 
   @override
@@ -29,26 +26,22 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
     super.initState();
     _currentSession = widget.session;
 
-    // If session already had an imagePath, restore preview
     if (_currentSession.imagePath != null) {
       _selectedImage = File(_currentSession.imagePath!);
     }
   }
 
-  Future<void> _pickImageFromGallery() async {
-    // You can change to ImageSource.camera later if you want camera instead.
-    final XFile? pickedFile =
-        await _picker.pickImage(source: ImageSource.gallery);
+  Future<void> _pickImage() async {
+    final XFile? file = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+    );
 
-    if (pickedFile == null) {
-      // user cancelled
-      return;
-    }
+    if (file == null) return;
 
     setState(() {
-      _selectedImage = File(pickedFile.path);
+      _selectedImage = File(file.path);
       _currentSession = _currentSession.copyWith(
-        imagePath: pickedFile.path,
+        imagePath: file.path,
       );
     });
 
@@ -61,7 +54,7 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
     );
   }
 
-  void _goToAnalyze() {
+  void _continueToAnalyze() {
     if (_currentSession.imagePath == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -71,7 +64,6 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
       return;
     }
 
-    // TODO: navigate to Analyze/Results step with _currentSession
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Ready for Analyze step – TODO.'),
@@ -81,7 +73,7 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final hasImage = _selectedImage != null;
+    final bool hasImage = _selectedImage != null;
 
     return Scaffold(
       appBar: AppBar(
@@ -103,13 +95,11 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
             ),
             const SizedBox(height: 12),
             const Text(
-              'AgriVora uses this soil image as input to the CNN texture classifier. '
-              'For Dev1 we let the user pick an image from the gallery and store its path in ScanSession.',
+              'AgriVora uses this soil image as input to the CNN texture classifier. For Dev1 we let the user pick an image from the gallery and store its path in ScanSession.',
               style: TextStyle(fontSize: 14, height: 1.4),
             ),
             const SizedBox(height: 24),
 
-            // Preview card
             Container(
               height: 220,
               decoration: BoxDecoration(
@@ -131,8 +121,7 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
                     )
                   : const Center(
                       child: Text(
-                        'No soil image selected yet.\n\n'
-                        'Tap the button below to choose a soil image from the gallery.',
+                        'No soil image selected yet.\n\nTap the button below to choose a soil image from the gallery.',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 14),
                       ),
@@ -141,7 +130,6 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
 
             const Spacer(),
 
-            // Pick image button (ALWAYS enabled)
             SizedBox(
               height: 48,
               child: ElevatedButton(
@@ -151,7 +139,7 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                onPressed: _pickImageFromGallery,
+                onPressed: _pickImage,
                 child: const Text(
                   'Select soil image from gallery',
                   style: TextStyle(
@@ -163,7 +151,6 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
             ),
             const SizedBox(height: 12),
 
-            // Next button
             SizedBox(
               height: 48,
               child: OutlinedButton(
@@ -173,7 +160,7 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                onPressed: _goToAnalyze,
+                onPressed: _continueToAnalyze,
                 child: const Text(
                   'Next – Analyze (TODO)',
                   style: TextStyle(

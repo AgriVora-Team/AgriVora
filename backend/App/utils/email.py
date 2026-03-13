@@ -17,6 +17,13 @@ def using_default_credentials() -> bool:
     )
 
 
+def print_debug_otp(receiver_email: str, otp: str):
+    print("\n" + "=" * 50)
+    print("DEBUG: SMTP Credentials not set in email.py")
+    print(f"DEBUG: OTP for {receiver_email} is: {otp}")
+    print("=" * 50 + "\n")
+
+
 def build_otp_email_body(otp: str) -> str:
     return f"""
     <html>
@@ -39,10 +46,7 @@ def build_otp_email_body(otp: str) -> str:
 
 def send_otp_email(receiver_email: str, otp: str):
     if using_default_credentials():
-        print("\n" + "=" * 50)
-        print("DEBUG: SMTP Credentials not set in email.py")
-        print(f"DEBUG: OTP for {receiver_email} is: {otp}")
-        print("=" * 50 + "\n")
+        print_debug_otp(receiver_email, otp)
         return True
 
     try:

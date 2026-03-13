@@ -3,28 +3,33 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
 
-# 🌿 Email Configuration
-# You should set these in your environment variables for security
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-# USER: PLEASE FILL THESE OR SET ENV VARS
+
 SENDER_EMAIL = os.getenv("SENDER_EMAIL", "your-email@gmail.com")
 SENDER_PASSWORD = os.getenv("SENDER_PASSWORD", "your-app-password")
 
+
+def using_default_credentials() -> bool:
+    return (
+        SENDER_EMAIL == "your-email@gmail.com"
+        or SENDER_PASSWORD == "your-app-password"
+    )
+
+
 def send_otp_email(receiver_email: str, otp: str):
-    # 🧪 DEBUG MODE: If credentials aren't set, print to terminal so you can test!
-    if SENDER_EMAIL == "your-email@gmail.com" or SENDER_PASSWORD == "your-app-password":
-        print("\n" + "="*50)
+    if using_default_credentials():
+        print("\n" + "=" * 50)
         print("DEBUG: SMTP Credentials not set in email.py")
         print(f"DEBUG: OTP for {receiver_email} is: {otp}")
-        print("="*50 + "\n")
+        print("=" * 50 + "\n")
         return True
 
     try:
         msg = MIMEMultipart()
-        msg['From'] = f"AgriVora Support <{SENDER_EMAIL}>"
-        msg['To'] = receiver_email
-        msg['Subject'] = "AgriVora Password Reset OTP"
+        msg["From"] = f"AgriVora Support <{SENDER_EMAIL}>"
+        msg["To"] = receiver_email
+        msg["Subject"] = "AgriVora Password Reset OTP"
 
         body = f"""
         <html>
@@ -43,7 +48,7 @@ def send_otp_email(receiver_email: str, otp: str):
         </body>
         </html>
         """
-        msg.attach(MIMEText(body, 'html'))
+        msg.attach(MIMEText(body, "html"))
 
         server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
         server.starttls()
@@ -51,6 +56,7 @@ def send_otp_email(receiver_email: str, otp: str):
         server.send_message(msg)
         server.quit()
         return True
+
     except Exception as e:
         print(f"Error sending email: {str(e)}")
         return False

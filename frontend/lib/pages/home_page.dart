@@ -17,37 +17,21 @@ class _HomePageState extends State<HomePage> {
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
     final role = ModalRoute.of(context)?.settings.arguments;
-    final roleText =
-        (role is String && role.trim().isNotEmpty) ? role : "Farmer";
+    final roleText = (role is String && role.trim().isNotEmpty)
+        ? role
+        : "Farmer";
 
     return Scaffold(
       backgroundColor: const Color(0xFFF2E8D5),
       body: Stack(
         children: [
-          // 🌾 Background
           Positioned.fill(
             child: Image.asset(
               'assets/images/bg_fields.png',
               fit: BoxFit.cover,
             ),
           ),
-
-          // ✅ Top logo (outside glass)
-          SafeArea(
-            child: Align(
-              alignment: Alignment.topCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Image.asset(
-                  'assets/images/logo_agrivora.png',
-                  height: 140,
-                  fit: BoxFit.contain,
-                ),
-              ),
-            ),
-          ),
-
-          // ✅ Big Wavy Glass Panel
+          _buildTopLogo(),
           Align(
             alignment: Alignment.bottomCenter,
             child: ClipPath(
@@ -70,137 +54,10 @@ class _HomePageState extends State<HomePage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Title + subtitle
-                              const Text(
-                                "Home",
-                                style: TextStyle(
-                                  fontSize: 36,
-                                  fontWeight: FontWeight.w900,
-                                  color: Color(0xFF1B1B1B),
-                                  height: 1.05,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                "Here's your smart farming dashboard • Role: $roleText",
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.black54,
-                                  height: 1.3,
-                                ),
-                              ),
-
+                              _buildHeader(roleText),
                               const SizedBox(height: 18),
-
-                              // ✅ Weather/Search + Robot
-                              SizedBox(
-                                height: 230,
-                                child: Stack(
-                                  clipBehavior: Clip.none,
-                                  children: [
-                                    Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: _GlassCard(
-                                        width: size.width * 0.66,
-                                        height: 195,
-                                        child: Padding(
-                                          padding: const EdgeInsets.fromLTRB(
-                                              14, 14, 14, 12),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                children: const [
-                                                  Icon(Icons.cloud,
-                                                      color: Color(0xFF004D40)),
-                                                  SizedBox(width: 8),
-                                                  Text(
-                                                    "Colombo",
-                                                    style: TextStyle(
-                                                      fontWeight: FontWeight.w900,
-                                                      color: Color(0xFF1B1B1B),
-                                                      fontSize: 18,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 12),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.spaceBetween,
-                                                children: const [
-                                                  _Metric(
-                                                      label: "Temperature",
-                                                      value: "27°C"),
-                                                  _Metric(
-                                                      label: "Rainfall",
-                                                      value: "75%"),
-                                                ],
-                                              ),
-                                              const Spacer(),
-
-                                              // Search bar
-                                              Container(
-                                                height: 46,
-                                                padding: const EdgeInsets.symmetric(
-                                                    horizontal: 12),
-                                                decoration: BoxDecoration(
-                                                  color: const Color(0xFFEAF3EA)
-                                                      .withOpacity(0.75),
-                                                  borderRadius:
-                                                      BorderRadius.circular(18),
-                                                  border: Border.all(
-                                                      color: Colors.black12),
-                                                ),
-                                                child: Row(
-                                                  children: [
-                                                    const Expanded(
-                                                      child: Text(
-                                                        "Search",
-                                                        style: TextStyle(
-                                                          color: Colors.black45,
-                                                          fontWeight: FontWeight.w700,
-                                                          fontSize: 15,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    Container(
-                                                      height: 38,
-                                                      width: 54,
-                                                      decoration: BoxDecoration(
-                                                        color: const Color(0xFF2E7D32),
-                                                        borderRadius:
-                                                            BorderRadius.circular(16),
-                                                      ),
-                                                      child: const Icon(Icons.search,
-                                                          color: Colors.white),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-
-                                    // ✅ Bigger robot
-                                    Positioned(
-                                      right: -4,
-                                      bottom: -6,
-                                      child: Image.asset(
-                                        'assets/images/robot.png',
-                                        height: 235,
-                                        fit: BoxFit.contain,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
+                              _buildWeatherSection(size),
                               const SizedBox(height: 16),
-
                               const Text(
                                 "Crop recommendation",
                                 style: TextStyle(
@@ -210,173 +67,24 @@ class _HomePageState extends State<HomePage> {
                                 ),
                               ),
                               const SizedBox(height: 10),
-
-                              // ✅ Soil analysis (existing)
-                              _GlassCard(
-                                width: double.infinity,
-                                height: 84,
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 12),
-                                  child: Row(
-                                    children: [
-                                      const Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Text(
-                                              "Soil Analysis",
-                                              style: TextStyle(
-                                                fontSize: 17,
-                                                fontWeight: FontWeight.w900,
-                                                color: Color(0xFF1B1B1B),
-                                              ),
-                                            ),
-                                            SizedBox(height: 3),
-                                            Text(
-                                              "pH : 6.8 | N : Good",
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                color: Colors.black54,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-
-                                      // ✅ "+" opens Soil Analysis page
-                                      InkWell(
-                                        onTap: () {
-                                          Navigator.pushNamed(context, '/soil-analysis');
-                                        },
-                                        borderRadius: BorderRadius.circular(999),
-                                        child: Container(
-                                          height: 52,
-                                          width: 52,
-                                          decoration: const BoxDecoration(
-                                            color: Color(0xFF2E7D32),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child:
-                                              const Icon(Icons.add, color: Colors.white),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                              _buildSoilCard(
+                                title: "Soil Analysis",
+                                subtitle: "pH : 6.8 | N : Good",
+                                route: '/soil-analysis',
                               ),
-
-                              // ✅ NEW: Manual Soil Analysis (added under Soil Analysis)
                               const SizedBox(height: 12),
-                              _GlassCard(
-                                width: double.infinity,
-                                height: 84,
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 12),
-                                  child: Row(
-                                    children: [
-                                      const Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Text(
-                                              "Manual Soil Analysis",
-                                              style: TextStyle(
-                                                fontSize: 17,
-                                                fontWeight: FontWeight.w900,
-                                                color: Color(0xFF1B1B1B),
-                                              ),
-                                            ),
-                                            SizedBox(height: 3),
-                                            Text(
-                                              "Enter soil type & pH manually",
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                color: Colors.black54,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-
-                                      // ✅ "+" opens Manual Soil Analysis page
-                                      InkWell(
-                                        onTap: () {
-                                          Navigator.pushNamed(context, '/manual-soil');
-                                        },
-                                        borderRadius: BorderRadius.circular(999),
-                                        child: Container(
-                                          height: 52,
-                                          width: 52,
-                                          decoration: const BoxDecoration(
-                                            color: Color(0xFF2E7D32),
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child:
-                                              const Icon(Icons.add, color: Colors.white),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                              _buildSoilCard(
+                                title: "Manual Soil Analysis",
+                                subtitle: "Enter soil type & pH manually",
+                                route: '/manual-soil',
                               ),
-
                               const SizedBox(height: 14),
-
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const Text(
-                                    "Recommended Crops",
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w900,
-                                      color: Color(0xFF1B1B1B),
-                                    ),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.pushNamed(context, '/crop-recom');
-                                    },
-                                    child: const Text(
-                                      "See All",
-                                      style: TextStyle(
-                                        color: Color(0xFF004D40),
-                                        fontWeight: FontWeight.w900,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              Row(
-                                children: const [
-                                  Expanded(
-                                    child: _CropCard(
-                                      title: "Tea Plant",
-                                      subtitle: "Ideal for current soil conditions",
-                                    ),
-                                  ),
-                                  SizedBox(width: 12),
-                                  Expanded(
-                                    child: _CropCard(
-                                      title: "Paddy (Rice)",
-                                      subtitle: "High yield potential this season",
-                                    ),
-                                  ),
-                                ],
-                              ),
-
+                              _buildRecommendedSection(),
                               const SizedBox(height: 18),
                             ],
                           ),
                         ),
                       ),
-
-                      // ✅ Bottom nav
                       _BottomNav(
                         index: _navIndex,
                         onTap: (i) => setState(() => _navIndex = i),
@@ -391,9 +99,244 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+
+  Widget _buildTopLogo() {
+    return SafeArea(
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Image.asset(
+            'assets/images/logo_agrivora.png',
+            height: 140,
+            fit: BoxFit.contain,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(String roleText) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "Home",
+          style: TextStyle(
+            fontSize: 36,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF1B1B1B),
+            height: 1.05,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(
+          "Here's your smart farming dashboard • Role: $roleText",
+          style: const TextStyle(
+            fontSize: 14,
+            color: Colors.black54,
+            height: 1.3,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWeatherSection(Size size) {
+    return SizedBox(
+      height: 230,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: _GlassCard(
+              width: size.width * 0.66,
+              height: 195,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: const [
+                        Icon(Icons.cloud, color: Color(0xFF004D40)),
+                        SizedBox(width: 8),
+                        Text(
+                          "Colombo",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF1B1B1B),
+                            fontSize: 18,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: const [
+                        _Metric(label: "Temperature", value: "27°C"),
+                        _Metric(label: "Rainfall", value: "75%"),
+                      ],
+                    ),
+                    const Spacer(),
+                    Container(
+                      height: 46,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEAF3EA).withOpacity(0.75),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: Colors.black12),
+                      ),
+                      child: Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              "Search",
+                              style: TextStyle(
+                                color: Colors.black45,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            height: 38,
+                            width: 54,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2E7D32),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Icon(
+                              Icons.search,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            right: -4,
+            bottom: -6,
+            child: Image.asset(
+              'assets/images/robot.png',
+              height: 235,
+              fit: BoxFit.contain,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSoilCard({
+    required String title,
+    required String subtitle,
+    required String route,
+  }) {
+    return _GlassCard(
+      width: double.infinity,
+      height: 84,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF1B1B1B),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(fontSize: 13, color: Colors.black54),
+                  ),
+                ],
+              ),
+            ),
+            InkWell(
+              onTap: () => Navigator.pushNamed(context, route),
+              borderRadius: BorderRadius.circular(999),
+              child: Container(
+                height: 52,
+                width: 52,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF2E7D32),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.add, color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecommendedSection() {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "Recommended Crops",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF1B1B1B),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/crop-recom');
+              },
+              child: const Text(
+                "See All",
+                style: TextStyle(
+                  color: Color(0xFF004D40),
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ],
+        ),
+        Row(
+          children: const [
+            Expanded(
+              child: _CropCard(
+                title: "Tea Plant",
+                subtitle: "Ideal for current soil conditions",
+              ),
+            ),
+            SizedBox(width: 12),
+            Expanded(
+              child: _CropCard(
+                title: "Paddy (Rice)",
+                subtitle: "High yield potential this season",
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 }
 
-/// ✅ Wavy clipper
 class _HomeWaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
@@ -440,7 +383,7 @@ class _GlassCard extends StatelessWidget {
                 color: Colors.black.withOpacity(0.10),
                 blurRadius: 18,
                 offset: const Offset(0, 10),
-              )
+              ),
             ],
           ),
           child: child,
@@ -487,10 +430,7 @@ class _CropCard extends StatelessWidget {
   final String title;
   final String subtitle;
 
-  const _CropCard({
-    required this.title,
-    required this.subtitle,
-  });
+  const _CropCard({required this.title, required this.subtitle});
 
   @override
   Widget build(BuildContext context) {
@@ -509,7 +449,7 @@ class _CropCard extends StatelessWidget {
                 color: Colors.black.withOpacity(0.10),
                 blurRadius: 18,
                 offset: const Offset(0, 10),
-              )
+              ),
             ],
           ),
           child: Row(
@@ -521,8 +461,11 @@ class _CropCard extends StatelessWidget {
                   color: const Color(0xFFDDEEDD).withOpacity(0.80),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: const Icon(Icons.eco,
-                    color: Color(0xFF2E7D32), size: 30),
+                child: const Icon(
+                  Icons.eco,
+                  color: Color(0xFF2E7D32),
+                  size: 30,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -554,8 +497,7 @@ class _CropCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded,
-                  color: Color(0xFF004D40)),
+              const Icon(Icons.chevron_right_rounded, color: Color(0xFF004D40)),
             ],
           ),
         ),

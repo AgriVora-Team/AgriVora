@@ -1,18 +1,19 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr
 from typing import Optional
-from app.utils.firestore import db
 from datetime import datetime
+
+from app.utils.firestore import db
 from app.api.api_v1.endpoints.auth import hash_password, verify_password
 
 router = APIRouter()
 
 
-# =====================================================
-# RESPONSE SCHEMA
-# =====================================================
+# ==========================================
+# PROFILE RESPONSE MODEL
+# ==========================================
 
-class ProfileResponse(BaseModel):
+class UserProfile(BaseModel):
     user_id: str
     full_name: str
     email: EmailStr
@@ -20,85 +21,84 @@ class ProfileResponse(BaseModel):
     role: Optional[str]
 
 
-# =====================================================
-# UPDATE SCHEMA
-# =====================================================
+# ==========================================
+# REQUEST MODELS
+# ==========================================
 
-class UpdateProfileRequest(BaseModel):
+class EditProfile(BaseModel):
     full_name: Optional[str] = None
     phone: Optional[str] = None
 
-class ChangePasswordRequest(BaseModel):
+
+class PasswordUpdate(BaseModel):
     old_password: str
     new_password: str
 
 
-# =====================================================
-# GET PROFILE
-# =====================================================
+# ==========================================
+# FETCH USER PROFILE
+# ==========================================
 
 @router.get("/profile/{user_id}")
-def get_profile(user_id: str):
+def fetch_profile(user_id: str):
 
-    user_ref = db.collection("users").document(user_id)
-    user_doc = user_ref.get()
+    user_doc = db.collection("users").document(user_id).get()
 
     if not user_doc.exists:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user_data = user_doc.to_dict()
+    user = user_doc.to_dict()
 
     return {
         "success": True,
-        "data": {
+        "profile": {
             "user_id": user_id,
-            "full_name": user_data.get("full_name"),
-            "email": user_data.get("email"),
-            "phone": user_data.get("phone"),
-            "role": user_data.get("role")
-        },
-        "error": None
+            "full_name": user.get("full_name"),
+            "email": user.get("email"),
+            "phone": user.get("phone"),
+            "role": user.get("role")
+        }
     }
 
 
-# =====================================================
-# UPDATE PROFILE
-# =====================================================
+# ==========================================
+# EDIT PROFILE
+# ==========================================
 
 @router.put("/profile/{user_id}")
-def update_profile(user_id: str, data: UpdateProfileRequest):
+def edit_profile(user_id: str, payload: EditProfile):
 
     user_ref = db.collection("users").document(user_id)
     user_doc = user_ref.get()
 
     if not user_doc.exists:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="User does not exist")
 
-    update_data = {}
+    updates = {}
 
-    if data.full_name is not None:
-        update_data["full_name"] = data.full_name
+    if payload.full_name:
+        updates["full_name"] = payload.full_name
 
-    if data.phone is not None:
-        update_data["phone"] = data.phone
+    if payload.phone:
+        updates["phone"] = payload.phone
 
-    update_data["updatedAt"] = datetime.utcnow()
+    updates["updated_at"] = datetime.utcnow()
 
-    user_ref.update(update_data)
+    user_ref.update(updates)
 
     return {
         "success": True,
-        "message": "Profile updated successfully",
-        "error": None
+        "message": "Profile information updated"
     }
 
 
-# =====================================================
-# CHANGE PASSWORD
-# =====================================================
+# ==========================================
+# UPDATE PASSWORD
+# ==========================================
 
-@router.put("/{user_id}/change-password")
-def change_password(user_id: str, data: ChangePasswordRequest):
+@router.put("/profile/{user_id}/password")
+def update_password(user_id: str, payload: PasswordUpdate):
+
     user_ref = db.collection("users").document(user_id)
     user_doc = user_ref.get()
 
@@ -106,15 +106,19 @@ def change_password(user_id: str, data: ChangePasswordRequest):
         raise HTTPException(status_code=404, detail="User not found")
 
     user_data = user_doc.to_dict()
-    stored_hash = user_data.get("password_hash")
+    current_hash = user_data.get("password_hash")
 
-    if not stored_hash or not verify_password(data.old_password, stored_hash):
-        raise HTTPException(status_code=400, detail="Incorrect old password")
+    if not current_hash or not verify_password(payload.old_password, current_hash):
+        raise HTTPException(status_code=400, detail="Old password is incorrect")
 
-    new_hash = hash_password(data.new_password)
-    user_ref.update({"password_hash": new_hash, "updatedAt": datetime.utcnow()})
+    new_hash = hash_password(payload.new_password)
+
+    user_ref.update({
+        "password_hash": new_hash,
+        "updated_at": datetime.utcnow()
+    })
 
     return {
         "success": True,
-        "message": "Password updated successfully"
+        "message": "Password changed successfully"
     }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../main.dart'; // to use ScanSession from main.dart
-import 'gps_step_screen.dart'; // 👈 NEW: GPS step screen
+import '../main.dart';
+import 'gps_step_screen.dart';
 
 class StartScanScreen extends StatelessWidget {
   const StartScanScreen({super.key});
@@ -22,12 +22,14 @@ class StartScanScreen extends StatelessWidget {
             const SizedBox(height: 20),
             const Text(
               'AgriVora Soil Scan',
-              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 12),
             const Text(
-              'This flow will collect your GPS location, pH value, and soil image, '
-              'then contact the backend to get soil & weather summary and crop recommendations.',
+              'This flow will collect your GPS location, pH value, and soil image, then contact the backend to get soil & weather summary and crop recommendations.',
               style: TextStyle(fontSize: 14, height: 1.4),
             ),
             const SizedBox(height: 30),
@@ -57,13 +59,12 @@ class StartScanScreen extends StatelessWidget {
                   ),
                 ),
                 onPressed: () {
-                  // 1️⃣ Create a fresh ScanSession when user starts scan
                   final session = ScanSession.empty(
                     DateTime.now().millisecondsSinceEpoch.toString(),
                   );
+
                   print('New scan started: ${session.toJson()}');
 
-                  // 2️⃣ Navigate to GPS step and pass this session
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -73,7 +74,10 @@ class StartScanScreen extends StatelessWidget {
                 },
                 child: const Text(
                   'Start Scan',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),

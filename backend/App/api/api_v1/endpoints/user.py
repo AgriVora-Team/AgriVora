@@ -26,6 +26,15 @@ class ChangePasswordRequest(BaseModel):
     new_password: str
 
 
+def success_response(message: Optional[str] = None, data=None):
+    return {
+        "success": True,
+        "message": message,
+        "data": data,
+        "error": None
+    }
+
+
 def get_user_document(user_id: str):
     user_ref = db.collection("users").document(user_id)
     user_doc = user_ref.get()
@@ -51,11 +60,9 @@ def get_profile(user_id: str):
 
     user_data = user_doc.to_dict()
 
-    return {
-        "success": True,
-        "data": build_profile_data(user_id, user_data),
-        "error": None
-    }
+    return success_response(
+        data=build_profile_data(user_id, user_data)
+    )
 
 
 @router.put("/profile/{user_id}")
@@ -76,11 +83,7 @@ def update_profile(user_id: str, data: UpdateProfileRequest):
     update_data["updatedAt"] = datetime.utcnow()
     user_ref.update(update_data)
 
-    return {
-        "success": True,
-        "message": "Profile updated successfully",
-        "error": None
-    }
+    return success_response(message="Profile updated successfully")
 
 
 @router.put("/{user_id}/change-password")
@@ -96,12 +99,10 @@ def change_password(user_id: str, data: ChangePasswordRequest):
     if not stored_hash or not verify_password(data.old_password, stored_hash):
         raise HTTPException(status_code=400, detail="Incorrect old password")
 
+    new_hash = hash_password(data.new_password)
     user_ref.update({
-        "password_hash": hash_password(data.new_password),
+        "password_hash": new_hash,
         "updatedAt": datetime.utcnow()
     })
 
-    return {
-        "success": True,
-        "message": "Password updated successfully"
-    }
+    return success_response(message="Password updated successfully")

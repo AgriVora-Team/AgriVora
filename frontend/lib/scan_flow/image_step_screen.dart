@@ -16,49 +16,46 @@ class ImageStepScreen extends StatefulWidget {
 }
 
 class _ImageStepScreenState extends State<ImageStepScreen> {
-  late ScanSession _currentSession;
+  late ScanSession _session;
 
-  final ImagePicker _imagePicker = ImagePicker();
-  File? _selectedImage;
+  final ImagePicker _picker = ImagePicker();
+  File? _imageFile;
 
   @override
   void initState() {
     super.initState();
-    _currentSession = widget.session;
+    _session = widget.session;
 
-    if (_currentSession.imagePath != null) {
-      _selectedImage = File(_currentSession.imagePath!);
+    if (_session.imagePath != null && _session.imagePath!.isNotEmpty) {
+      _imageFile = File(_session.imagePath!);
     }
   }
 
-  Future<void> _pickImage() async {
-    final XFile? file = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
-    );
+  Future<void> _selectImage() async {
+    final XFile? pickedImage =
+        await _picker.pickImage(source: ImageSource.gallery);
 
-    if (file == null) return;
+    if (pickedImage == null) return;
+
+    final file = File(pickedImage.path);
 
     setState(() {
-      _selectedImage = File(file.path);
-      _currentSession = _currentSession.copyWith(
-        imagePath: file.path,
-      );
+      _imageFile = file;
+      _session = _session.copyWith(imagePath: pickedImage.path);
     });
-
-    print('Image selected: ${_currentSession.toJson()}');
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Soil image selected successfully.'),
+        content: Text('Soil image added successfully'),
       ),
     );
   }
 
-  void _continueToAnalyze() {
-    if (_currentSession.imagePath == null) {
+  void _proceedToAnalyze() {
+    if (_session.imagePath == null || _session.imagePath!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please select an image before continuing.'),
+          content: Text('Please select a soil image to continue'),
         ),
       );
       return;
@@ -66,18 +63,18 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Ready for Analyze step – TODO.'),
+        content: Text('Proceeding to analysis step'),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool hasImage = _selectedImage != null;
+    final bool hasImage = _imageFile != null;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Step 4 – Image'),
+        title: const Text('Step 4 – Soil Image'),
         backgroundColor: const Color(0xFF2E7D32),
         foregroundColor: Colors.white,
       ),
@@ -87,7 +84,7 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
-              'Capture / Upload Soil Image',
+              'Upload Soil Image',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -95,7 +92,7 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
             ),
             const SizedBox(height: 12),
             const Text(
-              'AgriVora uses this soil image as input to the CNN texture classifier. For Dev1 we let the user pick an image from the gallery and store its path in ScanSession.',
+              'Select a soil image from your gallery. The image will be used to analyze soil texture using the AI model.',
               style: TextStyle(fontSize: 14, height: 1.4),
             ),
             const SizedBox(height: 24),
@@ -114,14 +111,14 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
                   ? ClipRRect(
                       borderRadius: BorderRadius.circular(16),
                       child: Image.file(
-                        _selectedImage!,
+                        _imageFile!,
                         fit: BoxFit.cover,
                         width: double.infinity,
                       ),
                     )
                   : const Center(
                       child: Text(
-                        'No soil image selected yet.\n\nTap the button below to choose a soil image from the gallery.',
+                        'No soil image selected.\n\nTap below to choose an image.',
                         textAlign: TextAlign.center,
                         style: TextStyle(fontSize: 14),
                       ),
@@ -139,9 +136,9 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                onPressed: _pickImage,
+                onPressed: _selectImage,
                 child: const Text(
-                  'Select soil image from gallery',
+                  'Choose Image From Gallery',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -160,9 +157,9 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                onPressed: _continueToAnalyze,
+                onPressed: _proceedToAnalyze,
                 child: const Text(
-                  'Next – Analyze (TODO)',
+                  'Continue to Analyze',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

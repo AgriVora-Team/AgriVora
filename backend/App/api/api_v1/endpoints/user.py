@@ -8,6 +8,10 @@ from app.api.api_v1.endpoints.auth import hash_password, verify_password
 router = APIRouter()
 
 
+# =====================================================
+# RESPONSE SCHEMA
+# =====================================================
+
 class ProfileResponse(BaseModel):
     user_id: str
     full_name: str
@@ -16,32 +20,29 @@ class ProfileResponse(BaseModel):
     role: Optional[str]
 
 
+# =====================================================
+# UPDATE SCHEMA
+# =====================================================
+
 class UpdateProfileRequest(BaseModel):
     full_name: Optional[str] = None
     phone: Optional[str] = None
-
 
 class ChangePasswordRequest(BaseModel):
     old_password: str
     new_password: str
 
 
-def success_response(message: Optional[str] = None, data=None):
-    return {
-        "success": True,
-        "message": message,
-        "data": data,
-        "error": None
-    }
-
+# =====================================================
+# HELPER FUNCTIONS
+# =====================================================
 
 def get_user_document(user_id: str):
     user_ref = db.collection("users").document(user_id)
     user_doc = user_ref.get()
     return user_ref, user_doc
 
-
-def build_profile_data(user_id: str, user_data: dict):
+def format_profile_response(user_id: str, user_data: dict):
     return {
         "user_id": user_id,
         "full_name": user_data.get("full_name"),
@@ -50,8 +51,7 @@ def build_profile_data(user_id: str, user_data: dict):
         "role": user_data.get("role")
     }
 
-
-def build_profile_update_data(data: UpdateProfileRequest):
+def collect_profile_updates(data: UpdateProfileRequest):
     update_data = {}
 
     if data.full_name is not None:
@@ -64,6 +64,10 @@ def build_profile_update_data(data: UpdateProfileRequest):
     return update_data
 
 
+# =====================================================
+# GET PROFILE
+# =====================================================
+
 @router.get("/profile/{user_id}")
 def get_profile(user_id: str):
     _, user_doc = get_user_document(user_id)
@@ -71,10 +75,18 @@ def get_profile(user_id: str):
     if not user_doc.exists:
         raise HTTPException(status_code=404, detail="User not found")
 
-    return success_response(
-        data=build_profile_data(user_id, user_doc.to_dict())
-    )
+    user_data = user_doc.to_dict()
 
+    return {
+        "success": True,
+        "data": format_profile_response(user_id, user_data),
+        "error": None
+    }
+
+
+# =====================================================
+# UPDATE PROFILE
+# =====================================================
 
 @router.put("/profile/{user_id}")
 def update_profile(user_id: str, data: UpdateProfileRequest):
@@ -83,11 +95,19 @@ def update_profile(user_id: str, data: UpdateProfileRequest):
     if not user_doc.exists:
         raise HTTPException(status_code=404, detail="User not found")
 
-    update_data = build_profile_update_data(data)
+    update_data = collect_profile_updates(data)
     user_ref.update(update_data)
 
-    return success_response(message="Profile updated successfully")
+    return {
+        "success": True,
+        "message": "Profile updated successfully",
+        "error": None
+    }
 
+
+# =====================================================
+# CHANGE PASSWORD
+# =====================================================
 
 @router.put("/{user_id}/change-password")
 def change_password(user_id: str, data: ChangePasswordRequest):
@@ -102,9 +122,13 @@ def change_password(user_id: str, data: ChangePasswordRequest):
     if not stored_hash or not verify_password(data.old_password, stored_hash):
         raise HTTPException(status_code=400, detail="Incorrect old password")
 
+    new_hash = hash_password(data.new_password)
     user_ref.update({
-        "password_hash": hash_password(data.new_password),
+        "password_hash": new_hash,
         "updatedAt": datetime.utcnow()
     })
 
-    return success_response(message="Password updated successfully")
+    return {
+        "success": True,
+        "message": "Password updated successfully"
+    }

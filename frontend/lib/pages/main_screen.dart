@@ -14,9 +14,11 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  final List<int> _navigationStack = [0];
+  final List<int> _tabTrail = [0];
 
-  final List<Widget> _screens = const [
+  int get currentTab => _tabTrail.last;
+
+  List<Widget> get pages => const [
     HomePage(),
     MapPage(),
     HistoryPage(),
@@ -24,45 +26,45 @@ class _MainScreenState extends State<MainScreen> {
     ProfilePage(),
   ];
 
-  int get _selectedIndex => _navigationStack.last;
-
-  void _handleTabChange(int index) {
-    if (index == _selectedIndex) return;
+  void _selectTab(int index) {
+    if (currentTab == index) {
+      return;
+    }
 
     setState(() {
-      _navigationStack.remove(index);
-      _navigationStack.add(index);
+      if (_tabTrail.contains(index)) {
+        _tabTrail.remove(index);
+      }
+      _tabTrail.add(index);
     });
   }
 
-  Future<bool> _handleBackPress() async {
-    if (_navigationStack.length > 1) {
+  Future<bool> _handleSystemBack() async {
+    final hasPreviousTab = _tabTrail.length > 1;
+
+    if (hasPreviousTab) {
       setState(() {
-        _navigationStack.removeLast();
+        _tabTrail.removeLast();
       });
       return false;
     }
+
     return true;
-  }
-
-  Widget _buildBody() {
-    return IndexedStack(index: _selectedIndex, children: _screens);
-  }
-
-  Widget _buildBottomNav() {
-    return AgriBottomNavBar(
-      activeIndex: _selectedIndex,
-      onTap: _handleTabChange,
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: _handleBackPress,
+      onWillPop: _handleSystemBack,
       child: Scaffold(
         extendBody: true,
-        body: Stack(children: [_buildBody(), _buildBottomNav()]),
+        body: Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
+            IndexedStack(index: currentTab, children: pages),
+            AgriBottomNavBar(activeIndex: currentTab, onTap: _selectTab),
+          ],
+        ),
       ),
     );
   }

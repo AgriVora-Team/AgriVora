@@ -11,11 +11,28 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   int _navIndex = 0;
 
+  final List<Map<String, String>> soilActions = const [
+    {
+      "title": "Soil Analysis",
+      "subtitle": "pH : 6.8 | N : Good",
+      "route": "/soil-analysis",
+    },
+    {
+      "title": "Manual Soil Analysis",
+      "subtitle": "Enter soil type & pH manually",
+      "route": "/manual-soil",
+    },
+  ];
+
+  final List<Map<String, String>> crops = const [
+    {"title": "Tea Plant", "subtitle": "Ideal for current soil conditions"},
+    {"title": "Paddy (Rice)", "subtitle": "High yield potential this season"},
+  ];
+
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final bottomPad = MediaQuery.of(context).padding.bottom;
-
+    final media = MediaQuery.of(context);
+    final size = media.size;
     final role = ModalRoute.of(context)?.settings.arguments;
     final roleText = (role is String && role.trim().isNotEmpty)
         ? role
@@ -31,7 +48,17 @@ class _HomePageState extends State<HomePage> {
               fit: BoxFit.cover,
             ),
           ),
-          _buildTopLogo(),
+          SafeArea(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Image.asset(
+                  'assets/images/logo_agrivora.png',
+                  height: 140,
+                ),
+              ),
+            ),
+          ),
           Align(
             alignment: Alignment.bottomCenter,
             child: ClipPath(
@@ -41,7 +68,12 @@ class _HomePageState extends State<HomePage> {
                 child: Container(
                   width: double.infinity,
                   height: size.height * 0.78,
-                  padding: EdgeInsets.fromLTRB(18, 95, 18, bottomPad + 14),
+                  padding: EdgeInsets.fromLTRB(
+                    18,
+                    95,
+                    18,
+                    media.padding.bottom + 14,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF2E8D5).withOpacity(0.70),
                     border: Border.all(color: Colors.white.withOpacity(0.18)),
@@ -49,40 +81,92 @@ class _HomePageState extends State<HomePage> {
                   child: Column(
                     children: [
                       Expanded(
-                        child: SingleChildScrollView(
+                        child: ListView(
                           physics: const BouncingScrollPhysics(),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildHeader(roleText),
-                              const SizedBox(height: 18),
-                              _buildWeatherSection(size),
-                              const SizedBox(height: 16),
-                              const Text(
-                                "Crop recommendation",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w900,
-                                  color: Color(0xFF1B1B1B),
+                          children: [
+                            const Text(
+                              "Home",
+                              style: TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF1B1B1B),
+                                height: 1.05,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              "Here's your smart farming dashboard • Role: $roleText",
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black54,
+                                height: 1.3,
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            _weatherRobotBlock(size),
+                            const SizedBox(height: 16),
+                            const Text(
+                              "Crop recommendation",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF1B1B1B),
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            ...soilActions.map((item) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: _actionCard(
+                                  title: item["title"]!,
+                                  subtitle: item["subtitle"]!,
+                                  route: item["route"]!,
                                 ),
-                              ),
-                              const SizedBox(height: 10),
-                              _buildSoilCard(
-                                title: "Soil Analysis",
-                                subtitle: "pH : 6.8 | N : Good",
-                                route: '/soil-analysis',
-                              ),
-                              const SizedBox(height: 12),
-                              _buildSoilCard(
-                                title: "Manual Soil Analysis",
-                                subtitle: "Enter soil type & pH manually",
-                                route: '/manual-soil',
-                              ),
-                              const SizedBox(height: 14),
-                              _buildRecommendedSection(),
-                              const SizedBox(height: 18),
-                            ],
-                          ),
+                              );
+                            }),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  "Recommended Crops",
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w900,
+                                    color: Color(0xFF1B1B1B),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pushNamed(context, '/crop-recom');
+                                  },
+                                  child: const Text(
+                                    "See All",
+                                    style: TextStyle(
+                                      color: Color(0xFF004D40),
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              children: crops.map((crop) {
+                                final isLast = crop == crops.last;
+                                return Expanded(
+                                  child: Padding(
+                                    padding: EdgeInsets.only(
+                                      right: isLast ? 0 : 12,
+                                    ),
+                                    child: _CropCard(
+                                      title: crop["title"]!,
+                                      subtitle: crop["subtitle"]!,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: 18),
+                          ],
                         ),
                       ),
                       _BottomNav(
@@ -100,49 +184,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildTopLogo() {
-    return SafeArea(
-      child: Align(
-        alignment: Alignment.topCenter,
-        child: Padding(
-          padding: const EdgeInsets.only(top: 10),
-          child: Image.asset(
-            'assets/images/logo_agrivora.png',
-            height: 140,
-            fit: BoxFit.contain,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader(String roleText) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          "Home",
-          style: TextStyle(
-            fontSize: 36,
-            fontWeight: FontWeight.w900,
-            color: Color(0xFF1B1B1B),
-            height: 1.05,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          "Here's your smart farming dashboard • Role: $roleText",
-          style: const TextStyle(
-            fontSize: 14,
-            color: Colors.black54,
-            height: 1.3,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildWeatherSection(Size size) {
+  Widget _weatherRobotBlock(Size size) {
     return SizedBox(
       height: 230,
       child: Stack(
@@ -173,9 +215,9 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    Row(
+                    const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
+                      children: [
                         _Metric(label: "Temperature", value: "27°C"),
                         _Metric(label: "Rainfall", value: "75%"),
                       ],
@@ -235,7 +277,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildSoilCard({
+  Widget _actionCard({
     required String title,
     required String subtitle,
     required String route,
@@ -284,55 +326,6 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildRecommendedSection() {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              "Recommended Crops",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFF1B1B1B),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pushNamed(context, '/crop-recom');
-              },
-              child: const Text(
-                "See All",
-                style: TextStyle(
-                  color: Color(0xFF004D40),
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ),
-          ],
-        ),
-        Row(
-          children: const [
-            Expanded(
-              child: _CropCard(
-                title: "Tea Plant",
-                subtitle: "Ideal for current soil conditions",
-              ),
-            ),
-            SizedBox(width: 12),
-            Expanded(
-              child: _CropCard(
-                title: "Paddy (Rice)",
-                subtitle: "High yield potential this season",
-              ),
-            ),
-          ],
-        ),
-      ],
     );
   }
 }
@@ -514,12 +507,12 @@ class _BottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget item(IconData icon, String label, int i, {String? route}) {
+    Widget navItem(IconData icon, String label, int i, {String? route}) {
       final selected = index == i;
       return InkWell(
         onTap: () {
           onTap(i);
-          if (route != null && route.isNotEmpty) {
+          if (route != null) {
             Navigator.pushNamed(context, route);
           }
         },
@@ -563,10 +556,15 @@ class _BottomNav extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              item(Icons.home_rounded, "Home", 0),
-              item(Icons.map_outlined, "Map", 1, route: '/map'),
-              item(Icons.smart_toy_outlined, "AI Chat", 2, route: '/ai-chat'),
-              item(Icons.person_outline, "Profile", 3, route: '/profile'),
+              navItem(Icons.home_rounded, "Home", 0),
+              navItem(Icons.map_outlined, "Map", 1, route: '/map'),
+              navItem(
+                Icons.smart_toy_outlined,
+                "AI Chat",
+                2,
+                route: '/ai-chat',
+              ),
+              navItem(Icons.person_outline, "Profile", 3, route: '/profile'),
             ],
           ),
         ),

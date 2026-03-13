@@ -59,19 +59,52 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def get_user_by_email(email: str):
-    users_ref = db.collection("users")
-    query = users_ref.where("email", "==", email).limit(1).stream()
+    query = db.collection("users").where("email", "==", email).limit(1).stream()
     for doc in query:
         return doc
     return None
 
 
 def get_user_by_phone(phone: str):
-    users_ref = db.collection("users")
-    query = users_ref.where("phone", "==", phone).limit(1).stream()
+    query = db.collection("users").where("phone", "==", phone).limit(1).stream()
     for doc in query:
         return doc
     return None
+
+
+def generate_otp() -> str:
+    return str(random.randint(100000, 999999))
+
+
+def save_otp(email: str, otp: str):
+    now = datetime.utcnow()
+    db.collection("otps").document(email).set({
+        "email": email,
+        "otp": otp,
+        "createdAt": now,
+        "expiresAt": now + timedelta(minutes=10),
+    })
+
+
+def get_otp_record(email: str):
+    otp_doc = db.collection("otps").document(email).get()
+    if not otp_doc.exists:
+        return None
+    return otp_doc.to_dict()
+
+
+def validate_otp(email: str, otp: str, missing_message: str = "No OTP requested for this email"):
+    otp_data = get_otp_record(email)
+    if not otp_data:
+        raise HTTPException(status_code=400, detail=missing_message)
+
+    if datetime.utcnow().timestamp() > otp_data["expiresAt"].timestamp():
+        raise HTTPException(status_code=400, detail="OTP has expired")
+
+    if otp_data["otp"] != otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+
+    return otp_data
 
 
 @router.post("/signup")
@@ -118,11 +151,7 @@ def create_account(data: SignUpRequest):
 def login_user(data: LoginRequest):
     try:
         identifier = data.email_or_phone.strip()
-        password = data.password
-
-        user_doc = get_user_by_email(identifier.lower())
-        if not user_doc:
-            user_doc = get_user_by_phone(identifier)
+        user_doc = get_user_by_email(identifier.lower()) or get_user_by_phone(identifier)
 
         if not user_doc:
             raise HTTPException(status_code=404, detail="User not found")
@@ -133,7 +162,7 @@ def login_user(data: LoginRequest):
         if not stored_hash:
             raise HTTPException(status_code=500, detail="Server error: password hash missing")
 
-        if not verify_password(password, stored_hash):
+        if not verify_password(data.password, stored_hash):
             raise HTTPException(status_code=401, detail="Invalid password")
 
         return {
@@ -161,18 +190,10 @@ def request_otp(data: RequestOTPRequest):
         if not get_user_by_email(email):
             raise HTTPException(status_code=404, detail="User with this email not found")
 
-        otp = str(random.randint(100000, 999999))
-        now = datetime.utcnow()
+        otp = generate_otp()
+        save_otp(email, otp)
 
-        db.collection("otps").document(email).set({
-            "email": email,
-            "otp": otp,
-            "createdAt": now,
-            "expiresAt": now + timedelta(minutes=10),
-        })
-
-        success = send_otp_email(email, otp)
-        if not success:
+        if not send_otp_email(email, otp):
             raise HTTPException(status_code=500, detail="Failed to send email. Check SMTP settings.")
 
         return {
@@ -192,17 +213,7 @@ def verify_otp_endpoint(data: VerifyOTPRequest):
         email = normalize_email(data.email)
         otp = data.otp.strip()
 
-        otp_doc = db.collection("otps").document(email).get()
-        if not otp_doc.exists:
-            raise HTTPException(status_code=400, detail="No OTP requested for this email")
-
-        otp_data = otp_doc.to_dict()
-
-        if datetime.utcnow().timestamp() > otp_data["expiresAt"].timestamp():
-            raise HTTPException(status_code=400, detail="OTP has expired")
-
-        if otp_data["otp"] != otp:
-            raise HTTPException(status_code=400, detail="Invalid OTP")
+        validate_otp(email, otp)
 
         return {
             "success": True,
@@ -221,13 +232,7 @@ def reset_password_endpoint(data: ResetPasswordRequest):
         email = normalize_email(data.email)
         otp = data.otp.strip()
 
-        otp_doc = db.collection("otps").document(email).get()
-        if not otp_doc.exists:
-            raise HTTPException(status_code=400, detail="Invalid request")
-
-        otp_data = otp_doc.to_dict()
-        if otp_data["otp"] != otp or datetime.utcnow().timestamp() > otp_data["expiresAt"].timestamp():
-            raise HTTPException(status_code=400, detail="OTP expired or invalid")
+        validate_otp(email, otp, missing_message="Invalid request")
 
         user_doc = get_user_by_email(email)
         if not user_doc:

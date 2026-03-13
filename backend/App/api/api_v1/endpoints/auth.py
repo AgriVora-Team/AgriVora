@@ -276,4 +276,4 @@ def reset_password_endpoint(data: ResetPasswordRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}") # small update

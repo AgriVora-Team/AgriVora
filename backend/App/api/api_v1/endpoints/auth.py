@@ -10,292 +10,263 @@ import random
 
 router = APIRouter()
 
-# =====================================================
-# REQUEST SCHEMAS
-# =====================================================
+# =========================================
+# DATA MODELS
+# =========================================
 
-class SignUpRequest(BaseModel):
+class RegisterUser(BaseModel):
     full_name: str = Field(..., min_length=1)
     email: EmailStr
     phone: str = Field(..., min_length=6)
     password: str = Field(..., min_length=8)
 
-class LoginRequest(BaseModel):
+class LoginUser(BaseModel):
     email_or_phone: str = Field(..., min_length=1)
     password: str = Field(..., min_length=8)
 
-class RequestOTPRequest(BaseModel):
+class OTPRequest(BaseModel):
     email: EmailStr
 
-class VerifyOTPRequest(BaseModel):
+class OTPVerify(BaseModel):
     email: EmailStr
     otp: str
 
-class ResetPasswordRequest(BaseModel):
+class PasswordReset(BaseModel):
     email: EmailStr
     otp: str
     new_password: str = Field(..., min_length=8)
 
 
-# =====================================================
-# HELPER FUNCTIONS (SAFE AGAINST 72-BYTE LIMIT)
-# =====================================================
+# =========================================
+# PASSWORD UTILITIES
+# =========================================
 
-def _pw_digest(password: str) -> bytes:
-    """
-    Returns a fixed-length 32-byte digest, so bcrypt never sees >72 bytes.
-    """
-    return hashlib.sha256(password.encode("utf-8")).digest()
+def _create_digest(password: str) -> bytes:
+    """Generate fixed SHA256 digest to avoid bcrypt length issues."""
+    return hashlib.sha256(password.encode()).digest()
 
-def hash_password(password: str) -> str:
-    """
-    Hash SHA256(password) using bcrypt.
-    Stores as a utf-8 string.
-    """
-    digest = _pw_digest(password)
-    hashed = bcrypt.hashpw(digest, bcrypt.gensalt())
-    return hashed.decode("utf-8")
+def generate_hash(password: str) -> str:
+    digest = _create_digest(password)
+    hashed_pw = bcrypt.hashpw(digest, bcrypt.gensalt())
+    return hashed_pw.decode()
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    digest = _pw_digest(plain_password)
-    return bcrypt.checkpw(digest, hashed_password.encode("utf-8"))
+def check_password(password: str, stored_hash: str) -> bool:
+    digest = _create_digest(password)
+    return bcrypt.checkpw(digest, stored_hash.encode())
 
 
-# =====================================================
-# SIGNUP ENDPOINT
-# =====================================================
+# =========================================
+# USER REGISTRATION
+# =========================================
 
 @router.post("/signup")
-def create_account(data: SignUpRequest):
+def signup(user: RegisterUser):
     try:
-        users_ref = db.collection("users")
+        users = db.collection("users")
 
-        full_name = data.full_name.strip()
-        email = data.email.strip().lower()
-        phone = data.phone.strip()
-        password = data.password
+        name = user.full_name.strip()
+        email = user.email.strip().lower()
+        phone = user.phone.strip()
+        password = user.password
 
-        # Check if email exists
-        existing_email = users_ref.where("email", "==", email).limit(1).stream()
-        for _ in existing_email:
-            raise HTTPException(status_code=400, detail="Email already registered")
+        # Check duplicate email
+        if list(users.where("email", "==", email).limit(1).stream()):
+            raise HTTPException(status_code=400, detail="Email already exists")
 
-        # Check if phone exists
-        existing_phone = users_ref.where("phone", "==", phone).limit(1).stream()
-        for _ in existing_phone:
-            raise HTTPException(status_code=400, detail="Phone number already registered")
+        # Check duplicate phone
+        if list(users.where("phone", "==", phone).limit(1).stream()):
+            raise HTTPException(status_code=400, detail="Phone already exists")
 
         user_id = str(uuid.uuid4())
-        password_hash = hash_password(password)
+        pw_hash = generate_hash(password)
 
-        users_ref.document(user_id).set({
-            "full_name": full_name,
+        users.document(user_id).set({
+            "full_name": name,
             "email": email,
             "phone": phone,
-            "password_hash": password_hash,
+            "password_hash": pw_hash,
             "role": None,
             "acceptedTerms": False,
             "onboardingCompleted": False,
-            "createdAt": datetime.utcnow(),
+            "created_at": datetime.utcnow()
         })
 
         return {
             "success": True,
-            "message": "Account created successfully",
-            "user_id": user_id,
+            "message": "User registered successfully",
+            "user_id": user_id
         }
 
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
+    except Exception as err:
+        raise HTTPException(status_code=500, detail=str(err))
 
 
-# =====================================================
-# LOGIN ENDPOINT
-# =====================================================
+# =========================================
+# USER LOGIN
+# =========================================
 
 @router.post("/login")
-def login_user(data: LoginRequest):
+def login(user: LoginUser):
     try:
-        users_ref = db.collection("users")
+        users = db.collection("users")
 
-        identifier = data.email_or_phone.strip()
-        password = data.password
-
+        identifier = user.email_or_phone.strip()
+        password = user.password
         user_doc = None
 
-        # Try email
-        query = users_ref.where("email", "==", identifier.lower()).limit(1).stream()
-        for doc in query:
+        # Search by email
+        result = users.where("email", "==", identifier.lower()).limit(1).stream()
+        for doc in result:
             user_doc = doc
-            break
 
-        # Try phone
+        # If not found try phone
         if not user_doc:
-            query = users_ref.where("phone", "==", identifier).limit(1).stream()
-            for doc in query:
+            result = users.where("phone", "==", identifier).limit(1).stream()
+            for doc in result:
                 user_doc = doc
-                break
 
         if not user_doc:
-            raise HTTPException(status_code=404, detail="User not found")
+            raise HTTPException(status_code=404, detail="Account not found")
 
-        user_data = user_doc.to_dict()
+        data = user_doc.to_dict()
+        stored_hash = data.get("password_hash")
 
-        stored_hash = user_data.get("password_hash") or user_data.get("password")
-        if not stored_hash:
-            raise HTTPException(status_code=500, detail="Server error: password hash missing")
-
-        if not verify_password(password, stored_hash):
-            raise HTTPException(status_code=401, detail="Invalid password")
+        if not check_password(password, stored_hash):
+            raise HTTPException(status_code=401, detail="Incorrect password")
 
         return {
             "success": True,
             "message": "Login successful",
             "user_id": user_doc.id,
-            "full_name": user_data.get("full_name"),
-            "email": user_data.get("email"),
-            "phone": user_data.get("phone"),
-            "role": user_data.get("role"),
-            "onboardingCompleted": user_data.get("onboardingCompleted", False),
+            "full_name": data.get("full_name"),
+            "email": data.get("email"),
+            "phone": data.get("phone"),
+            "role": data.get("role"),
+            "onboardingCompleted": data.get("onboardingCompleted", False)
         }
 
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
+    except Exception as err:
+        raise HTTPException(status_code=500, detail=str(err))
 
 
-# =====================================================
-# FORGOT PASSWORD - REQUEST OTP
-# =====================================================
+# =========================================
+# REQUEST OTP
+# =========================================
 
 @router.post("/forgot-password/request-otp")
-def request_otp(data: RequestOTPRequest):
+def send_otp(data: OTPRequest):
     try:
         email = data.email.strip().lower()
+        users = db.collection("users")
 
-        # 1. Check if user exists
-        users_ref = db.collection("users")
-        user_query = users_ref.where("email", "==", email).limit(1).stream()
-        user_found = False
-        for _ in user_query:
-            user_found = True
-            break
-        
-        if not user_found:
-            raise HTTPException(status_code=404, detail="User with this email not found")
+        # Check user
+        if not list(users.where("email", "==", email).limit(1).stream()):
+            raise HTTPException(status_code=404, detail="Email not registered")
 
-        # 2. Generate 6-digit OTP
-        otp = str(random.randint(100000, 999999))
+        otp_code = str(random.randint(100000, 999999))
 
-        # 3. Save OTP to Firestore (expire in 10 mins)
-        otp_ref = db.collection("otps").document(email)
-        otp_ref.set({
+        db.collection("otps").document(email).set({
             "email": email,
-            "otp": otp,
-            "createdAt": datetime.utcnow(),
-            "expiresAt": datetime.utcnow() + timedelta(minutes=10)
+            "otp": otp_code,
+            "created_at": datetime.utcnow(),
+            "expires_at": datetime.utcnow() + timedelta(minutes=10)
         })
 
-        # 4. Send Email
-        success = send_otp_email(email, otp)
-        if not success:
-            raise HTTPException(status_code=500, detail="Failed to send email. Check SMTP settings.")
+        if not send_otp_email(email, otp_code):
+            raise HTTPException(status_code=500, detail="Email sending failed")
 
         return {
             "success": True,
-            "message": "OTP sent to your email"
+            "message": "OTP sent"
         }
 
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
+    except Exception as err:
+        raise HTTPException(status_code=500, detail=str(err))
 
 
-# =====================================================
-# FORGOT PASSWORD - VERIFY OTP
-# =====================================================
+# =========================================
+# VERIFY OTP
+# =========================================
 
 @router.post("/forgot-password/verify-otp")
-def verify_otp_endpoint(data: VerifyOTPRequest):
+def verify_otp(data: OTPVerify):
     try:
         email = data.email.strip().lower()
-        otp = data.otp.strip()
+        otp_input = data.otp.strip()
 
-        # 1. Get OTP from Firestore
         otp_doc = db.collection("otps").document(email).get()
+
         if not otp_doc.exists:
-            raise HTTPException(status_code=400, detail="No OTP requested for this email")
+            raise HTTPException(status_code=400, detail="OTP not found")
 
         otp_data = otp_doc.to_dict()
 
-        # 2. Check if expired
-        if datetime.utcnow().timestamp() > otp_data['expiresAt'].timestamp():
-            raise HTTPException(status_code=400, detail="OTP has expired")
+        if datetime.utcnow() > otp_data["expires_at"]:
+            raise HTTPException(status_code=400, detail="OTP expired")
 
-        # 3. Check if matches
-        if otp_data['otp'] != otp:
-             raise HTTPException(status_code=400, detail="Invalid OTP")
+        if otp_data["otp"] != otp_input:
+            raise HTTPException(status_code=400, detail="Invalid OTP")
 
         return {
             "success": True,
-            "message": "OTP verified successfully"
+            "message": "OTP verified"
         }
 
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
+    except Exception as err:
+        raise HTTPException(status_code=500, detail=str(err))
 
 
-# =====================================================
-# FORGOT PASSWORD - RESET
-# =====================================================
+# =========================================
+# RESET PASSWORD
+# =========================================
 
 @router.post("/forgot-password/reset")
-def reset_password_endpoint(data: ResetPasswordRequest):
+def reset_password(data: PasswordReset):
     try:
         email = data.email.strip().lower()
         otp = data.otp.strip()
         new_password = data.new_password
 
-        # 1. Re-verify OTP for security
         otp_doc = db.collection("otps").document(email).get()
+
         if not otp_doc.exists:
-             raise HTTPException(status_code=400, detail="Invalid request")
+            raise HTTPException(status_code=400, detail="Invalid reset request")
 
         otp_data = otp_doc.to_dict()
-        if otp_data['otp'] != otp or datetime.utcnow().timestamp() > otp_data['expiresAt'].timestamp():
-            raise HTTPException(status_code=400, detail="OTP expired or invalid")
 
-        # 2. Update User Password
-        users_ref = db.collection("users")
-        user_query = users_ref.where("email", "==", email).limit(1).stream()
+        if otp_data["otp"] != otp or datetime.utcnow() > otp_data["expires_at"]:
+            raise HTTPException(status_code=400, detail="OTP invalid or expired")
+
+        users = db.collection("users")
+        query = users.where("email", "==", email).limit(1).stream()
+
         user_id = None
-        for doc in user_query:
+        for doc in query:
             user_id = doc.id
-            break
-        
+
         if not user_id:
             raise HTTPException(status_code=404, detail="User not found")
 
-        hashed_password = hash_password(new_password)
-        users_ref.document(user_id).update({
-            "password_hash": hashed_password
+        users.document(user_id).update({
+            "password_hash": generate_hash(new_password)
         })
 
-        # 3. Delete OTP record
         db.collection("otps").document(email).delete()
 
         return {
             "success": True,
-            "message": "Password reset successfully"
+            "message": "Password updated successfully"
         }
 
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
+    except Exception as err:
+        raise HTTPException(status_code=500, detail=str(err))

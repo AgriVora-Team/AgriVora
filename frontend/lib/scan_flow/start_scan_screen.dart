@@ -8,6 +8,8 @@ class StartScanScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenPadding = MediaQuery.of(context).padding;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Start Scan'),
@@ -15,11 +17,11 @@ class StartScanScreen extends StatelessWidget {
         foregroundColor: Colors.white,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.fromLTRB(20, 20, 20, screenPadding.bottom + 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             const Text(
               'AgriVora Soil Scan',
               style: TextStyle(
@@ -27,14 +29,14 @@ class StartScanScreen extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             const Text(
-              'This flow will collect your GPS location, pH value, and soil image, then contact the backend to get soil & weather summary and crop recommendations.',
-              style: TextStyle(fontSize: 14, height: 1.4),
+              'This flow collects your GPS location, soil pH value and soil image before sending data to the backend for crop recommendations.',
+              style: TextStyle(fontSize: 14, height: 1.45),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 28),
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
                 color: const Color(0xFFE8F5E9),
                 borderRadius: BorderRadius.circular(16),
@@ -43,32 +45,32 @@ class StartScanScreen extends StatelessWidget {
                 'Steps:\n'
                 '1. Get GPS location\n'
                 '2. Enter or read pH\n'
-                '3. Capture / upload soil image\n'
+                '3. Capture or upload soil image\n'
                 '4. Analyze and view ranked crops & tips',
                 style: TextStyle(fontSize: 14),
               ),
             ),
             const Spacer(),
             SizedBox(
-              height: 50,
+              height: 54,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2E7D32),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
                 onPressed: () {
-                  final session = ScanSession.empty(
+                  final scanSession = ScanSession.empty(
                     DateTime.now().millisecondsSinceEpoch.toString(),
                   );
 
-                  print('New scan started: ${session.toJson()}');
+                  debugPrint('New scan started: ${scanSession.toJson()}');
 
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) => GpsStepScreen(session: session),
+                      builder: (_) => GpsStepScreen(session: scanSession),
                     ),
                   );
                 },
@@ -81,7 +83,7 @@ class StartScanScreen extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
           ],
         ),
       ),

@@ -1,279 +1,134 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, EmailStr, Field
-from datetime import datetime, timedelta
+from pydantic import BaseModel, EmailStr
+from typing import Optional
 from app.utils.firestore import db
-from app.utils.email import send_otp_email
-import uuid
-import hashlib
-import bcrypt
-import random
+from datetime import datetime
+from app.api.api_v1.endpoints.auth import hash_password, verify_password
 
 router = APIRouter()
 
+
 # =====================================================
-# REQUEST SCHEMAS
+# RESPONSE SCHEMA
 # =====================================================
 
-class SignUpRequest(BaseModel):
-    full_name: str = Field(..., min_length=1)
+class ProfileResponse(BaseModel):
+    user_id: str
+    full_name: str
     email: EmailStr
-    phone: str = Field(..., min_length=6)
-    password: str = Field(..., min_length=8)
+    phone: str
+    role: Optional[str]
 
-class LoginRequest(BaseModel):
-    email_or_phone: str = Field(..., min_length=1)
-    password: str = Field(..., min_length=8)
 
-class RequestOTPRequest(BaseModel):
-    email: EmailStr
+# =====================================================
+# UPDATE SCHEMA
+# =====================================================
 
-class VerifyOTPRequest(BaseModel):
-    email: EmailStr
-    otp: str
+class UpdateProfileRequest(BaseModel):
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
 
-class ResetPasswordRequest(BaseModel):
-    email: EmailStr
-    otp: str
-    new_password: str = Field(..., min_length=8)
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
 
 
 # =====================================================
 # HELPER FUNCTIONS
 # =====================================================
 
-def normalize_email(email: str) -> str:
-    return email.strip().lower()
+def get_user_document(user_id: str):
+    user_ref = db.collection("users").document(user_id)
+    user_doc = user_ref.get()
+    return user_ref, user_doc
 
-def normalize_phone(phone: str) -> str:
-    return phone.strip()
+def format_profile_response(user_id: str, user_data: dict):
+    return {
+        "user_id": user_id,
+        "full_name": user_data.get("full_name"),
+        "email": user_data.get("email"),
+        "phone": user_data.get("phone"),
+        "role": user_data.get("role")
+    }
 
-def _pw_digest(password: str) -> bytes:
-    return hashlib.sha256(password.encode("utf-8")).digest()
+def collect_profile_updates(data: UpdateProfileRequest):
+    update_data = {}
 
-def hash_password(password: str) -> str:
-    digest = _pw_digest(password)
-    hashed = bcrypt.hashpw(digest, bcrypt.gensalt())
-    return hashed.decode("utf-8")
+    if data.full_name is not None:
+        update_data["full_name"] = data.full_name
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    digest = _pw_digest(plain_password)
-    return bcrypt.checkpw(digest, hashed_password.encode("utf-8"))
+    if data.phone is not None:
+        update_data["phone"] = data.phone
 
-def get_user_by_email(email: str):
-    query = db.collection("users").where("email", "==", email).limit(1).stream()
-    for doc in query:
-        return doc
-    return None
+    update_data["updatedAt"] = datetime.utcnow()
+    return update_data
 
-def get_user_by_phone(phone: str):
-    query = db.collection("users").where("phone", "==", phone).limit(1).stream()
-    for doc in query:
-        return doc
-    return None
 
-def generate_otp() -> str:
-    return str(random.randint(100000, 999999))
+# =====================================================
+# GET PROFILE
+# =====================================================
 
-def get_otp_doc(email: str):
-    return db.collection("otps").document(email).get()
+@router.get("/profile/{user_id}")
+def get_profile(user_id: str):
+    _, user_doc = get_user_document(user_id)
 
-def save_otp(email: str, otp: str):
-    now = datetime.utcnow()
-    db.collection("otps").document(email).set({
-        "email": email,
-        "otp": otp,
-        "createdAt": now,
-        "expiresAt": now + timedelta(minutes=10)
+    if not user_doc.exists:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user_data = user_doc.to_dict()
+
+    return {
+        "success": True,
+        "data": format_profile_response(user_id, user_data),
+        "error": None
+    }
+
+
+# =====================================================
+# UPDATE PROFILE
+# =====================================================
+
+@router.put("/profile/{user_id}")
+def update_profile(user_id: str, data: UpdateProfileRequest):
+    user_ref, user_doc = get_user_document(user_id)
+
+    if not user_doc.exists:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    update_data = collect_profile_updates(data)
+    user_ref.update(update_data)
+
+    return {
+        "success": True,
+        "message": "Profile updated successfully",
+        "error": None
+    }
+
+
+# =====================================================
+# CHANGE PASSWORD
+# =====================================================
+
+@router.put("/{user_id}/change-password")
+def change_password(user_id: str, data: ChangePasswordRequest):
+    user_ref, user_doc = get_user_document(user_id)
+
+    if not user_doc.exists:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user_data = user_doc.to_dict()
+    stored_hash = user_data.get("password_hash")
+
+    if not stored_hash or not verify_password(data.old_password, stored_hash):
+        raise HTTPException(status_code=400, detail="Incorrect old password")
+
+    new_hash = hash_password(data.new_password)
+    user_ref.update({
+        "password_hash": new_hash,
+        "updatedAt": datetime.utcnow()
     })
 
-
-# =====================================================
-# SIGNUP ENDPOINT
-# =====================================================
-
-@router.post("/signup")
-def create_account(data: SignUpRequest):
-    try:
-        users_ref = db.collection("users")
-
-        full_name = data.full_name.strip()
-        email = normalize_email(data.email)
-        phone = normalize_phone(data.phone)
-        password = data.password
-
-        if get_user_by_email(email):
-            raise HTTPException(status_code=400, detail="Email already registered")
-
-        if get_user_by_phone(phone):
-            raise HTTPException(status_code=400, detail="Phone number already registered")
-
-        user_id = str(uuid.uuid4())
-        password_hash = hash_password(password)
-
-        users_ref.document(user_id).set({
-            "full_name": full_name,
-            "email": email,
-            "phone": phone,
-            "password_hash": password_hash,
-            "role": None,
-            "acceptedTerms": False,
-            "onboardingCompleted": False,
-            "createdAt": datetime.utcnow(),
-        })
-
-        return {
-            "success": True,
-            "message": "Account created successfully",
-            "user_id": user_id,
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
-
-
-# =====================================================
-# LOGIN ENDPOINT
-# =====================================================
-
-@router.post("/login")
-def login_user(data: LoginRequest):
-    try:
-        identifier = data.email_or_phone.strip()
-        password = data.password
-
-        user_doc = get_user_by_email(identifier.lower())
-        if not user_doc:
-            user_doc = get_user_by_phone(identifier)
-
-        if not user_doc:
-            raise HTTPException(status_code=404, detail="User not found")
-
-        user_data = user_doc.to_dict()
-        stored_hash = user_data.get("password_hash") or user_data.get("password")
-
-        if not stored_hash:
-            raise HTTPException(status_code=500, detail="Server error: password hash missing")
-
-        if not verify_password(password, stored_hash):
-            raise HTTPException(status_code=401, detail="Invalid password")
-
-        return {
-            "success": True,
-            "message": "Login successful",
-            "user_id": user_doc.id,
-            "full_name": user_data.get("full_name"),
-            "email": user_data.get("email"),
-            "phone": user_data.get("phone"),
-            "role": user_data.get("role"),
-            "onboardingCompleted": user_data.get("onboardingCompleted", False),
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
-
-
-# =====================================================
-# FORGOT PASSWORD - REQUEST OTP
-# =====================================================
-
-@router.post("/forgot-password/request-otp")
-def request_otp(data: RequestOTPRequest):
-    try:
-        email = normalize_email(data.email)
-
-        if not get_user_by_email(email):
-            raise HTTPException(status_code=404, detail="User with this email not found")
-
-        otp = generate_otp()
-        save_otp(email, otp)
-
-        success = send_otp_email(email, otp)
-        if not success:
-            raise HTTPException(status_code=500, detail="Failed to send email. Check SMTP settings.")
-
-        return {
-            "success": True,
-            "message": "OTP sent to your email"
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
-
-
-# =====================================================
-# FORGOT PASSWORD - VERIFY OTP
-# =====================================================
-
-@router.post("/forgot-password/verify-otp")
-def verify_otp_endpoint(data: VerifyOTPRequest):
-    try:
-        email = normalize_email(data.email)
-        otp = data.otp.strip()
-
-        otp_doc = get_otp_doc(email)
-        if not otp_doc.exists:
-            raise HTTPException(status_code=400, detail="No OTP requested for this email")
-
-        otp_data = otp_doc.to_dict()
-
-        if datetime.utcnow().timestamp() > otp_data["expiresAt"].timestamp():
-            raise HTTPException(status_code=400, detail="OTP has expired")
-
-        if otp_data["otp"] != otp:
-            raise HTTPException(status_code=400, detail="Invalid OTP")
-
-        return {
-            "success": True,
-            "message": "OTP verified successfully"
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}")
-
-
-# =====================================================
-# FORGOT PASSWORD - RESET
-# =====================================================
-
-@router.post("/forgot-password/reset")
-def reset_password_endpoint(data: ResetPasswordRequest):
-    try:
-        email = normalize_email(data.email)
-        otp = data.otp.strip()
-        new_password = data.new_password
-
-        otp_doc = get_otp_doc(email)
-        if not otp_doc.exists:
-            raise HTTPException(status_code=400, detail="Invalid request")
-
-        otp_data = otp_doc.to_dict()
-        if otp_data["otp"] != otp or datetime.utcnow().timestamp() > otp_data["expiresAt"].timestamp():
-            raise HTTPException(status_code=400, detail="OTP expired or invalid")
-
-        user_doc = get_user_by_email(email)
-        if not user_doc:
-            raise HTTPException(status_code=404, detail="User not found")
-
-        db.collection("users").document(user_doc.id).update({
-            "password_hash": hash_password(new_password)
-        })
-
-        db.collection("otps").document(email).delete()
-
-        return {
-            "success": True,
-            "message": "Password reset successfully"
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Server error: {str(e)}") # small update
+    return {
+        "success": True,
+        "message": "Password updated successfully"
+    }

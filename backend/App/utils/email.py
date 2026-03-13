@@ -17,6 +17,26 @@ def using_default_credentials() -> bool:
     )
 
 
+def build_otp_email_body(otp: str) -> str:
+    return f"""
+    <html>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
+            <h2 style="color: #2E7D32; text-align: center;">AgriVora</h2>
+            <p>Hello,</p>
+            <p>You requested a password reset for your AgriVora account. Use the following 6-digit OTP to verify your identity:</p>
+            <div style="text-align: center; margin: 30px 0;">
+                <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #004D40; background: #e0f2f1; padding: 10px 20px; border-radius: 5px;">{otp}</span>
+            </div>
+            <p>This OTP is valid for 10 minutes. If you did not request this, please ignore this email.</p>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+            <p style="font-size: 12px; color: #888; text-align: center;">Team AgriVora • Smart Farming for You</p>
+        </div>
+    </body>
+    </html>
+    """
+
+
 def send_otp_email(receiver_email: str, otp: str):
     if using_default_credentials():
         print("\n" + "=" * 50)
@@ -30,25 +50,7 @@ def send_otp_email(receiver_email: str, otp: str):
         msg["From"] = f"AgriVora Support <{SENDER_EMAIL}>"
         msg["To"] = receiver_email
         msg["Subject"] = "AgriVora Password Reset OTP"
-
-        body = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
-                <h2 style="color: #2E7D32; text-align: center;">AgriVora</h2>
-                <p>Hello,</p>
-                <p>You requested a password reset for your AgriVora account. Use the following 6-digit OTP to verify your identity:</p>
-                <div style="text-align: center; margin: 30px 0;">
-                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #004D40; background: #e0f2f1; padding: 10px 20px; border-radius: 5px;">{otp}</span>
-                </div>
-                <p>This OTP is valid for 10 minutes. If you did not request this, please ignore this email.</p>
-                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-                <p style="font-size: 12px; color: #888; text-align: center;">Team AgriVora • Smart Farming for You</p>
-            </div>
-        </body>
-        </html>
-        """
-        msg.attach(MIMEText(body, "html"))
+        msg.attach(MIMEText(build_otp_email_body(otp), "html"))
 
         server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
         server.starttls()

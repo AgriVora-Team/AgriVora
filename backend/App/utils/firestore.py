@@ -2,6 +2,7 @@ from datetime import datetime
 from google.cloud import firestore
 from google.oauth2 import service_account
 
+# Load credentials
 cred = service_account.Credentials.from_service_account_file(
     "firebase-key.json"
 )
@@ -9,6 +10,9 @@ cred = service_account.Credentials.from_service_account_file(
 db = firestore.Client(credentials=cred)
 
 
+# -----------------------------
+# HELPER FUNCTIONS
+# -----------------------------
 def get_current_time():
     return datetime.utcnow()
 
@@ -23,7 +27,7 @@ def format_scan_history_item(doc):
     return item
 
 
-def get_history_sort_key(item):
+def get_sort_key(item):
     ts = item.get("createdAt")
     if ts is None:
         return "1970"
@@ -33,6 +37,9 @@ def get_history_sort_key(item):
         return str(ts)
 
 
+# -----------------------------
+# SAVE SCAN HISTORY
+# -----------------------------
 def save_scan_history(data: dict):
     try:
         data["createdAt"] = get_current_time()
@@ -44,6 +51,9 @@ def save_scan_history(data: dict):
         return False
 
 
+# -----------------------------
+# GET SCAN HISTORY BY USER
+# -----------------------------
 def get_scan_history(user_id: str):
     try:
         docs = (
@@ -52,9 +62,11 @@ def get_scan_history(user_id: str):
             .stream()
         )
 
-        results = [format_scan_history_item(doc) for doc in docs]
-        results.sort(key=get_history_sort_key, reverse=True)
+        results = []
+        for doc in docs:
+            results.append(format_scan_history_item(doc))
 
+        results.sort(key=get_sort_key, reverse=True)
         return results
 
     except Exception as e:

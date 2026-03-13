@@ -8,10 +8,6 @@ from app.api.api_v1.endpoints.auth import hash_password, verify_password
 router = APIRouter()
 
 
-# =====================================================
-# RESPONSE SCHEMA
-# =====================================================
-
 class ProfileResponse(BaseModel):
     user_id: str
     full_name: str
@@ -20,28 +16,25 @@ class ProfileResponse(BaseModel):
     role: Optional[str]
 
 
-# =====================================================
-# UPDATE SCHEMA
-# =====================================================
-
 class UpdateProfileRequest(BaseModel):
     full_name: Optional[str] = None
     phone: Optional[str] = None
+
 
 class ChangePasswordRequest(BaseModel):
     old_password: str
     new_password: str
 
 
-# =====================================================
-# GET PROFILE
-# =====================================================
+def get_user_document(user_id: str):
+    user_ref = db.collection("users").document(user_id)
+    user_doc = user_ref.get()
+    return user_ref, user_doc
+
 
 @router.get("/profile/{user_id}")
 def get_profile(user_id: str):
-
-    user_ref = db.collection("users").document(user_id)
-    user_doc = user_ref.get()
+    user_ref, user_doc = get_user_document(user_id)
 
     if not user_doc.exists:
         raise HTTPException(status_code=404, detail="User not found")
@@ -61,15 +54,9 @@ def get_profile(user_id: str):
     }
 
 
-# =====================================================
-# UPDATE PROFILE
-# =====================================================
-
 @router.put("/profile/{user_id}")
 def update_profile(user_id: str, data: UpdateProfileRequest):
-
-    user_ref = db.collection("users").document(user_id)
-    user_doc = user_ref.get()
+    user_ref, user_doc = get_user_document(user_id)
 
     if not user_doc.exists:
         raise HTTPException(status_code=404, detail="User not found")
@@ -83,7 +70,6 @@ def update_profile(user_id: str, data: UpdateProfileRequest):
         update_data["phone"] = data.phone
 
     update_data["updatedAt"] = datetime.utcnow()
-
     user_ref.update(update_data)
 
     return {
@@ -93,14 +79,9 @@ def update_profile(user_id: str, data: UpdateProfileRequest):
     }
 
 
-# =====================================================
-# CHANGE PASSWORD
-# =====================================================
-
 @router.put("/{user_id}/change-password")
 def change_password(user_id: str, data: ChangePasswordRequest):
-    user_ref = db.collection("users").document(user_id)
-    user_doc = user_ref.get()
+    user_ref, user_doc = get_user_document(user_id)
 
     if not user_doc.exists:
         raise HTTPException(status_code=404, detail="User not found")
@@ -112,7 +93,10 @@ def change_password(user_id: str, data: ChangePasswordRequest):
         raise HTTPException(status_code=400, detail="Incorrect old password")
 
     new_hash = hash_password(data.new_password)
-    user_ref.update({"password_hash": new_hash, "updatedAt": datetime.utcnow()})
+    user_ref.update({
+        "password_hash": new_hash,
+        "updatedAt": datetime.utcnow()
+    })
 
     return {
         "success": True,

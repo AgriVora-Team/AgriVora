@@ -19,6 +19,16 @@ def format_scan_history_item(doc):
     return item
 
 
+def get_history_sort_key(item):
+    ts = item.get("createdAt")
+    if ts is None:
+        return "1970"
+    try:
+        return ts.isoformat()
+    except:
+        return str(ts)
+
+
 def save_scan_history(data: dict):
     try:
         data["createdAt"] = get_current_time()
@@ -38,20 +48,9 @@ def get_scan_history(user_id: str):
             .stream()
         )
 
-        results = []
-        for doc in docs:
-            results.append(format_scan_history_item(doc))
+        results = [format_scan_history_item(doc) for doc in docs]
+        results.sort(key=get_history_sort_key, reverse=True)
 
-        def get_sort_key(x):
-            ts = x.get("createdAt")
-            if ts is None:
-                return "1970"
-            try:
-                return ts.isoformat()
-            except:
-                return str(ts)
-
-        results.sort(key=get_sort_key, reverse=True)
         return results
 
     except Exception as e:

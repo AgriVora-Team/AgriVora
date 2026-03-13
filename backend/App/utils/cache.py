@@ -1,30 +1,23 @@
 import time
 
-# In-memory cache storage
-_cache_store = {}
-
-CACHE_TTL = 24 * 60 * 60  # 24 hours
-
-
-def _is_expired(timestamp: float) -> bool:
-    """Check whether cached item has expired."""
-    return (time.time() - timestamp) > CACHE_TTL
+_cache = {}
+TTL_SECONDS = 24 * 60 * 60
 
 
 def get_cache(key: str):
-    entry = _cache_store.get(key)
+    entry = _cache.get(key)
 
-    if entry is None:
+    if not entry:
         return None
 
-    value, saved_time = entry
+    value, timestamp = entry
 
-    if _is_expired(saved_time):
-        _cache_store.pop(key, None)
+    if time.time() - timestamp > TTL_SECONDS:
+        _cache.pop(key, None)
         return None
 
     return value
 
 
 def set_cache(key: str, value):
-    _cache_store[key] = (value, time.time())
+    _cache[key] = (value, time.time())

@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../widgets/agri_bottom_nav_bar.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -12,55 +13,118 @@ class HistoryPage extends StatefulWidget {
 class _HistoryPageState extends State<HistoryPage> {
   bool _isLoading = true;
   String? _errorMsg;
-  List<dynamic> _historyItems = [];
+  List<dynamic> _historyData = [];
 
   @override
   void initState() {
     super.initState();
-    _loadHistory();
+    _fetchHistory();
   }
 
-  Future<void> _loadHistory() async {
+  Future<void> _fetchHistory() async {
     setState(() {
       _isLoading = true;
       _errorMsg = null;
     });
-
     try {
-      final result = await ApiService.getUserHistory();
-      if (!mounted) return;
-
-      setState(() {
-        _historyItems = result;
-        _isLoading = false;
-      });
+      final res = await ApiService.getUserHistory();
+      if (mounted) {
+        setState(() {
+          _historyData = res;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      if (!mounted) return;
-
-      setState(() {
-        _errorMsg = e.toString().replaceFirst("Exception: ", "");
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _errorMsg = e.toString().replaceFirst("Exception: ", "");
+          _isLoading = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final media = MediaQuery.of(context);
-    final size = media.size;
-    final bottomPad = media.padding.bottom;
+    final size = MediaQuery.of(context).size;
+    final bottomPad = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF2E8D5),
       body: Stack(
         children: [
+          // 🌾 Background
           Positioned.fill(
             child: Image.asset(
               'assets/images/bg_fields.png',
               fit: BoxFit.cover,
             ),
           ),
-          _buildTopHeader(context),
+
+          // ✅ Top Header (Floating over the image)
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 55,
+            left: 24,
+            right: 24,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      "Prediction History",
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        height: 1.1,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black45,
+                            blurRadius: 10,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      "Your Soil & Crop Analysis Records",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w600,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black45,
+                            blurRadius: 8,
+                            offset: Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white.withOpacity(0.4)),
+                  ),
+                  child: const Icon(
+                    Icons.history,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ✅ Large Wavy Glass Panel
           Align(
             alignment: Alignment.bottomCenter,
             child: ClipPath(
@@ -78,86 +142,70 @@ class _HistoryPageState extends State<HistoryPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (_showDashboard) _buildSummaryDashboard(),
-                      if (_showDashboard) const SizedBox(height: 16),
-                      Expanded(child: _buildContent()),
+                      // Summary Analytics Dashboard
+                      if (!_isLoading &&
+                          _historyData.isNotEmpty &&
+                          _errorMsg == null)
+                        _buildSummaryDashboard(),
+                      if (!_isLoading &&
+                          _historyData.isNotEmpty &&
+                          _errorMsg == null)
+                        const SizedBox(height: 16),
+
+                      Expanded(child: _buildBody()),
                     ],
                   ),
                 ),
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
 
-  bool get _showDashboard =>
-      !_isLoading && _historyItems.isNotEmpty && _errorMsg == null;
-
-  Widget _buildTopHeader(BuildContext context) {
-    return Positioned(
-      top: MediaQuery.of(context).padding.top + 55,
-      left: 24,
-      right: 24,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                "Prediction History",
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                  height: 1.1,
-                  shadows: [
-                    Shadow(
-                      color: Colors.black45,
-                      blurRadius: 10,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 4),
-              Text(
-                "Your Soil & Crop Analysis Records",
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white70,
-                  fontWeight: FontWeight.w600,
-                  shadows: [
-                    Shadow(
-                      color: Colors.black45,
-                      blurRadius: 8,
-                      offset: Offset(0, 1),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withOpacity(0.4)),
-            ),
-            child: const Icon(Icons.history, color: Colors.white, size: 28),
-          ),
+          // 🧭 The Floating Navigation Bar
         ],
       ),
     );
   }
 
   Widget _buildSummaryDashboard() {
-    final topCrop = _getTopCrop();
-    final lastSync = _getLastSyncDate();
+    String topCrop = "None";
+    if (_historyData.isNotEmpty) {
+      Map<String, int> cropCounts = {};
+      for (var item in _historyData) {
+        if (item['results'] != null &&
+            item['results'] is List &&
+            (item['results'] as List).isNotEmpty) {
+          String c = (item['results'] as List).first.toString();
+          cropCounts[c] = (cropCounts[c] ?? 0) + 1;
+        } else if (item['crop'] != null) {
+          String c = item['crop'].toString();
+          cropCounts[c] = (cropCounts[c] ?? 0) + 1;
+        }
+      }
+      if (cropCounts.isNotEmpty) {
+        topCrop = cropCounts.entries
+            .reduce((a, b) => a.value > b.value ? a : b)
+            .key;
+      }
+    }
+
+    String lastSync = "N/A";
+    if (_historyData.isNotEmpty) {
+      final firstItem = _historyData.first as Map<String, dynamic>;
+      if (firstItem.containsKey("createdAt")) {
+        try {
+          if (firstItem['createdAt'] is String) {
+            DateTime dt = DateTime.parse(firstItem['createdAt']).toLocal();
+            lastSync = "${dt.day}/${dt.month}/${dt.year}";
+          } else if (firstItem['createdAt'] is Map &&
+              firstItem['createdAt']['_seconds'] != null) {
+            DateTime dt = DateTime.fromMillisecondsSinceEpoch(
+              firstItem['createdAt']['_seconds'] * 1000,
+            ).toLocal();
+            lastSync = "${dt.day}/${dt.month}/${dt.year}";
+          }
+        } catch (_) {}
+      }
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -174,7 +222,7 @@ class _HistoryPageState extends State<HistoryPage> {
               ),
             ),
             InkWell(
-              onTap: _loadHistory,
+              onTap: _fetchHistory,
               child: const Icon(
                 Icons.refresh,
                 color: Color(0xFF2E7D32),
@@ -187,25 +235,25 @@ class _HistoryPageState extends State<HistoryPage> {
         Row(
           children: [
             Expanded(
-              child: _buildMiniCard(
+              child: _buildMiniStatCard(
                 Icons.analytics,
                 "Total Predicts",
-                _historyItems.length.toString(),
+                _historyData.length.toString(),
               ),
             ),
             const SizedBox(width: 10),
-            Expanded(child: _buildMiniCard(Icons.eco, "Top Crop", topCrop)),
+            Expanded(child: _buildMiniStatCard(Icons.eco, "Top Crop", topCrop)),
           ],
         ),
         const SizedBox(height: 10),
         Row(
           children: [
             Expanded(
-              child: _buildMiniCard(Icons.healing, "Avg Health", "Good"),
+              child: _buildMiniStatCard(Icons.healing, "Avg Health", "Good"),
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: _buildMiniCard(Icons.event, "Last Analysis", lastSync),
+              child: _buildMiniStatCard(Icons.event, "Last Analysis", lastSync),
             ),
           ],
         ),
@@ -213,7 +261,7 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-  Widget _buildMiniCard(IconData icon, String title, String value) {
+  Widget _buildMiniStatCard(IconData icon, String title, String value) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -244,170 +292,212 @@ class _HistoryPageState extends State<HistoryPage> {
           const SizedBox(height: 2),
           Text(
             value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w900,
               color: Color(0xFF1B1B1B),
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildContent() {
-    if (_isLoading) return _buildLoadingState();
-    if (_errorMsg != null) return _buildErrorState();
-    if (_historyItems.isEmpty) return _buildEmptyState();
-
-    return ListView.builder(
-      physics: const ClampingScrollPhysics(),
-      padding: const EdgeInsets.only(top: 4, bottom: 20),
-      itemCount: _historyItems.length,
-      itemBuilder: (context, index) {
-        final item = _historyItems[index] as Map<String, dynamic>;
-        return _buildHistoryCard(item);
-      },
-    );
-  }
-
-  Widget _buildLoadingState() {
-    return const Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CircularProgressIndicator(color: Color(0xFF2E7D32)),
-          SizedBox(height: 16),
-          Text(
-            "Loading history...",
-            style: TextStyle(
-              color: Colors.black54,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErrorState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline, color: Colors.redAccent, size: 50),
+            CircularProgressIndicator(color: Color(0xFF2E7D32)),
+            SizedBox(height: 16),
+            Text(
+              "Loading history...",
+              style: TextStyle(
+                color: Colors.black54,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_errorMsg != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                color: Colors.redAccent,
+                size: 50,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "Failed to Load",
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _errorMsg!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 14, color: Colors.black54),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _fetchHistory,
+                icon: const Icon(Icons.refresh, color: Colors.white),
+                label: const Text(
+                  "Retry",
+                  style: TextStyle(color: Colors.white),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2E7D32),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_historyData.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.4),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.analytics_outlined,
+                size: 50,
+                color: Color(0xFF2E7D32),
+              ),
+            ),
             const SizedBox(height: 16),
             const Text(
-              "Failed to Load",
+              "No Analysis Records Yet",
               style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF1B1B1B),
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              _errorMsg!,
+            const Text(
+              "Start a soil analysis to generate\ncrop recommendations.",
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 14, color: Colors.black54),
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.black54,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _loadHistory,
-              icon: const Icon(Icons.refresh, color: Colors.white),
-              label: const Text("Retry", style: TextStyle(color: Colors.white)),
+            ElevatedButton(
+              onPressed: () {
+                // Navigate to manual soil entry or predict soil
+                Navigator.pushNamed(context, '/manual-soil');
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF2E7D32),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+              child: const Text(
+                "Start Analysis",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],
         ),
-      ),
+      );
+    }
+
+    return ListView.builder(
+      physics: const ClampingScrollPhysics(),
+      padding: const EdgeInsets.only(top: 4, bottom: 20),
+      itemCount: _historyData.length,
+      itemBuilder: (context, index) {
+        final item = _historyData[index] as Map<String, dynamic>;
+        return _buildHistoryCard(context, item);
+      },
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.4),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.analytics_outlined,
-              size: 50,
-              color: Color(0xFF2E7D32),
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            "No Analysis Records Yet",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF1B1B1B),
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            "Start a soil analysis to generate\ncrop recommendations.",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.black54,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/manual-soil');
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2E7D32),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-            child: const Text(
-              "Start Analysis",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _buildHistoryCard(BuildContext context, Map<String, dynamic> item) {
+    bool isTexture = item.containsKey("texture");
 
-  Widget _buildHistoryCard(Map<String, dynamic> item) {
-    final isTexture = item.containsKey("texture");
-    final dateInfo = _extractDateTime(item);
-    final accent = isTexture
+    String dateStr = "Unknown Date";
+    String timeStr = "";
+    if (item.containsKey("createdAt")) {
+      if (item['createdAt'] is String) {
+        try {
+          DateTime dt = DateTime.parse(item['createdAt']).toLocal();
+          dateStr = "${dt.day}/${dt.month}/${dt.year}";
+          timeStr = "${dt.hour}:${dt.minute.toString().padLeft(2, '0')}";
+        } catch (e) {}
+      } else if (item['createdAt'] is Map &&
+          item['createdAt']['_seconds'] != null) {
+        DateTime dt = DateTime.fromMillisecondsSinceEpoch(
+          item['createdAt']['_seconds'] * 1000,
+        ).toLocal();
+        dateStr = "${dt.day}/${dt.month}/${dt.year}";
+        timeStr = "${dt.hour}:${dt.minute.toString().padLeft(2, '0')}";
+      }
+    }
+
+    final IconData cardIcon = isTexture
+        ? Icons.science_rounded
+        : Icons.eco_rounded;
+    final Color cardAccent = isTexture
         ? const Color(0xFF795548)
         : const Color(0xFF2E7D32);
-    final icon = isTexture ? Icons.science_rounded : Icons.eco_rounded;
-    final type = isTexture ? "Soil Analysis" : "Crop Recommendation";
-    final topCrop = _extractCardTopCrop(item);
+    final String cardType = isTexture ? "Soil Analysis" : "Crop Recommendation";
+
+    String topCrop = "N/A";
+    if (!isTexture) {
+      if (item['results'] != null &&
+          item['results'] is List &&
+          (item['results'] as List).isNotEmpty) {
+        topCrop = (item['results'] as List).first.toString();
+      } else if (item['crop'] != null) {
+        topCrop = item['crop'].toString();
+      }
+    }
 
     return InkWell(
+      onTap: () {
+        // Normally open detail, skip for now or navigate to crop overview
+      },
+      onLongPress: () {
+        // Shows delete prompt (implement later)
+      },
       borderRadius: BorderRadius.circular(22),
-      onTap: () {},
-      onLongPress: () {},
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.all(18),
@@ -432,10 +522,10 @@ class _HistoryPageState extends State<HistoryPage> {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: accent.withOpacity(0.12),
+                    color: cardAccent.withOpacity(0.12),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(icon, color: accent, size: 22),
+                  child: Icon(cardIcon, color: cardAccent, size: 22),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -443,15 +533,15 @@ class _HistoryPageState extends State<HistoryPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        type,
+                        cardType,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w900,
-                          color: accent,
+                          color: cardAccent,
                         ),
                       ),
                       Text(
-                        "${dateInfo["date"]} • ${dateInfo["time"]}",
+                        "$dateStr • $timeStr",
                         style: const TextStyle(
                           fontSize: 11,
                           color: Colors.black54,
@@ -485,29 +575,26 @@ class _HistoryPageState extends State<HistoryPage> {
             const Divider(height: 1, color: Colors.black12),
             const SizedBox(height: 10),
             if (isTexture) ...[
-              _infoField("Soil Texture", item['texture']?.toString() ?? 'N/A'),
-              _infoField(
+              _InfoRow("Soil Texture", item['texture']?.toString() ?? 'N/A'),
+              _InfoRow(
                 "Water Capacity",
                 item['water_capacity']?.toString() ?? 'N/A',
               ),
-              _infoField("Drainage", item['drainage']?.toString() ?? 'N/A'),
+              _InfoRow("Drainage", item['drainage']?.toString() ?? 'N/A'),
             ] else ...[
               Row(
                 children: [
-                  Expanded(child: _infoField("Top Crop", topCrop)),
-                  Expanded(child: _infoField("Suitability", "92%")),
+                  Expanded(child: _InfoRow("Top Crop", topCrop)),
+                  Expanded(child: _InfoRow("Suitability", "92%")),
                 ],
               ),
               Row(
                 children: [
                   Expanded(
-                    child: _infoField(
-                      "Soil pH",
-                      item['ph']?.toString() ?? 'N/A',
-                    ),
+                    child: _InfoRow("Soil pH", item['ph']?.toString() ?? 'N/A'),
                   ),
                   Expanded(
-                    child: _infoField(
+                    child: _InfoRow(
                       "Soil Type",
                       item['soil_type']?.toString() ?? 'Unknown',
                     ),
@@ -521,7 +608,7 @@ class _HistoryPageState extends State<HistoryPage> {
     );
   }
 
-  Widget _infoField(String label, String value) {
+  Widget _InfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Column(
@@ -547,88 +634,6 @@ class _HistoryPageState extends State<HistoryPage> {
         ],
       ),
     );
-  }
-
-  String _getTopCrop() {
-    final Map<String, int> counts = {};
-
-    for (final item in _historyItems) {
-      if (item['results'] != null &&
-          item['results'] is List &&
-          (item['results'] as List).isNotEmpty) {
-        final crop = (item['results'] as List).first.toString();
-        counts[crop] = (counts[crop] ?? 0) + 1;
-      } else if (item['crop'] != null) {
-        final crop = item['crop'].toString();
-        counts[crop] = (counts[crop] ?? 0) + 1;
-      }
-    }
-
-    if (counts.isEmpty) return "None";
-    return counts.entries.reduce((a, b) => a.value > b.value ? a : b).key;
-  }
-
-  String _getLastSyncDate() {
-    if (_historyItems.isEmpty) return "N/A";
-
-    final first = _historyItems.first as Map<String, dynamic>;
-    if (!first.containsKey("createdAt")) return "N/A";
-
-    try {
-      if (first['createdAt'] is String) {
-        final dt = DateTime.parse(first['createdAt']).toLocal();
-        return "${dt.day}/${dt.month}/${dt.year}";
-      }
-
-      if (first['createdAt'] is Map && first['createdAt']['_seconds'] != null) {
-        final dt = DateTime.fromMillisecondsSinceEpoch(
-          first['createdAt']['_seconds'] * 1000,
-        ).toLocal();
-        return "${dt.day}/${dt.month}/${dt.year}";
-      }
-    } catch (_) {}
-
-    return "N/A";
-  }
-
-  Map<String, String> _extractDateTime(Map<String, dynamic> item) {
-    String dateStr = "Unknown Date";
-    String timeStr = "";
-
-    if (!item.containsKey("createdAt")) {
-      return {"date": dateStr, "time": timeStr};
-    }
-
-    try {
-      if (item['createdAt'] is String) {
-        final dt = DateTime.parse(item['createdAt']).toLocal();
-        dateStr = "${dt.day}/${dt.month}/${dt.year}";
-        timeStr = "${dt.hour}:${dt.minute.toString().padLeft(2, '0')}";
-      } else if (item['createdAt'] is Map &&
-          item['createdAt']['_seconds'] != null) {
-        final dt = DateTime.fromMillisecondsSinceEpoch(
-          item['createdAt']['_seconds'] * 1000,
-        ).toLocal();
-        dateStr = "${dt.day}/${dt.month}/${dt.year}";
-        timeStr = "${dt.hour}:${dt.minute.toString().padLeft(2, '0')}";
-      }
-    } catch (_) {}
-
-    return {"date": dateStr, "time": timeStr};
-  }
-
-  String _extractCardTopCrop(Map<String, dynamic> item) {
-    if (item['results'] != null &&
-        item['results'] is List &&
-        (item['results'] as List).isNotEmpty) {
-      return (item['results'] as List).first.toString();
-    }
-
-    if (item['crop'] != null) {
-      return item['crop'].toString();
-    }
-
-    return "N/A";
   }
 }
 

@@ -51,6 +51,19 @@ def build_profile_data(user_id: str, user_data: dict):
     }
 
 
+def build_profile_update_data(data: UpdateProfileRequest):
+    update_data = {}
+
+    if data.full_name is not None:
+        update_data["full_name"] = data.full_name
+
+    if data.phone is not None:
+        update_data["phone"] = data.phone
+
+    update_data["updatedAt"] = datetime.utcnow()
+    return update_data
+
+
 @router.get("/profile/{user_id}")
 def get_profile(user_id: str):
     _, user_doc = get_user_document(user_id)
@@ -58,10 +71,8 @@ def get_profile(user_id: str):
     if not user_doc.exists:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user_data = user_doc.to_dict()
-
     return success_response(
-        data=build_profile_data(user_id, user_data)
+        data=build_profile_data(user_id, user_doc.to_dict())
     )
 
 
@@ -72,15 +83,7 @@ def update_profile(user_id: str, data: UpdateProfileRequest):
     if not user_doc.exists:
         raise HTTPException(status_code=404, detail="User not found")
 
-    update_data = {}
-
-    if data.full_name is not None:
-        update_data["full_name"] = data.full_name
-
-    if data.phone is not None:
-        update_data["phone"] = data.phone
-
-    update_data["updatedAt"] = datetime.utcnow()
+    update_data = build_profile_update_data(data)
     user_ref.update(update_data)
 
     return success_response(message="Profile updated successfully")
@@ -99,9 +102,8 @@ def change_password(user_id: str, data: ChangePasswordRequest):
     if not stored_hash or not verify_password(data.old_password, stored_hash):
         raise HTTPException(status_code=400, detail="Incorrect old password")
 
-    new_hash = hash_password(data.new_password)
     user_ref.update({
-        "password_hash": new_hash,
+        "password_hash": hash_password(data.new_password),
         "updatedAt": datetime.utcnow()
     })
 

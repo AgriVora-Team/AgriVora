@@ -32,9 +32,19 @@ def get_user_document(user_id: str):
     return user_ref, user_doc
 
 
+def build_profile_data(user_id: str, user_data: dict):
+    return {
+        "user_id": user_id,
+        "full_name": user_data.get("full_name"),
+        "email": user_data.get("email"),
+        "phone": user_data.get("phone"),
+        "role": user_data.get("role")
+    }
+
+
 @router.get("/profile/{user_id}")
 def get_profile(user_id: str):
-    user_ref, user_doc = get_user_document(user_id)
+    _, user_doc = get_user_document(user_id)
 
     if not user_doc.exists:
         raise HTTPException(status_code=404, detail="User not found")
@@ -43,13 +53,7 @@ def get_profile(user_id: str):
 
     return {
         "success": True,
-        "data": {
-            "user_id": user_id,
-            "full_name": user_data.get("full_name"),
-            "email": user_data.get("email"),
-            "phone": user_data.get("phone"),
-            "role": user_data.get("role")
-        },
+        "data": build_profile_data(user_id, user_data),
         "error": None
     }
 
@@ -92,9 +96,8 @@ def change_password(user_id: str, data: ChangePasswordRequest):
     if not stored_hash or not verify_password(data.old_password, stored_hash):
         raise HTTPException(status_code=400, detail="Incorrect old password")
 
-    new_hash = hash_password(data.new_password)
     user_ref.update({
-        "password_hash": new_hash,
+        "password_hash": hash_password(data.new_password),
         "updatedAt": datetime.utcnow()
     })
 

@@ -3,36 +3,41 @@ from app.utils.firestore import db, get_scan_history
 
 router = APIRouter()
 
+
+def success_response(data):
+    return {
+        "success": True,
+        "data": data,
+        "error": None
+    }
+
+
+def server_error(exc: Exception):
+    raise HTTPException(
+        status_code=500,
+        detail=str(exc)
+    )
+
+
 # =====================================================
 # GET FULL SCAN HISTORY
 # =====================================================
-
 @router.get("/history/{user_id}")
 def get_history(user_id: str):
     try:
-        results = get_scan_history(user_id)
-
-        return {
-            "success": True,
-            "data": results,
-            "error": None
-        }
-
+        history = get_scan_history(user_id)
+        return success_response(history)
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
+        server_error(e)
 
 
 # =====================================================
 # GET LATEST SCAN (FOR DASHBOARD)
 # =====================================================
-
 @router.get("/history/latest/{user_id}")
 def get_latest_history(user_id: str):
     try:
-        docs = (
+        query = (
             db.collection("scan_history")
             .where("userId", "==", user_id)
             .order_by("createdAt", direction="DESCENDING")
@@ -40,25 +45,14 @@ def get_latest_history(user_id: str):
             .stream()
         )
 
-        for doc in docs:
-            data = doc.to_dict()
-            data["id"] = doc.id
+        latest_record = None
 
-            return {
-                "success": True,
-                "data": data,
-                "error": None
-            }
+        for doc in query:
+            latest_record = doc.to_dict()
+            latest_record["id"] = doc.id
+            break
 
-        # If no history exists
-        return {
-            "success": True,
-            "data": None,
-            "error": None
-        }
+        return success_response(latest_record)
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=str(e)
-        )
+        server_error(e)

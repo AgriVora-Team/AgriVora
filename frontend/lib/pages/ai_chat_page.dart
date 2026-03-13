@@ -16,7 +16,7 @@ class _AIChatPageState extends State<AIChatPage> {
           "Hey! I am the AgriVora AI Assistant. How can I help with your farm today?",
       "isUser": false,
     },
-    {"text": "What's the best fertilizer for paddy fields?", "isUser": true},
+    {"text": "What is the best fertilizer for paddy fields?", "isUser": true},
   ];
 
   @override

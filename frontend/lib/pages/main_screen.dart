@@ -14,55 +14,45 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  final List<int> _tabTrail = [0];
+  final List<int> _tabHistory = [0];
+  int get _currentIndex => _tabHistory.last;
 
-  int get currentTab => _tabTrail.last;
-
-  List<Widget> get pages => const [
-    HomePage(),
-    MapPage(),
-    HistoryPage(),
-    AIChatPage(),
-    ProfilePage(),
+  final List<Widget> _pages = [
+    const HomePage(),
+    const MapPage(),
+    const HistoryPage(),
+    const AIChatPage(),
+    const ProfilePage(),
   ];
 
-  void _selectTab(int index) {
-    if (currentTab == index) {
-      return;
-    }
-
+  void _onTabTapped(int index) {
+    if (_currentIndex == index) return;
     setState(() {
-      if (_tabTrail.contains(index)) {
-        _tabTrail.remove(index);
-      }
-      _tabTrail.add(index);
+      _tabHistory.remove(index);
+      _tabHistory.add(index);
     });
   }
 
-  Future<bool> _handleSystemBack() async {
-    final hasPreviousTab = _tabTrail.length > 1;
-
-    if (hasPreviousTab) {
+  Future<bool> _onWillPop() async {
+    if (_tabHistory.length > 1) {
       setState(() {
-        _tabTrail.removeLast();
+        _tabHistory.removeLast();
       });
-      return false;
+      return false; // Prevent backing out, we popped a tab
     }
-
-    return true;
+    return true; // We are at the root Home tab, allow app exit
   }
 
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: _handleSystemBack,
+      onWillPop: _onWillPop,
       child: Scaffold(
         extendBody: true,
         body: Stack(
-          alignment: Alignment.bottomCenter,
           children: [
-            IndexedStack(index: currentTab, children: pages),
-            AgriBottomNavBar(activeIndex: currentTab, onTap: _selectTab),
+            IndexedStack(index: _currentIndex, children: _pages),
+            AgriBottomNavBar(activeIndex: _currentIndex, onTap: _onTabTapped),
           ],
         ),
       ),

@@ -2,6 +2,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart';
 
 class SessionService {
+  // ── Shared Preferences keys ────────────────────────────────────────────────
   static const _kUserId = 'session_user_id';
   static const _kUserName = 'session_user_name';
   static const _kUserEmail = 'session_user_email';
@@ -10,6 +11,9 @@ class SessionService {
   static const _kIsGuest = 'session_is_guest';
   static const _kProfilePic = 'session_profile_pic';
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Helpers
+  // ──────────────────────────────────────────────────────────────────────────
   static Future<SharedPreferences> _prefs() async {
     return SharedPreferences.getInstance();
   }
@@ -30,6 +34,9 @@ class SessionService {
     }
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Save (called right after a successful login)
+  // ──────────────────────────────────────────────────────────────────────────
   static Future<void> saveSession({
     required String userId,
     required String userName,
@@ -43,16 +50,25 @@ class SessionService {
     await prefs.setString(_kUserPhone, userPhone);
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Save Guest Session
+  // ──────────────────────────────────────────────────────────────────────────
   static Future<void> saveGuestSession() async {
     final prefs = await _prefs();
     await prefs.setBool(_kIsGuest, true);
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Mark permissions granted
+  // ──────────────────────────────────────────────────────────────────────────
   static Future<void> markPermissionsGranted() async {
     final prefs = await _prefs();
     await prefs.setBool(_kPermsGranted, true);
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Restore
+  // ──────────────────────────────────────────────────────────────────────────
   static Future<bool> restoreSession() async {
     final prefs = await _prefs();
 
@@ -69,11 +85,17 @@ class SessionService {
     return true;
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Check permissions state
+  // ──────────────────────────────────────────────────────────────────────────
   static Future<bool> hasGrantedPermissions() async {
     final prefs = await _prefs();
     return prefs.getBool(_kPermsGranted) ?? false;
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Profile Picture
+  // ──────────────────────────────────────────────────────────────────────────
   static Future<void> saveProfilePic(String path) async {
     final prefs = await _prefs();
     await prefs.setString(_kProfilePic, path);
@@ -84,6 +106,9 @@ class SessionService {
     return prefs.getString(_kProfilePic);
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Clear
+  // ──────────────────────────────────────────────────────────────────────────
   static Future<void> clearSession() async {
     final prefs = await _prefs();
     await _removeKeys(prefs, [

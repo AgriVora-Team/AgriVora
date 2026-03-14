@@ -37,11 +37,20 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     _phoneController.text = ApiService.userPhone ?? '';
   }
 
+  // =====================================================
+  // HELPERS
+  // =====================================================
+
   void _setProfileImagePath(String path) {
     if (!mounted) return;
     setState(() {
       _profileImagePath = path;
     });
+  }
+
+  Future<void> _openExternalLink(String url) async {
+    final uri = Uri.parse(url);
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   Future<void> _loadProfilePic() async {
@@ -512,6 +521,10 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     );
   }
 
+  // =====================================================
+  // CARD SECTIONS
+  // =====================================================
+
   Widget _buildProfileOverviewCard() {
     return _GlassCardContainer(
       child: Row(
@@ -702,20 +715,18 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
             Icons.privacy_tip_outlined,
             "Privacy Policy",
             () async {
-              final url = Uri.parse(
+              await _openExternalLink(
                 'https://github.com/AgriVora-Team/AgriVora/blob/main/docs/AgriVora_Privacy_Policy.md',
               );
-              launchUrl(url, mode: LaunchMode.externalApplication);
             },
           ),
           _buildActionRow(
             Icons.description_outlined,
             "Terms & Conditions",
             () async {
-              final url = Uri.parse(
+              await _openExternalLink(
                 'https://github.com/AgriVora-Team/AgriVora/blob/main/docs/AgriVora_Terms_and_Conditions.pdf',
               );
-              launchUrl(url, mode: LaunchMode.externalApplication);
             },
             isLast: true,
           ),
@@ -754,6 +765,10 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
       ),
     );
   }
+
+  // =====================================================
+  // SHARED UI HELPERS
+  // =====================================================
 
   Widget _buildSectionHeader(String title) {
     return Padding(

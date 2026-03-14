@@ -105,6 +105,57 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
+  Widget _buildHeader() {
+    return const Column(
+      children: [
+        Text(
+          "Create Account",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 26,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF1B1B1B),
+          ),
+        ),
+        SizedBox(height: 10),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 14),
+          child: Text(
+            "Enter your details to get started.",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.black54,
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoginLink() {
+    return Column(
+      children: [
+        const Text(
+          "Already have an account?",
+          style: TextStyle(color: Colors.black54, fontSize: 14),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text(
+            "Log in",
+            style: TextStyle(
+              color: Color(0xFF004D40),
+              fontWeight: FontWeight.bold,
+              decoration: TextDecoration.underline,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -161,28 +212,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const Text(
-                            "Create Account",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFF1B1B1B),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 14),
-                            child: Text(
-                              "Enter your details to get started.",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.black54,
-                                height: 1.4,
-                              ),
-                            ),
-                          ),
+                          _buildHeader(),
                           const SizedBox(height: 18),
                           _SoftInput(
                             icon: Icons.person,
@@ -245,24 +275,7 @@ class _SignUpPageState extends State<SignUpPage> {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          const Text(
-                            "Already have an account?",
-                            style: TextStyle(
-                              color: Colors.black54,
-                              fontSize: 14,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text(
-                              "Log in",
-                              style: TextStyle(
-                                color: Color(0xFF004D40),
-                                fontWeight: FontWeight.bold,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                          ),
+                          _buildLoginLink(),
                         ],
                       ),
                     ),

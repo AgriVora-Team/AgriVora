@@ -22,6 +22,19 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   bool _isLoading = false;
   String? _errorMessage;
 
+  void _startLoading() {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+  }
+
+  void _stopLoading() {
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
   void _showError(String msg) {
     setState(() {
       _errorMessage = msg;
@@ -44,10 +57,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    _startLoading();
 
     try {
       await ApiService.requestResetOTP(_emailController.text);
@@ -67,10 +77,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    _startLoading();
 
     try {
       await ApiService.verifyResetOTP(
@@ -97,10 +104,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    _startLoading();
 
     try {
       await ApiService.resetPassword(
@@ -108,7 +112,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         _otpController.text,
         _passwordController.text,
       );
-      setState(() => _isLoading = false);
+      _stopLoading();
 
       showDialog(
         context: context,
@@ -128,7 +132,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 "OK",
                 style: TextStyle(color: Color(0xFF004D40)),
               ),
-            ),
+            )
           ],
         ),
       );

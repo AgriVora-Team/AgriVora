@@ -39,6 +39,12 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  void _togglePasswordVisibility() {
+    setState(() {
+      _obscurePassword = !_obscurePassword;
+    });
+  }
+
   Future<void> _login() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -77,6 +83,64 @@ class _LoginPageState extends State<LoginPage> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Widget _buildPasswordSuffix() {
+    return IconButton(
+      icon: Icon(
+        _obscurePassword ? Icons.visibility : Icons.visibility_off,
+        color: Colors.black54,
+      ),
+      onPressed: _togglePasswordVisibility,
+    );
+  }
+
+  Widget _buildHeader() {
+    return const Column(
+      children: [
+        Text(
+          "Login to AgriVora",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 26,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF1B1B1B),
+          ),
+        ),
+        SizedBox(height: 10),
+        Text(
+          "Enter your email or phone number and password\nto continue.",
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.black54,
+            height: 1.4,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCreateAccountLink() {
+    return Column(
+      children: [
+        const Text(
+          "Don't have an account?",
+          style: TextStyle(color: Colors.black54, fontSize: 14),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pushNamed(context, '/signup'),
+          child: const Text(
+            "Create one",
+            style: TextStyle(
+              color: Color(0xFF004D40),
+              fontWeight: FontWeight.bold,
+              decoration: TextDecoration.underline,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -135,25 +199,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const Text(
-                            "Login to AgriVora",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.w900,
-                              color: Color(0xFF1B1B1B),
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          const Text(
-                            "Enter your email or phone number and password\nto continue.",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.black54,
-                              height: 1.4,
-                            ),
-                          ),
+                          _buildHeader(),
                           const SizedBox(height: 22),
                           _SoftInput(
                             icon: Icons.alternate_email,
@@ -166,19 +212,7 @@ class _LoginPageState extends State<LoginPage> {
                             hint: "Password",
                             controller: _passwordController,
                             obscureText: _obscurePassword,
-                            suffix: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility
-                                    : Icons.visibility_off,
-                                color: Colors.black54,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
-                            ),
+                            suffix: _buildPasswordSuffix(),
                           ),
                           const SizedBox(height: 10),
                           Align(
@@ -229,25 +263,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                           const SizedBox(height: 18),
-                          const Text(
-                            "Don't have an account?",
-                            style: TextStyle(
-                              color: Colors.black54,
-                              fontSize: 14,
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () =>
-                                Navigator.pushNamed(context, '/signup'),
-                            child: const Text(
-                              "Create one",
-                              style: TextStyle(
-                                color: Color(0xFF004D40),
-                                fontWeight: FontWeight.bold,
-                                decoration: TextDecoration.underline,
-                              ),
-                            ),
-                          ),
+                          _buildCreateAccountLink(),
                         ],
                       ),
                     ),

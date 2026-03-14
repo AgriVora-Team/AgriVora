@@ -1,3 +1,4 @@
+# User profile management endpoints (profile retrieval, edit, password update)
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr
 from typing import Optional

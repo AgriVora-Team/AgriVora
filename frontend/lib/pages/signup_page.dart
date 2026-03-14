@@ -1,5 +1,7 @@
 import 'dart:ui';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -10,6 +12,7 @@ class SignUpPage extends StatefulWidget {
 
 class _SignUpPageState extends State<SignUpPage> {
   bool _isLoaded = false;
+  bool _isLoading = false;
   bool _obscurePassword = true;
 
   final TextEditingController _nameController = TextEditingController();
@@ -34,9 +37,56 @@ class _SignUpPageState extends State<SignUpPage> {
     super.dispose();
   }
 
-  void _signup() {
-    // For now: just go back to Login (later connect backend)
-    Navigator.pop(context);
+  void _showMessage(String message, {int seconds = 2}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: Duration(seconds: seconds),
+      ),
+    );
+  }
+
+  Future<void> _signup() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final phone = _phoneController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (name.isEmpty || email.isEmpty || phone.isEmpty || password.isEmpty) {
+      _showMessage('Please fill all fields');
+      return;
+    }
+
+    if (password.length < 8) {
+      _showMessage('Password must be at least 8 characters');
+      return;
+    }
+
+    final pwBytes = utf8.encode(password).length;
+    print("SIGNUP password chars=${password.length}, bytes=$pwBytes");
+
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await ApiService.signup(
+        fullName: name,
+        email: email,
+        phone: phone,
+        password: password,
+      );
+
+      if (!mounted) return;
+
+      _showMessage(response['message']?.toString() ?? 'Account created!');
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+
+      final msg = e.toString().replaceAll('Exception: ', '');
+      _showMessage(msg, seconds: 4);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -48,15 +98,12 @@ class _SignUpPageState extends State<SignUpPage> {
       backgroundColor: const Color(0xFFF2E8D5),
       body: Stack(
         children: [
-          // ✅ background
           Positioned.fill(
             child: Image.asset(
               'assets/images/bg_fields.png',
               fit: BoxFit.cover,
             ),
           ),
-
-          // ✅ logo
           SafeArea(
             child: Align(
               alignment: Alignment.topCenter,
@@ -70,8 +117,6 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
             ),
           ),
-
-          // ✅ bottom wavy panel (animated)
           AnimatedPositioned(
             duration: const Duration(milliseconds: 750),
             curve: Curves.easeOutQuart,
@@ -123,21 +168,18 @@ class _SignUpPageState extends State<SignUpPage> {
                             ),
                           ),
                           const SizedBox(height: 18),
-
                           _SoftInput(
                             icon: Icons.person,
                             hint: "Full name",
                             controller: _nameController,
                           ),
                           const SizedBox(height: 12),
-
                           _SoftInput(
                             icon: Icons.alternate_email,
                             hint: "Email address",
                             controller: _emailController,
                           ),
                           const SizedBox(height: 12),
-
                           _SoftInput(
                             icon: Icons.phone,
                             hint: "Phone number",
@@ -145,7 +187,6 @@ class _SignUpPageState extends State<SignUpPage> {
                             keyboardType: TextInputType.phone,
                           ),
                           const SizedBox(height: 12),
-
                           _SoftInput(
                             icon: Icons.lock,
                             hint: "Create password",
@@ -165,14 +206,12 @@ class _SignUpPageState extends State<SignUpPage> {
                               },
                             ),
                           ),
-
                           const SizedBox(height: 18),
-
                           SizedBox(
                             width: double.infinity,
                             height: 58,
                             child: ElevatedButton(
-                              onPressed: _signup,
+                              onPressed: _isLoading ? null : _signup,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF004D40),
                                 shape: RoundedRectangleBorder(
@@ -182,22 +221,32 @@ class _SignUpPageState extends State<SignUpPage> {
                                 shadowColor:
                                     const Color(0xFF004D40).withOpacity(0.35),
                               ),
-                              child: const Text(
-                                "Sign Up",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2.5,
+                                      ),
+                                    )
+                                  : const Text(
+                                      "Sign Up",
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                             ),
                           ),
-
                           const SizedBox(height: 16),
-
                           const Text(
                             "Already have an account?",
-                            style: TextStyle(color: Colors.black54, fontSize: 14),
+                            style: TextStyle(
+                              color: Colors.black54,
+                              fontSize: 14,
+                            ),
                           ),
                           TextButton(
                             onPressed: () => Navigator.pop(context),
@@ -224,7 +273,6 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 }
 
-/// ✅ same wavy top style as login
 class _TopWaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
@@ -242,7 +290,6 @@ class _TopWaveClipper extends CustomClipper<Path> {
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
 
-/// ✅ same input style as login (icon in circle + soft green field)
 class _SoftInput extends StatelessWidget {
   final IconData icon;
   final String hint;

@@ -14,6 +14,13 @@ class SessionService {
     return SharedPreferences.getInstance();
   }
 
+  static void _loadUserIntoMemory(SharedPreferences prefs, String userId) {
+    ApiService.userId = userId;
+    ApiService.userName = prefs.getString(_kUserName) ?? '';
+    ApiService.userEmail = prefs.getString(_kUserEmail) ?? '';
+    ApiService.userPhone = prefs.getString(_kUserPhone) ?? '';
+  }
+
   static Future<void> saveSession({
     required String userId,
     required String userName,
@@ -49,10 +56,7 @@ class SessionService {
     final userId = prefs.getString(_kUserId);
     if (userId == null || userId.isEmpty) return false;
 
-    ApiService.userId = userId;
-    ApiService.userName = prefs.getString(_kUserName) ?? '';
-    ApiService.userEmail = prefs.getString(_kUserEmail) ?? '';
-    ApiService.userPhone = prefs.getString(_kUserPhone) ?? '';
+    _loadUserIntoMemory(prefs, userId);
     return true;
   }
 

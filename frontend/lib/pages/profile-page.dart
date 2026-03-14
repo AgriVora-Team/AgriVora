@@ -49,6 +49,11 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
+  Future<void> _openExternalLink(String url) async {
+    final uri = Uri.parse(url);
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
   Future<void> _loadProfilePic() async {
     final path = await SessionService.getProfilePic();
     if (path != null) {
@@ -531,19 +536,17 @@ class _ProfilePageState extends State<ProfilePage> {
             if (!isGuest) Navigator.pushNamed(context, '/account-settings');
           }),
           _buildActionRow(Icons.lock_outline, "Privacy Policy", () async {
-            final url = Uri.parse(
+            await _openExternalLink(
               'https://github.com/AgriVora-Team/AgriVora/blob/main/docs/AgriVora_Privacy_Policy.md',
             );
-            launchUrl(url, mode: LaunchMode.externalApplication);
           }),
           _buildActionRow(
             Icons.description_outlined,
             "Terms & Conditions",
             () async {
-              final url = Uri.parse(
+              await _openExternalLink(
                 'https://github.com/AgriVora-Team/AgriVora/blob/main/docs/AgriVora_Terms_and_Conditions.pdf',
               );
-              launchUrl(url, mode: LaunchMode.externalApplication);
             },
             noDivider: true,
           ),

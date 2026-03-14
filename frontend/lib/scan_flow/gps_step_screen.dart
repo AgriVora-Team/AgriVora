@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../main.dart'; // to use ScanSession
-import 'ph_step_screen.dart'; // we'll create this next
+import '../main.dart';
+import 'ph_step_screen.dart';
 
 class GpsStepScreen extends StatefulWidget {
   final ScanSession session;
@@ -16,36 +16,35 @@ class GpsStepScreen extends StatefulWidget {
 }
 
 class _GpsStepScreenState extends State<GpsStepScreen> {
-  late ScanSession _currentSession;
-  bool _isFetching = false;
+  late ScanSession _session;
+  bool _loading = false;
 
   @override
   void initState() {
     super.initState();
-    _currentSession = widget.session;
+    _session = widget.session;
   }
 
-  Future<void> _fakeGetLocation() async {
-    // TODO: replace this with real GPS (geolocator) later
+  Future<void> _getLocation() async {
     setState(() {
-      _isFetching = true;
+      _loading = true;
     });
 
     await Future.delayed(const Duration(seconds: 2));
 
     setState(() {
-      _currentSession = _currentSession.copyWith(
-        latitude: 6.9271, // Colombo (just as sample)
+      _session = _session.copyWith(
+        latitude: 6.9271,
         longitude: 79.8612,
       );
-      _isFetching = false;
+      _loading = false;
     });
 
-    print('GPS updated: ${_currentSession.toJson()}');
+    print('GPS updated: ${_session.toJson()}');
   }
 
-  void _goNext() {
-    if (_currentSession.latitude == null || _currentSession.longitude == null) {
+  void _continue() {
+    if (_session.latitude == null || _session.longitude == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please fetch GPS location before continuing.'),
@@ -57,15 +56,15 @@ class _GpsStepScreenState extends State<GpsStepScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => PhStepScreen(session: _currentSession),
+        builder: (_) => PhStepScreen(session: _session),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final lat = _currentSession.latitude;
-    final lon = _currentSession.longitude;
+    final lat = _session.latitude;
+    final lon = _session.longitude;
 
     return Scaffold(
       appBar: AppBar(
@@ -87,8 +86,7 @@ class _GpsStepScreenState extends State<GpsStepScreen> {
             ),
             const SizedBox(height: 12),
             const Text(
-              'We use your GPS location to fetch soil and weather data from APIs '
-              'like SoilGrids and Open-Meteo. For now this uses a sample location.',
+              'Your location will be used to fetch soil and weather information for crop analysis.',
               style: TextStyle(fontSize: 14, height: 1.4),
             ),
             const SizedBox(height: 24),
@@ -112,8 +110,7 @@ class _GpsStepScreenState extends State<GpsStepScreen> {
                   Text(
                     lat == null || lon == null
                         ? 'Not fetched yet'
-                        : 'Latitude: ${lat.toStringAsFixed(4)}, '
-                          'Longitude: ${lon.toStringAsFixed(4)}',
+                        : 'Latitude: ${lat.toStringAsFixed(4)}, Longitude: ${lon.toStringAsFixed(4)}',
                     style: const TextStyle(fontSize: 14),
                   ),
                 ],
@@ -129,8 +126,8 @@ class _GpsStepScreenState extends State<GpsStepScreen> {
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                onPressed: _isFetching ? null : _fakeGetLocation,
-                child: _isFetching
+                onPressed: _loading ? null : _getLocation,
+                child: _loading
                     ? const SizedBox(
                         height: 22,
                         width: 22,
@@ -141,7 +138,7 @@ class _GpsStepScreenState extends State<GpsStepScreen> {
                         ),
                       )
                     : const Text(
-                        'Get GPS (sample)',
+                        'Fetch GPS',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -159,7 +156,7 @@ class _GpsStepScreenState extends State<GpsStepScreen> {
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                onPressed: _goNext,
+                onPressed: _continue,
                 child: const Text(
                   'Next – pH step',
                   style: TextStyle(

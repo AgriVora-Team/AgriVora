@@ -46,6 +46,12 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
+  void _togglePasswordVisibility() {
+    setState(() {
+      _obscurePassword = !_obscurePassword;
+    });
+  }
+
   Future<void> _signup() async {
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
@@ -87,6 +93,16 @@ class _SignUpPageState extends State<SignUpPage> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Widget _buildPasswordSuffix() {
+    return IconButton(
+      icon: Icon(
+        _obscurePassword ? Icons.visibility : Icons.visibility_off,
+        color: Colors.black45,
+      ),
+      onPressed: _togglePasswordVisibility,
+    );
   }
 
   @override
@@ -192,19 +208,7 @@ class _SignUpPageState extends State<SignUpPage> {
                             hint: "Create password",
                             controller: _passwordController,
                             obscureText: _obscurePassword,
-                            suffix: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility
-                                    : Icons.visibility_off,
-                                color: Colors.black45,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
-                            ),
+                            suffix: _buildPasswordSuffix(),
                           ),
                           const SizedBox(height: 18),
                           SizedBox(

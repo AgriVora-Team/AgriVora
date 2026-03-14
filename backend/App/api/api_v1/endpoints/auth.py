@@ -262,5 +262,4 @@ def reset_password(data: PasswordReset):
 
     except HTTPException:
         raise
-    except Exception as err:
-        raise HTTPException(status_code=500, detail=str(err))
+

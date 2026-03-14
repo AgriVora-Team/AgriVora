@@ -33,6 +33,10 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  // =====================================================
+  // HELPERS
+  // =====================================================
+
   void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
@@ -43,46 +47,6 @@ class _LoginPageState extends State<LoginPage> {
     setState(() {
       _obscurePassword = !_obscurePassword;
     });
-  }
-
-  Future<void> _login() async {
-    final email = _emailController.text.trim();
-    final password = _passwordController.text.trim();
-
-    if (email.isEmpty || password.isEmpty) {
-      _showMessage('Please enter all fields');
-      return;
-    }
-
-    if (password.length < 8) {
-      _showMessage('Password must be at least 8 characters');
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      final response = await ApiService.login(email, password);
-      if (mounted) {
-        await SessionService.saveSession(
-          userId: ApiService.userId ?? '',
-          userName: ApiService.userName ?? '',
-          userEmail: ApiService.userEmail ?? '',
-          userPhone: ApiService.userPhone ?? '',
-        );
-
-        _showMessage(response['message'] ?? 'Login successful');
-
-        final fullName = response['full_name']?.toString() ?? 'User';
-        Navigator.pushReplacementNamed(context, '/role', arguments: fullName);
-      }
-    } catch (e) {
-      if (mounted) {
-        _showMessage(e.toString().replaceAll('Exception: ', ''));
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
   }
 
   Widget _buildPasswordSuffix() {
@@ -169,6 +133,50 @@ class _LoginPageState extends State<LoginPage> {
         ),
       ],
     );
+  }
+
+  // =====================================================
+  // LOGIN
+  // =====================================================
+
+  Future<void> _login() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      _showMessage('Please enter all fields');
+      return;
+    }
+
+    if (password.length < 8) {
+      _showMessage('Password must be at least 8 characters');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await ApiService.login(email, password);
+      if (mounted) {
+        await SessionService.saveSession(
+          userId: ApiService.userId ?? '',
+          userName: ApiService.userName ?? '',
+          userEmail: ApiService.userEmail ?? '',
+          userPhone: ApiService.userPhone ?? '',
+        );
+
+        _showMessage(response['message'] ?? 'Login successful');
+
+        final fullName = response['full_name']?.toString() ?? 'User';
+        Navigator.pushReplacementNamed(context, '/role', arguments: fullName);
+      }
+    } catch (e) {
+      if (mounted) {
+        _showMessage(e.toString().replaceAll('Exception: ', ''));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override

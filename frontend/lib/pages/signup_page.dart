@@ -37,6 +37,10 @@ class _SignUpPageState extends State<SignUpPage> {
     super.dispose();
   }
 
+  // =====================================================
+  // HELPERS
+  // =====================================================
+
   void _showMessage(String message, {int seconds = 2}) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -50,49 +54,6 @@ class _SignUpPageState extends State<SignUpPage> {
     setState(() {
       _obscurePassword = !_obscurePassword;
     });
-  }
-
-  Future<void> _signup() async {
-    final name = _nameController.text.trim();
-    final email = _emailController.text.trim();
-    final phone = _phoneController.text.trim();
-    final password = _passwordController.text.trim();
-
-    if (name.isEmpty || email.isEmpty || phone.isEmpty || password.isEmpty) {
-      _showMessage('Please fill all fields');
-      return;
-    }
-
-    if (password.length < 8) {
-      _showMessage('Password must be at least 8 characters');
-      return;
-    }
-
-    final pwBytes = utf8.encode(password).length;
-    print("SIGNUP password chars=${password.length}, bytes=$pwBytes");
-
-    setState(() => _isLoading = true);
-
-    try {
-      final response = await ApiService.signup(
-        fullName: name,
-        email: email,
-        phone: phone,
-        password: password,
-      );
-
-      if (!mounted) return;
-
-      _showMessage(response['message']?.toString() ?? 'Account created!');
-      Navigator.pop(context);
-    } catch (e) {
-      if (!mounted) return;
-
-      final msg = e.toString().replaceAll('Exception: ', '');
-      _showMessage(msg, seconds: 4);
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
   }
 
   Widget _buildPasswordSuffix() {
@@ -189,6 +150,53 @@ class _SignUpPageState extends State<SignUpPage> {
         ),
       ],
     );
+  }
+
+  // =====================================================
+  // SIGNUP
+  // =====================================================
+
+  Future<void> _signup() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final phone = _phoneController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (name.isEmpty || email.isEmpty || phone.isEmpty || password.isEmpty) {
+      _showMessage('Please fill all fields');
+      return;
+    }
+
+    if (password.length < 8) {
+      _showMessage('Password must be at least 8 characters');
+      return;
+    }
+
+    final pwBytes = utf8.encode(password).length;
+    print("SIGNUP password chars=${password.length}, bytes=$pwBytes");
+
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await ApiService.signup(
+        fullName: name,
+        email: email,
+        phone: phone,
+        password: password,
+      );
+
+      if (!mounted) return;
+
+      _showMessage(response['message']?.toString() ?? 'Account created!');
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+
+      final msg = e.toString().replaceAll('Exception: ', '');
+      _showMessage(msg, seconds: 4);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override

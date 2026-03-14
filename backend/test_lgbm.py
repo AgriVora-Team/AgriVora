@@ -1,5 +1,6 @@
 import os
 import sys
+import datetime
 
 # Ensure backend directory is in Python path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -8,19 +9,41 @@ sys.path.insert(0, BASE_DIR)
 from app.services.crop_lgbm_service import predict_crop
 
 
+def print_header():
+    print("\n==============================================")
+    print("      LightGBM Crop Prediction Test Suite")
+    print("      Started:", datetime.datetime.now())
+    print("==============================================")
+
+
+def print_footer():
+    print("\n==============================================")
+    print("      Test Suite Completed")
+    print("==============================================\n")
+
+
 def run_test_case(title, data):
     """
-    Helper function to run a prediction test
+    Run a single crop prediction test case
     """
+
     print("\n----------------------------------------")
     print(f"Running Test Case: {title}")
     print("Input Data:", data)
 
     try:
         result = predict_crop(data)
+
         print("Prediction Result:", result)
+
+        if result:
+            print("Status: SUCCESS")
+        else:
+            print("Status: NO RESULT RETURNED")
+
     except Exception as e:
         print("Prediction Error:", str(e))
+        print("Status: FAILED")
 
 
 def run_all_tests():
@@ -28,7 +51,7 @@ def run_all_tests():
     Execute multiple crop prediction tests
     """
 
-    print("\n=== LightGBM Crop Prediction Test Suite ===")
+    print_header()
 
     # Neutral soil test
     run_test_case(
@@ -72,7 +95,7 @@ def run_all_tests():
         }
     )
 
-    # High rainfall tropical test
+    # Tropical rainfall test
     run_test_case(
         "Tropical Climate",
         {
@@ -86,7 +109,21 @@ def run_all_tests():
         }
     )
 
-    print("\n=== Test Suite Completed ===")
+    # Dry climate test
+    run_test_case(
+        "Dry Climate",
+        {
+            "ph": 7.0,
+            "temperature": 33.0,
+            "humidity": 40.0,
+            "rainfall": 40.0,
+            "nitrogen": 35.0,
+            "carbon": 0.9,
+            "soil_type": "sandy soil"
+        }
+    )
+
+    print_footer()
 
 
 if __name__ == "__main__":

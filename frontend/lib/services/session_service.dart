@@ -21,6 +21,15 @@ class SessionService {
     ApiService.userPhone = prefs.getString(_kUserPhone) ?? '';
   }
 
+  static Future<void> _removeKeys(
+    SharedPreferences prefs,
+    List<String> keys,
+  ) async {
+    for (final key in keys) {
+      await prefs.remove(key);
+    }
+  }
+
   static Future<void> saveSession({
     required String userId,
     required String userName,
@@ -77,12 +86,14 @@ class SessionService {
 
   static Future<void> clearSession() async {
     final prefs = await _prefs();
-    await prefs.remove(_kUserId);
-    await prefs.remove(_kUserName);
-    await prefs.remove(_kUserEmail);
-    await prefs.remove(_kUserPhone);
-    await prefs.remove(_kIsGuest);
-    await prefs.remove(_kProfilePic);
-    await prefs.remove(_kPermsGranted);
+    await _removeKeys(prefs, [
+      _kUserId,
+      _kUserName,
+      _kUserEmail,
+      _kUserPhone,
+      _kIsGuest,
+      _kProfilePic,
+      _kPermsGranted,
+    ]);
   }
 }

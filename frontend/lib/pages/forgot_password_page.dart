@@ -22,6 +22,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   bool _isLoading = false;
   String? _errorMessage;
 
+  // =====================================================
+  // HELPERS
+  // =====================================================
+
   void _startLoading() {
     setState(() {
       _isLoading = true;
@@ -50,6 +54,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       SnackBar(content: Text(msg), backgroundColor: Colors.green),
     );
   }
+
+  // =====================================================
+  // STEP ACTIONS
+  // =====================================================
 
   Future<void> _requestOTP() async {
     if (_emailController.text.isEmpty) {

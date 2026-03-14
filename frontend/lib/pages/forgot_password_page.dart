@@ -22,23 +22,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   bool _isLoading = false;
   String? _errorMessage;
 
-  // =====================================================
-  // HELPERS
-  // =====================================================
-
-  void _startLoading() {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-  }
-
-  void _stopLoading() {
-    setState(() {
-      _isLoading = false;
-    });
-  }
-
   void _showError(String msg) {
     setState(() {
       _errorMessage = msg;
@@ -49,23 +32,15 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     );
   }
 
-  void _showSuccess(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: Colors.green),
-    );
-  }
-
-  // =====================================================
-  // STEP ACTIONS
-  // =====================================================
-
   Future<void> _requestOTP() async {
     if (_emailController.text.isEmpty) {
       _showError("Please enter your email");
       return;
     }
-
-    _startLoading();
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
     try {
       await ApiService.requestResetOTP(_emailController.text);
@@ -73,7 +48,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         _currentStep = ForgotStep.otp;
         _isLoading = false;
       });
-      _showSuccess("OTP sent to your email");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text("OTP sent to your email"),
+            backgroundColor: Colors.green),
+      );
     } catch (e) {
       _showError(e.toString().replaceAll("Exception: ", ""));
     }
@@ -84,14 +63,14 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       _showError("Please enter the 6-digit OTP");
       return;
     }
-
-    _startLoading();
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
     try {
       await ApiService.verifyResetOTP(
-        _emailController.text,
-        _otpController.text,
-      );
+          _emailController.text, _otpController.text);
       setState(() {
         _currentStep = ForgotStep.reset;
         _isLoading = false;
@@ -106,13 +85,15 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       _showError("Password must be at least 8 characters");
       return;
     }
-
     if (_passwordController.text != _confirmPasswordController.text) {
       _showError("Passwords do not match");
       return;
     }
 
-    _startLoading();
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
 
     try {
       await ApiService.resetPassword(
@@ -120,7 +101,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         _otpController.text,
         _passwordController.text,
       );
-      _stopLoading();
+      setState(() => _isLoading = false);
 
       showDialog(
         context: context,
@@ -128,18 +109,15 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         builder: (ctx) => AlertDialog(
           title: const Text("Success"),
           content: const Text(
-            "Your password has been reset successfully. You can now login with your new password.",
-          ),
+              "Your password has been reset successfully. You can now login with your new password."),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(ctx).pop();
-                Navigator.of(context).pop();
+                Navigator.of(context).pop(); // Back to login
               },
-              child: const Text(
-                "OK",
-                style: TextStyle(color: Color(0xFF004D40)),
-              ),
+              child:
+                  const Text("OK", style: TextStyle(color: Color(0xFF004D40))),
             )
           ],
         ),
@@ -157,12 +135,15 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       backgroundColor: const Color(0xFFF2E8D5),
       body: Stack(
         children: [
+          // 🌾 Background
           Positioned.fill(
             child: Image.asset(
               'assets/images/bg_fields.png',
               fit: BoxFit.cover,
             ),
           ),
+
+          // 🌿 Back Button
           Positioned(
             top: 50,
             left: 20,
@@ -171,6 +152,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               onPressed: () => Navigator.pop(context),
             ),
           ),
+
+          // 🌿 Content
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 28),
@@ -190,9 +173,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                         decoration: BoxDecoration(
                           color: const Color(0xFFF2E8D5).withOpacity(0.75),
                           borderRadius: BorderRadius.circular(30),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.3),
-                          ),
+                          border:
+                              Border.all(color: Colors.white.withOpacity(0.3)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,8 +212,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                 ),
                                 child: _isLoading
                                     ? const CircularProgressIndicator(
-                                        color: Colors.white,
-                                      )
+                                        color: Colors.white)
                                     : Text(
                                         _getButtonText(),
                                         style: const TextStyle(
@@ -303,49 +284,29 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   Widget _buildFields() {
     switch (_currentStep) {
       case ForgotStep.email:
-        return _buildTextField(
-          _emailController,
-          "Email Address",
-          Icons.email_outlined,
-          TextInputType.emailAddress,
-        );
+        return _buildTextField(_emailController, "Email Address",
+            Icons.email_outlined, TextInputType.emailAddress);
       case ForgotStep.otp:
-        return _buildTextField(
-          _otpController,
-          "6-Digit OTP",
-          Icons.lock_clock_outlined,
-          TextInputType.number,
-        );
+        return _buildTextField(_otpController, "6-Digit OTP",
+            Icons.lock_clock_outlined, TextInputType.number);
       case ForgotStep.reset:
         return Column(
           children: [
-            _buildTextField(
-              _passwordController,
-              "New Password",
-              Icons.lock_outline,
-              TextInputType.text,
-              isObscure: true,
-            ),
+            _buildTextField(_passwordController, "New Password",
+                Icons.lock_outline, TextInputType.text,
+                isObscure: true),
             const SizedBox(height: 20),
-            _buildTextField(
-              _confirmPasswordController,
-              "Confirm Password",
-              Icons.lock_outline,
-              TextInputType.text,
-              isObscure: true,
-            ),
+            _buildTextField(_confirmPasswordController, "Confirm Password",
+                Icons.lock_outline, TextInputType.text,
+                isObscure: true),
           ],
         );
     }
   }
 
-  Widget _buildTextField(
-    TextEditingController controller,
-    String label,
-    IconData icon,
-    TextInputType type, {
-    bool isObscure = false,
-  }) {
+  Widget _buildTextField(TextEditingController controller, String label,
+      IconData icon, TextInputType type,
+      {bool isObscure = false}) {
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFFEAF3E6).withOpacity(0.8),
@@ -357,18 +318,14 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         keyboardType: type,
         obscureText: isObscure,
         style: const TextStyle(
-          color: Color(0xFF1B1B1B),
-          fontWeight: FontWeight.w600,
-        ),
+            color: Color(0xFF1B1B1B), fontWeight: FontWeight.w600),
         decoration: InputDecoration(
           prefixIcon: Icon(icon, color: const Color(0xFF004D40)),
           labelText: label,
           labelStyle: const TextStyle(color: Colors.black38),
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 15,
-          ),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
         ),
       ),
     );

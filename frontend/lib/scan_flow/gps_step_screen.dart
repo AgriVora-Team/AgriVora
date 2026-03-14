@@ -16,38 +16,43 @@ class GpsStepScreen extends StatefulWidget {
 }
 
 class _GpsStepScreenState extends State<GpsStepScreen> {
-  late ScanSession _session;
-  bool _loading = false;
+  late ScanSession _currentSession;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _session = widget.session;
+    _currentSession = widget.session;
   }
 
-  Future<void> _getLocation() async {
+  Future<void> _fetchLocation() async {
     setState(() {
-      _loading = true;
+      _isLoading = true;
     });
 
     await Future.delayed(const Duration(seconds: 2));
 
+    final updatedSession = _currentSession.copyWith(
+      latitude: 6.9271,
+      longitude: 79.8612,
+    );
+
     setState(() {
-      _session = _session.copyWith(
-        latitude: 6.9271,
-        longitude: 79.8612,
-      );
-      _loading = false;
+      _currentSession = updatedSession;
+      _isLoading = false;
     });
 
-    print('GPS updated: ${_session.toJson()}');
+    print('Location updated: ${_currentSession.toJson()}');
   }
 
-  void _continue() {
-    if (_session.latitude == null || _session.longitude == null) {
+  void _goToNextStep() {
+    final lat = _currentSession.latitude;
+    final lon = _currentSession.longitude;
+
+    if (lat == null || lon == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please fetch GPS location before continuing.'),
+          content: Text('Fetch GPS location before proceeding'),
         ),
       );
       return;
@@ -56,19 +61,23 @@ class _GpsStepScreenState extends State<GpsStepScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => PhStepScreen(session: _session),
+        builder: (_) => PhStepScreen(session: _currentSession),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final lat = _session.latitude;
-    final lon = _session.longitude;
+    final lat = _currentSession.latitude;
+    final lon = _currentSession.longitude;
+
+    final coordinatesText = lat == null || lon == null
+        ? 'Location not fetched'
+        : 'Latitude: ${lat.toStringAsFixed(4)}, Longitude: ${lon.toStringAsFixed(4)}';
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Step 2 – GPS'),
+        title: const Text('Step 2 – GPS Location'),
         backgroundColor: const Color(0xFF2E7D32),
         foregroundColor: Colors.white,
       ),
@@ -78,7 +87,7 @@ class _GpsStepScreenState extends State<GpsStepScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Text(
-              'Get GPS Location',
+              'Retrieve GPS Location',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -86,10 +95,11 @@ class _GpsStepScreenState extends State<GpsStepScreen> {
             ),
             const SizedBox(height: 12),
             const Text(
-              'Your location will be used to fetch soil and weather information for crop analysis.',
+              'Your location helps AgriVora gather local soil and weather data to improve crop recommendations.',
               style: TextStyle(fontSize: 14, height: 1.4),
             ),
             const SizedBox(height: 24),
+
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -100,7 +110,7 @@ class _GpsStepScreenState extends State<GpsStepScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Current coordinates',
+                    'Current Coordinates',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -108,15 +118,15 @@ class _GpsStepScreenState extends State<GpsStepScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    lat == null || lon == null
-                        ? 'Not fetched yet'
-                        : 'Latitude: ${lat.toStringAsFixed(4)}, Longitude: ${lon.toStringAsFixed(4)}',
+                    coordinatesText,
                     style: const TextStyle(fontSize: 14),
                   ),
                 ],
               ),
             ),
+
             const Spacer(),
+
             SizedBox(
               height: 48,
               child: ElevatedButton(
@@ -126,8 +136,8 @@ class _GpsStepScreenState extends State<GpsStepScreen> {
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                onPressed: _loading ? null : _getLocation,
-                child: _loading
+                onPressed: _isLoading ? null : _fetchLocation,
+                child: _isLoading
                     ? const SizedBox(
                         height: 22,
                         width: 22,
@@ -138,7 +148,7 @@ class _GpsStepScreenState extends State<GpsStepScreen> {
                         ),
                       )
                     : const Text(
-                        'Fetch GPS',
+                        'Get GPS Location',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -146,7 +156,9 @@ class _GpsStepScreenState extends State<GpsStepScreen> {
                       ),
               ),
             ),
+
             const SizedBox(height: 12),
+
             SizedBox(
               height: 48,
               child: OutlinedButton(
@@ -156,9 +168,9 @@ class _GpsStepScreenState extends State<GpsStepScreen> {
                     borderRadius: BorderRadius.circular(14),
                   ),
                 ),
-                onPressed: _continue,
+                onPressed: _goToNextStep,
                 child: const Text(
-                  'Next – pH step',
+                  'Continue to pH Step',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -167,6 +179,7 @@ class _GpsStepScreenState extends State<GpsStepScreen> {
                 ),
               ),
             ),
+
             const SizedBox(height: 16),
           ],
         ),

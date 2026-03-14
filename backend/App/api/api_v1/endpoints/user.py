@@ -120,5 +120,4 @@ def update_password(user_id: str, payload: PasswordUpdate):
 
     return {
         "success": True,
-        "message": "Password changed successfully"
-    }
+

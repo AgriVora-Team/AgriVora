@@ -134,6 +134,41 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
+  Widget _buildSignUpButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 58,
+      child: ElevatedButton(
+        onPressed: _isLoading ? null : _signup,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF004D40),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(34),
+          ),
+          elevation: 10,
+          shadowColor: const Color(0xFF004D40).withOpacity(0.35),
+        ),
+        child: _isLoading
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2.5,
+                ),
+              )
+            : const Text(
+                "Sign Up",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+      ),
+    );
+  }
+
   Widget _buildLoginLink() {
     return Column(
       children: [
@@ -241,39 +276,7 @@ class _SignUpPageState extends State<SignUpPage> {
                             suffix: _buildPasswordSuffix(),
                           ),
                           const SizedBox(height: 18),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 58,
-                            child: ElevatedButton(
-                              onPressed: _isLoading ? null : _signup,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF004D40),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(34),
-                                ),
-                                elevation: 10,
-                                shadowColor:
-                                    const Color(0xFF004D40).withOpacity(0.35),
-                              ),
-                              child: _isLoading
-                                  ? const SizedBox(
-                                      width: 24,
-                                      height: 24,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2.5,
-                                      ),
-                                    )
-                                  : const Text(
-                                      "Sign Up",
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                            ),
-                          ),
+                          _buildSignUpButton(),
                           const SizedBox(height: 16),
                           _buildLoginLink(),
                         ],

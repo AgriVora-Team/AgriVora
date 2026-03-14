@@ -4,20 +4,24 @@ import os
 
 MODEL_PATH = os.path.join("app", "models", "rf_model.pkl")
 
-TOP_K = 3
-
 rf_model = None
 model_error = None
 
 try:
+    print("Loading recommendation model...")
     rf_model = joblib.load(MODEL_PATH)
 except Exception as e:
     model_error = str(e)
+    print("Model load failed:", model_error)
 
 CROP_LABELS = ["Rice", "Maize", "Wheat", "Chili", "Potato"]
 
+
 def recommend_crops(features: dict):
     try:
+
+        print("Recommendation service called")
+
         if rf_model is None:
             return [
                 {
@@ -48,7 +52,7 @@ def recommend_crops(features: dict):
 
         recommendations = []
 
-        for crop, score in ranked[:TOP_K]:
+        for crop, score in ranked[:3]:
             recommendations.append({
                 "name": crop,
                 "score": round(float(score), 2),
@@ -56,7 +60,10 @@ def recommend_crops(features: dict):
                 "tips": ["Follow recommended agricultural practices"]
             })
 
+        print("Recommendation results:", recommendations)
+
         return recommendations, None
 
     except Exception as e:
+        print("Recommendation error:", str(e))
         return None, str(e)

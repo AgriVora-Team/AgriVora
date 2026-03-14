@@ -1,5 +1,5 @@
 import 'dart:ui';
-import 'dart:convert';
+import 'dart:convert'; // ✅ added for utf8.encode
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
@@ -37,125 +37,7 @@ class _SignUpPageState extends State<SignUpPage> {
     super.dispose();
   }
 
-  // =====================================================
-  // HELPERS
-  // =====================================================
-
-  void _showMessage(String message, {int seconds = 2}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: Duration(seconds: seconds),
-      ),
-    );
-  }
-
-  void _togglePasswordVisibility() {
-    setState(() {
-      _obscurePassword = !_obscurePassword;
-    });
-  }
-
-  Widget _buildPasswordSuffix() {
-    return IconButton(
-      icon: Icon(
-        _obscurePassword ? Icons.visibility : Icons.visibility_off,
-        color: Colors.black45,
-      ),
-      onPressed: _togglePasswordVisibility,
-    );
-  }
-
-  Widget _buildHeader() {
-    return const Column(
-      children: [
-        Text(
-          "Create Account",
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.w900,
-            color: Color(0xFF1B1B1B),
-          ),
-        ),
-        SizedBox(height: 10),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 14),
-          child: Text(
-            "Enter your details to get started.",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.black54,
-              height: 1.4,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSignUpButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 58,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _signup,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF004D40),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(34),
-          ),
-          elevation: 10,
-          shadowColor: const Color(0xFF004D40).withOpacity(0.35),
-        ),
-        child: _isLoading
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2.5,
-                ),
-              )
-            : const Text(
-                "Sign Up",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-      ),
-    );
-  }
-
-  Widget _buildLoginLink() {
-    return Column(
-      children: [
-        const Text(
-          "Already have an account?",
-          style: TextStyle(color: Colors.black54, fontSize: 14),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text(
-            "Log in",
-            style: TextStyle(
-              color: Color(0xFF004D40),
-              fontWeight: FontWeight.bold,
-              decoration: TextDecoration.underline,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // =====================================================
-  // SIGNUP
-  // =====================================================
-
+  // ✅ FIXED SIGNUP METHOD (debug bytes + cleaner error display)
   Future<void> _signup() async {
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
@@ -163,16 +45,22 @@ class _SignUpPageState extends State<SignUpPage> {
     final password = _passwordController.text.trim();
 
     if (name.isEmpty || email.isEmpty || phone.isEmpty || password.isEmpty) {
-      _showMessage('Please fill all fields');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill all fields')),
+      );
       return;
     }
 
     if (password.length < 8) {
-      _showMessage('Password must be at least 8 characters');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password must be at least 8 characters')),
+      );
       return;
     }
 
+    // ✅ DEBUG: bcrypt limit is 72 BYTES (not characters)
     final pwBytes = utf8.encode(password).length;
+    // ignore: avoid_print
     print("SIGNUP password chars=${password.length}, bytes=$pwBytes");
 
     setState(() => _isLoading = true);
@@ -187,13 +75,24 @@ class _SignUpPageState extends State<SignUpPage> {
 
       if (!mounted) return;
 
-      _showMessage(response['message']?.toString() ?? 'Account created!');
-      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response['message']?.toString() ?? 'Account created!'),
+        ),
+      );
+
+      Navigator.pop(context); // Go back to login
     } catch (e) {
       if (!mounted) return;
 
       final msg = e.toString().replaceAll('Exception: ', '');
-      _showMessage(msg, seconds: 4);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          duration: const Duration(seconds: 4),
+        ),
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -208,12 +107,15 @@ class _SignUpPageState extends State<SignUpPage> {
       backgroundColor: const Color(0xFFF2E8D5),
       body: Stack(
         children: [
+          // ✅ background
           Positioned.fill(
             child: Image.asset(
               'assets/images/bg_fields.png',
               fit: BoxFit.cover,
             ),
           ),
+
+          // ✅ logo
           SafeArea(
             child: Align(
               alignment: Alignment.topCenter,
@@ -227,6 +129,8 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
             ),
           ),
+
+          // ✅ bottom wavy panel (animated)
           AnimatedPositioned(
             duration: const Duration(milliseconds: 750),
             curve: Curves.easeOutQuart,
@@ -255,7 +159,28 @@ class _SignUpPageState extends State<SignUpPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          _buildHeader(),
+                          const Text(
+                            "Create Account",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF1B1B1B),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 14),
+                            child: Text(
+                              "Enter your details to get started.",
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.black54,
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
                           const SizedBox(height: 18),
                           _SoftInput(
                             icon: Icons.person,
@@ -281,12 +206,71 @@ class _SignUpPageState extends State<SignUpPage> {
                             hint: "Create password",
                             controller: _passwordController,
                             obscureText: _obscurePassword,
-                            suffix: _buildPasswordSuffix(),
+                            suffix: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                                color: Colors.black45,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
+                            ),
                           ),
                           const SizedBox(height: 18),
-                          _buildSignUpButton(),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 58,
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _signup,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF004D40),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(34),
+                                ),
+                                elevation: 10,
+                                shadowColor:
+                                    const Color(0xFF004D40).withOpacity(0.35),
+                              ),
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2.5,
+                                      ),
+                                    )
+                                  : const Text(
+                                      "Sign Up",
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                            ),
+                          ),
                           const SizedBox(height: 16),
-                          _buildLoginLink(),
+                          const Text(
+                            "Already have an account?",
+                            style:
+                                TextStyle(color: Colors.black54, fontSize: 14),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text(
+                              "Log in",
+                              style: TextStyle(
+                                color: Color(0xFF004D40),
+                                fontWeight: FontWeight.bold,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -301,6 +285,7 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 }
 
+/// ✅ same wavy top style as login
 class _TopWaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
@@ -318,6 +303,7 @@ class _TopWaveClipper extends CustomClipper<Path> {
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
 
+/// ✅ same input style as login (icon in circle + soft green field)
 class _SoftInput extends StatelessWidget {
   final IconData icon;
   final String hint;

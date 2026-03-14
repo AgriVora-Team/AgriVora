@@ -19,6 +19,7 @@ def recommend(req: CropLGBMRequest, background_tasks: BackgroundTasks):
     print("Prediction result:", result)
 
     # return response
+    print("Crop recommendation API executed")
     return CropLGBMResponse(
         recommended_crop=result["crop"],
         confidence=result["confidence"],

@@ -121,6 +121,34 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
+  Widget _buildLoginButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 58,
+      child: ElevatedButton(
+        onPressed: _login,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF004D40),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(34),
+          ),
+          elevation: 10,
+          shadowColor: const Color(0xFF004D40).withOpacity(0.35),
+        ),
+        child: _isLoading
+            ? const CircularProgressIndicator(color: Colors.white)
+            : const Text(
+                "Log In",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+      ),
+    );
+  }
+
   Widget _buildCreateAccountLink() {
     return Column(
       children: [
@@ -234,34 +262,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                           const SizedBox(height: 10),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 58,
-                            child: ElevatedButton(
-                              onPressed: _login,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF004D40),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(34),
-                                ),
-                                elevation: 10,
-                                shadowColor:
-                                    const Color(0xFF004D40).withOpacity(0.35),
-                              ),
-                              child: _isLoading
-                                  ? const CircularProgressIndicator(
-                                      color: Colors.white,
-                                    )
-                                  : const Text(
-                                      "Log In",
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                            ),
-                          ),
+                          _buildLoginButton(),
                           const SizedBox(height: 18),
                           _buildCreateAccountLink(),
                         ],

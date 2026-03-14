@@ -35,6 +35,10 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  // =====================================================
+  // HELPERS
+  // =====================================================
+
   void _setHistoryLoading(bool value) {
     if (!mounted) return;
     setState(() {
@@ -243,6 +247,10 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
+
+  // =====================================================
+  // CARD SECTIONS
+  // =====================================================
 
   Widget _buildProfileOverviewCard() {
     return _buildGlassElevatedCard(
@@ -481,43 +489,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildMiniStatCard(IconData icon, String title, String value) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: const Color(0xFF2E7D32), size: 18),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 11,
-              color: Colors.black54,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF1B1B1B),
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSettingsCard() {
     return _buildGlassElevatedCard(
       child: Column(
@@ -625,6 +596,47 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       );
     }
+  }
+
+  // =====================================================
+  // SHARED UI HELPERS
+  // =====================================================
+
+  Widget _buildMiniStatCard(IconData icon, String title, String value) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: const Color(0xFF2E7D32), size: 18),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Colors.black54,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF1B1B1B),
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildGlassElevatedCard({required Widget child}) {

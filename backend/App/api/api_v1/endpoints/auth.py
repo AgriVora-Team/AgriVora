@@ -1,3 +1,5 @@
+# FastAPI authentication module handling signup, login, OTP verification and password reset
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime, timedelta
@@ -10,8 +12,9 @@ import random
 
 router = APIRouter()
 
-# Authentication routes for signup, login, OTP verification, and password reset
 # Authentication router for signup, login, OTP verification and password reset
+
+
 # =========================================
 # DATA MODELS
 # =========================================
@@ -67,6 +70,8 @@ def verify_password(password: str, stored_hash: str) -> bool:
 # DATABASE HELPER
 # =========================================
 
+# Helper function to retrieve user records from Firestore
+
 def get_user_by_field(field: str, value: str):
     query = db.collection("users").where(field, "==", value).limit(1).stream()
     for doc in query:
@@ -80,6 +85,7 @@ def get_user_by_field(field: str, value: str):
 
 @router.post("/signup")
 def signup(user: RegisterUser):
+    """Register a new user and store credentials securely."""
     try:
         users_ref = db.collection("users")
 
@@ -127,6 +133,7 @@ def signup(user: RegisterUser):
 
 @router.post("/login")
 def login(user: LoginUser):
+    """Authenticate user using email or phone and verify password."""
     try:
         identifier = user.email_or_phone.strip()
         password = user.password
@@ -165,6 +172,8 @@ def login(user: LoginUser):
 # =========================================
 # REQUEST OTP
 # =========================================
+
+# OTP generation and validation for password recovery
 
 @router.post("/forgot-password/request-otp")
 def request_otp(data: OTPRequest):

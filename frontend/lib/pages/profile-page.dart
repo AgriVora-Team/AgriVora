@@ -42,12 +42,17 @@ class _ProfilePageState extends State<ProfilePage> {
     });
   }
 
+  void _setProfileImage(String path) {
+    if (!mounted) return;
+    setState(() {
+      _profileImagePath = path;
+    });
+  }
+
   Future<void> _loadProfilePic() async {
     final path = await SessionService.getProfilePic();
-    if (path != null && mounted) {
-      setState(() {
-        _profileImagePath = path;
-      });
+    if (path != null) {
+      _setProfileImage(path);
     }
   }
 
@@ -57,11 +62,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (pickedFile != null) {
       final path = pickedFile.path;
       await SessionService.saveProfilePic(path);
-      if (mounted) {
-        setState(() {
-          _profileImagePath = path;
-        });
-      }
+      _setProfileImage(path);
     }
   }
 

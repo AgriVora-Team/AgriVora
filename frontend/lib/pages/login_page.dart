@@ -33,123 +33,22 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  // =====================================================
-  // HELPERS
-  // =====================================================
-
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
-  }
-
-  void _togglePasswordVisibility() {
-    setState(() {
-      _obscurePassword = !_obscurePassword;
-    });
-  }
-
-  Widget _buildPasswordSuffix() {
-    return IconButton(
-      icon: Icon(
-        _obscurePassword ? Icons.visibility : Icons.visibility_off,
-        color: Colors.black54,
-      ),
-      onPressed: _togglePasswordVisibility,
-    );
-  }
-
-  Widget _buildHeader() {
-    return const Column(
-      children: [
-        Text(
-          "Login to AgriVora",
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.w900,
-            color: Color(0xFF1B1B1B),
-          ),
-        ),
-        SizedBox(height: 10),
-        Text(
-          "Enter your email or phone number and password\nto continue.",
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.black54,
-            height: 1.4,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLoginButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 58,
-      child: ElevatedButton(
-        onPressed: _login,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF004D40),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(34),
-          ),
-          elevation: 10,
-          shadowColor: const Color(0xFF004D40).withOpacity(0.35),
-        ),
-        child: _isLoading
-            ? const CircularProgressIndicator(color: Colors.white)
-            : const Text(
-                "Log In",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-      ),
-    );
-  }
-
-  Widget _buildCreateAccountLink() {
-    return Column(
-      children: [
-        const Text(
-          "Don't have an account?",
-          style: TextStyle(color: Colors.black54, fontSize: 14),
-        ),
-        TextButton(
-          onPressed: () => Navigator.pushNamed(context, '/signup'),
-          child: const Text(
-            "Create one",
-            style: TextStyle(
-              color: Color(0xFF004D40),
-              fontWeight: FontWeight.bold,
-              decoration: TextDecoration.underline,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // =====================================================
-  // LOGIN
-  // =====================================================
-
+  // ✅ Log in -> Role select page
   Future<void> _login() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      _showMessage('Please enter all fields');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter all fields')),
+      );
       return;
     }
 
     if (password.length < 8) {
-      _showMessage('Password must be at least 8 characters');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password must be at least 8 characters')),
+      );
       return;
     }
 
@@ -158,6 +57,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final response = await ApiService.login(email, password);
       if (mounted) {
+        // ✅ Persist the session so next cold-start skips onboarding
         await SessionService.saveSession(
           userId: ApiService.userId ?? '',
           userName: ApiService.userName ?? '',
@@ -165,14 +65,17 @@ class _LoginPageState extends State<LoginPage> {
           userPhone: ApiService.userPhone ?? '',
         );
 
-        _showMessage(response['message'] ?? 'Login successful');
-
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(response['message'] ?? 'Login successful')),
+        );
         final fullName = response['full_name']?.toString() ?? 'User';
         Navigator.pushReplacementNamed(context, '/role', arguments: fullName);
       }
     } catch (e) {
       if (mounted) {
-        _showMessage(e.toString().replaceAll('Exception: ', ''));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -235,7 +138,25 @@ class _LoginPageState extends State<LoginPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          _buildHeader(),
+                          const Text(
+                            "Login to AgriVora",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF1B1B1B),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          const Text(
+                            "Enter your email or phone number and password\nto continue.",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.black54,
+                              height: 1.4,
+                            ),
+                          ),
                           const SizedBox(height: 22),
                           _SoftInput(
                             icon: Icons.alternate_email,
@@ -248,7 +169,19 @@ class _LoginPageState extends State<LoginPage> {
                             hint: "Password",
                             controller: _passwordController,
                             obscureText: _obscurePassword,
-                            suffix: _buildPasswordSuffix(),
+                            suffix: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                                color: Colors.black54,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
+                            ),
                           ),
                           const SizedBox(height: 10),
                           Align(
@@ -256,9 +189,7 @@ class _LoginPageState extends State<LoginPage> {
                             child: TextButton(
                               onPressed: () {
                                 Navigator.pushNamed(
-                                  context,
-                                  '/forgot-password',
-                                );
+                                    context, '/forgot-password');
                               },
                               child: const Text(
                                 "Forgot password?",
@@ -270,9 +201,51 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                           const SizedBox(height: 10),
-                          _buildLoginButton(),
+                          SizedBox(
+                            width: double.infinity,
+                            height: 58,
+                            child: ElevatedButton(
+                              onPressed: _login,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF004D40),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(34),
+                                ),
+                                elevation: 10,
+                                shadowColor:
+                                    const Color(0xFF004D40).withOpacity(0.35),
+                              ),
+                              child: _isLoading
+                                  ? const CircularProgressIndicator(
+                                      color: Colors.white)
+                                  : const Text(
+                                      "Log In",
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                            ),
+                          ),
                           const SizedBox(height: 18),
-                          _buildCreateAccountLink(),
+                          const Text(
+                            "Don't have an account?",
+                            style:
+                                TextStyle(color: Colors.black54, fontSize: 14),
+                          ),
+                          TextButton(
+                            onPressed: () =>
+                                Navigator.pushNamed(context, '/signup'),
+                            child: const Text(
+                              "Create one",
+                              style: TextStyle(
+                                color: Color(0xFF004D40),
+                                fontWeight: FontWeight.bold,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),

@@ -10,6 +10,8 @@ import random
 
 router = APIRouter()
 
+# Authentication routes for signup, login, OTP verification, and password reset
+# Authentication router for signup, login, OTP verification and password reset
 # =========================================
 # DATA MODELS
 # =========================================

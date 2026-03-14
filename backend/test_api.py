@@ -1,12 +1,23 @@
 import requests
 import time
 
-url = "http://localhost:8000/sensor/ph/123"
+URL = "http://localhost:8000/sensor/ph/123"
+REQUEST_COUNT = 3
+DELAY_SECONDS = 2
 
-for _ in range(3):
+def fetch_sensor_data():
     try:
-        r = requests.get(url)
-        print(r.json())
+        response = requests.get(URL)
+
+        if response.status_code == 200:
+            print("Response:", response.json())
+        else:
+            print("Request failed:", response.status_code)
+
     except Exception as e:
         print("Error:", e)
-    time.sleep(2)
+
+
+for _ in range(REQUEST_COUNT):
+    fetch_sensor_data()
+    time.sleep(DELAY_SECONDS)

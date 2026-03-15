@@ -15,12 +15,14 @@ class _PermissionPageState extends State<PermissionPage> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 160), () {
+    Future.delayed(const Duration(milliseconds: 120), () {
       if (mounted) setState(() => _isLoaded = true);
     });
   }
 
+  // ✅ Shared navigation logic — persists the permission grant
   void _onContinue() async {
+    // Save the flag so we never show this screen again
     await SessionService.markPermissionsGranted();
 
     if (!mounted) return;
@@ -43,17 +45,20 @@ class _PermissionPageState extends State<PermissionPage> {
       backgroundColor: const Color(0xFFF2E8D5),
       body: Stack(
         children: [
+          // 🌾 Background
           Positioned.fill(
             child: Image.asset(
               'assets/images/bg_fields.png',
               fit: BoxFit.cover,
             ),
           ),
+
+          // 🌿 Logo (top)
           SafeArea(
             child: Align(
               alignment: Alignment.topCenter,
               child: Padding(
-                padding: const EdgeInsets.only(top: 20),
+                padding: const EdgeInsets.only(top: 18),
                 child: Image.asset(
                   'assets/images/logo_agrivora.png',
                   height: 170,
@@ -62,9 +67,11 @@ class _PermissionPageState extends State<PermissionPage> {
               ),
             ),
           ),
+
+          // 🟫 Glass permission card (slide up)
           AnimatedPositioned(
-            duration: const Duration(milliseconds: 900),
-            curve: Curves.easeOutCubic,
+            duration: const Duration(milliseconds: 850),
+            curve: Curves.easeOutQuart,
             bottom: _isLoaded ? 0 : -size.height,
             left: 0,
             right: 0,
@@ -75,8 +82,9 @@ class _PermissionPageState extends State<PermissionPage> {
                 child: Container(
                   height: size.height * 0.76,
                   width: double.infinity,
+                  // ✅ frosted glass tint (matches login)
                   color: const Color(0xFFF2E8D5).withOpacity(0.78),
-                  padding: EdgeInsets.fromLTRB(24, 72, 24, bottomPadding + 18),
+                  padding: EdgeInsets.fromLTRB(24, 72, 24, bottomPadding + 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -89,16 +97,18 @@ class _PermissionPageState extends State<PermissionPage> {
                           color: Color(0xFF1B1B1B),
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 10),
                       const Text(
-                        'To provide better insights, AgriVora needs access to your device location and sensors.',
+                        'To help you grow better, AgriVora needs access to your location and sensors.',
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.black54,
                           height: 1.4,
                         ),
                       ),
-                      const SizedBox(height: 18),
+                      const SizedBox(height: 16),
+
+                      // ✅ Static Column instead of ListView for perfect alignment
                       Expanded(
                         child: Column(
                           children: const [
@@ -107,13 +117,13 @@ class _PermissionPageState extends State<PermissionPage> {
                               title: 'Location Services',
                               subtitle: 'For local soil & weather data.',
                             ),
-                            SizedBox(height: 12),
+                            SizedBox(height: 10),
                             PermissionTile(
                               icon: Icons.camera_alt_rounded,
                               title: 'Camera Access',
-                              subtitle: 'To scan soil texture and plant leaves.',
+                              subtitle: 'To scan soil texture and leaves.',
                             ),
-                            SizedBox(height: 12),
+                            SizedBox(height: 10),
                             PermissionTile(
                               icon: Icons.bluetooth_rounded,
                               title: 'Bluetooth & Wi-Fi',
@@ -122,7 +132,10 @@ class _PermissionPageState extends State<PermissionPage> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 14),
+
+                      const SizedBox(height: 12),
+
+                      // ✅ Allow All -> Next Step
                       SizedBox(
                         width: double.infinity,
                         height: 58,
@@ -133,7 +146,7 @@ class _PermissionPageState extends State<PermissionPage> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(34),
                             ),
-                            elevation: 12,
+                            elevation: 10,
                             shadowColor:
                                 const Color(0xFF004D40).withOpacity(0.35),
                           ),
@@ -147,7 +160,9 @@ class _PermissionPageState extends State<PermissionPage> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 6),
+
+                      const SizedBox(height: 4),
+
                       Center(
                         child: TextButton(
                           onPressed: _onContinue,
@@ -173,6 +188,7 @@ class _PermissionPageState extends State<PermissionPage> {
   }
 }
 
+// 🌊 Same smooth wave top
 class SoilWaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
@@ -190,6 +206,7 @@ class SoilWaveClipper extends CustomClipper<Path> {
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
 
+// ✅ Static Permission item with no animations and better resizing
 class PermissionTile extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -207,6 +224,7 @@ class PermissionTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
+        // ✅ soft “field” tile look (not pure white)
         color: const Color(0xFFEAF3E6).withOpacity(0.65),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.black.withOpacity(0.08)),
@@ -220,6 +238,7 @@ class PermissionTile extends StatelessWidget {
       ),
       child: Row(
         children: [
+          // ✅ round icon bubble like your permission page style
           Container(
             width: 44,
             height: 44,

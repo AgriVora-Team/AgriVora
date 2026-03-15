@@ -1,67 +1,114 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from datetime import datetime
+
 from app.services.recommend_service import recommend_crops
 from app.utils.firestore import save_scan_history
-from datetime import datetime
 
 router = APIRouter()
 
 
 # =====================================================
-# REQUEST SCHEMA
+# REQUEST MODEL
 # =====================================================
 
 class RecommendRequest(BaseModel):
-    userId: str
-    soilType: str
-    ph: float
+
+    userId: str = Field(..., description="User ID making the request")
+    soilType: str = Field(..., description="Type of soil selected")
+    ph: float = Field(..., ge=0, le=14, description="Soil pH value")
+
     temperature: float
     rainfall: float
     humidity: float
 
 
 # =====================================================
-# MANUAL SOIL RECOMMENDATION
+# SOIL MAPPING
+# =====================================================
+
+SOIL_MAP = {
+    "Sandy": {
+        "sand": 70,
+        "clay": 10,
+        "organicCarbon": 0.5
+    },
+    "Clay": {
+        "sand": 20,
+        "clay": 60,
+        "organicCarbon": 1.5
+    },
+    "Loamy": {
+        "sand": 40,
+        "clay": 30,
+        "organicCarbon": 1.2
+    }
+}
+
+
+# =====================================================
+# HELPER FUNCTIONS
+# =====================================================
+
+def build_weather_summary(temp: float, rain: float, humid: float):
+
+    return {
+        "temperature": temp,
+        "rainfall": rain,
+        "humidity": humid
+    }
+
+
+def validate_soil_type(soil_type: str):
+
+    soil_summary = SOIL_MAP.get(soil_type)
+
+    if soil_summary is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid soil type provided"
+        )
+
+    return soil_summary
+
+
+def store_history(user_id, soil, weather, ph, results):
+
+    history_payload = {
+        "userId": user_id,
+        "soilSummary": soil,
+        "weatherSummary": weather,
+        "ph": ph,
+        "results": results,
+        "createdAt": datetime.utcnow()
+    }
+
+    save_scan_history(history_payload)
+
+
+# =====================================================
+# RECOMMENDATION ROUTE
 # =====================================================
 
 @router.post("/recommend")
 def recommend(data: RecommendRequest):
 
-    print("Recommendation request received for user:", data.userId)
+    print("📡 Crop recommendation request received")
 
-    # Validate pH
-    if not (0 <= data.ph <= 14):
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid pH value"
-        )
+    # Validate soil
+    soil_summary = validate_soil_type(data.soilType)
 
-    # Soil type mapping
-    soil_map = {
-        "Sandy": {"sand": 70, "clay": 10, "organicCarbon": 0.5},
-        "Clay": {"sand": 20, "clay": 60, "organicCarbon": 1.5},
-        "Loamy": {"sand": 40, "clay": 30, "organicCarbon": 1.2}
-    }
+    # Build weather summary
+    weather_summary = build_weather_summary(
+        data.temperature,
+        data.rainfall,
+        data.humidity
+    )
 
-    soil_summary = soil_map.get(data.soilType)
+    print("🌱 Soil summary:", soil_summary)
+    print("☁ Weather summary:", weather_summary)
 
-    if soil_summary is None:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid soil type"
-        )
-
-    # Weather summary
-    weather_summary = {
-        "temperature": data.temperature,
-        "rainfall": data.rainfall,
-        "humidity": data.humidity
-    }
-
-    print("Soil summary:", soil_summary)
-    print("Weather summary:", weather_summary)
-
-    # ML prediction
+    # Run ML prediction
     results, error = recommend_crops({
         "soil": soil_summary,
         "weather": weather_summary,
@@ -71,20 +118,19 @@ def recommend(data: RecommendRequest):
     if error or results is None:
         raise HTTPException(
             status_code=500,
-            detail="Recommendation failed"
+            detail="Crop recommendation failed"
         )
 
     # Save scan history
-    save_scan_history({
-        "userId": data.userId,
-        "soilSummary": soil_summary,
-        "weatherSummary": weather_summary,
-        "ph": data.ph,
-        "results": results,
-        "createdAt": datetime.utcnow()
-    })
+    store_history(
+        data.userId,
+        soil_summary,
+        weather_summary,
+        data.ph,
+        results
+    )
 
-    print("Recommendation saved to Firestore")
+    print("✅ Recommendation saved to Firestore")
 
     return {
         "success": True,

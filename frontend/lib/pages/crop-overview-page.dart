@@ -1,7 +1,62 @@
+/*
+====================================================================
+Crop Overview Page
+====================================================================
+
+This page displays detailed information about the crop recommended
+by the Agrivora AI system.
+
+The screen presents multiple sections explaining:
+
+• Crop overview
+• Soil compatibility
+• Nutrient levels
+• Climate suitability
+• Growth stages
+• Yield prediction
+• Pest risks
+• Farming recommendations
+
+This UI helps farmers understand WHY the AI recommended
+a particular crop and how to manage it effectively.
+
+Design Features:
+
+• Glassmorphism UI
+• Smooth scrolling sections
+• Informational cards
+• Visual progress indicators
+• Farming insights
+
+Author: Agrivora Mobile Team
+====================================================================
+*/
+
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../widgets/agri_bottom_nav_bar.dart';
 
+
+
+/*
+====================================================================
+MAIN PAGE WIDGET
+====================================================================
+
+This widget displays detailed crop information after the
+AI recommendation is generated.
+
+Parameters received:
+
+name
+    crop name (e.g. Rice)
+
+scientific
+    scientific name
+
+image
+    crop image asset path
+*/
 class CropOverviewPage extends StatelessWidget {
 
   final String name;
@@ -15,6 +70,22 @@ class CropOverviewPage extends StatelessWidget {
     required this.image,
   });
 
+
+
+  /*
+  ================================================================
+  MAIN BUILD METHOD
+  ================================================================
+
+  This method builds the entire UI layout.
+
+  Layout Structure:
+
+  Stack
+    ├ Background Image
+    ├ Header (crop name + badge)
+    └ Bottom Glass Panel (content sections)
+  */
   @override
   Widget build(BuildContext context) {
 
@@ -28,13 +99,13 @@ class CropOverviewPage extends StatelessWidget {
       body: Stack(
         children: [
 
-          _background(),
+          _buildBackground(),
 
           Positioned(
             top: MediaQuery.of(context).padding.top + 55,
             left: 24,
             right: 24,
-            child: _header(),
+            child: _buildHeader(),
           ),
 
           Align(
@@ -43,27 +114,46 @@ class CropOverviewPage extends StatelessWidget {
               clipper: _OverviewWaveClipper(),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+
                 child: Container(
                   width: double.infinity,
                   height: size.height * 0.86,
-                  padding: EdgeInsets.fromLTRB(16, 90, 16, bottomPad + 70),
+
+                  padding: EdgeInsets.fromLTRB(
+                      16,
+                      90,
+                      16,
+                      bottomPad + 70),
 
                   decoration: BoxDecoration(
                     color: const Color(0xFFF2E8D5).withOpacity(0.75),
-                    border: Border.all(color: Colors.white.withOpacity(0.3)),
+                    border: Border.all(
+                        color: Colors.white.withOpacity(0.3)),
                   ),
 
-                  child: _body(context),
+                  child: _buildBody(context),
                 ),
               ),
             ),
           ),
         ],
       ),
+
+      bottomNavigationBar:
+          const AgriBottomNavBar(currentIndex: 1),
     );
   }
 
-  Widget _background() {
+
+
+  /*
+  ================================================================
+  BACKGROUND IMAGE
+  ================================================================
+  */
+
+  Widget _buildBackground() {
+
     return Positioned.fill(
       child: Image.asset(
         'assets/images/bg_fields.png',
@@ -72,15 +162,32 @@ class CropOverviewPage extends StatelessWidget {
     );
   }
 
-  Widget _header() {
+
+
+  /*
+  ================================================================
+  HEADER SECTION
+  ================================================================
+
+  Displays:
+
+  • Crop name
+  • Scientific name
+  • Suitability badge
+  • Crop icon
+  */
+
+  Widget _buildHeader(){
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
       children: [
 
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+
             children: [
 
               Text(
@@ -89,11 +196,13 @@ class CropOverviewPage extends StatelessWidget {
                   fontSize: 32,
                   fontWeight: FontWeight.w900,
                   color: Colors.white,
+
                   shadows: [
                     Shadow(
-                        color: Colors.black45,
-                        blurRadius: 10,
-                        offset: Offset(0,2))
+                      color: Colors.black45,
+                      blurRadius: 10,
+                      offset: Offset(0,2)
+                    )
                   ],
                 ),
               ),
@@ -110,22 +219,32 @@ class CropOverviewPage extends StatelessWidget {
 
               const SizedBox(height:8),
 
-              _suitabilityBadge()
+              _buildSuitabilityBadge()
 
             ],
           ),
         ),
 
-        _icon(),
+        _buildCropIcon(),
 
       ],
     );
   }
 
-  Widget _suitabilityBadge(){
+
+
+  /*
+  ================================================================
+  SUITABILITY BADGE
+  ================================================================
+  */
+
+  Widget _buildSuitabilityBadge(){
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal:10,vertical:4),
+      padding: const EdgeInsets.symmetric(
+          horizontal:10,
+          vertical:4),
 
       decoration: BoxDecoration(
         color: const Color(0xFF2E7D32),
@@ -143,19 +262,53 @@ class CropOverviewPage extends StatelessWidget {
     );
   }
 
-  Widget _icon(){
+
+
+  /*
+  ================================================================
+  HEADER ICON
+  ================================================================
+  */
+
+  Widget _buildCropIcon(){
+
     return Container(
       height:65,
       width:65,
+
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.2),
         shape: BoxShape.circle,
       ),
-      child: const Icon(Icons.spa,color:Colors.white,size:32),
+
+      child: const Icon(
+        Icons.spa,
+        color: Colors.white,
+        size:32
+      ),
     );
   }
 
-  Widget _body(BuildContext context){
+
+
+  /*
+  ================================================================
+  MAIN BODY CONTENT
+  ================================================================
+
+  Contains multiple informational cards explaining:
+
+  • crop overview
+  • soil compatibility
+  • nutrients
+  • climate suitability
+  • growth stages
+  • yield prediction
+  • pest risks
+  • farming advice
+  */
+
+  Widget _buildBody(BuildContext context){
 
     return SingleChildScrollView(
 
@@ -165,50 +318,58 @@ class CropOverviewPage extends StatelessWidget {
 
         children: [
 
-          _cropImage(),
+          _buildCropImage(),
 
           const SizedBox(height:16),
 
-          _overview(),
+          _buildOverviewSection(),
 
           const SizedBox(height:16),
 
-          _soilCompatibility(),
+          _buildSoilCompatibility(),
 
           const SizedBox(height:16),
 
-          _soilNutrients(),
+          _buildSoilNutrients(),
 
           const SizedBox(height:16),
 
-          _climate(),
+          _buildClimateSection(),
 
           const SizedBox(height:16),
 
-          _growthTimeline(),
+          _buildGrowthTimeline(),
 
           const SizedBox(height:16),
 
-          _yieldPrediction(),
+          _buildYieldPrediction(),
 
           const SizedBox(height:16),
 
-          _pestRisk(),
+          _buildPestRisk(),
 
           const SizedBox(height:16),
 
-          _farmingTips(),
+          _buildFarmingTips(),
 
           const SizedBox(height:20),
 
-          _actions(context),
+          _buildActions(context),
 
         ],
       ),
     );
   }
 
-  Widget _cropImage(){
+
+
+  /*
+  ================================================================
+  CROP IMAGE
+  ================================================================
+  */
+
+  Widget _buildCropImage(){
 
     return ClipRRect(
 
@@ -223,11 +384,20 @@ class CropOverviewPage extends StatelessWidget {
     );
   }
 
-  Widget _overview(){
+
+
+  /*
+  ================================================================
+  INFORMATION SECTIONS
+  ================================================================
+  */
+
+  Widget _buildOverviewSection(){
 
     return _card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+
         children: [
 
           _title(Icons.info,"Crop Overview"),
@@ -236,15 +406,18 @@ class CropOverviewPage extends StatelessWidget {
 
           Text(
             "$name ($scientific) is predicted as a suitable crop based on soil nutrients, pH levels and environmental conditions detected in your field.",
-            style: const TextStyle(fontSize:13,height:1.4),
+            style: const TextStyle(
+              fontSize:13,
+              height:1.4),
           ),
-
         ],
       ),
     );
   }
 
-  Widget _soilCompatibility(){
+
+
+  Widget _buildSoilCompatibility(){
 
     return _card(
 
@@ -268,7 +441,9 @@ class CropOverviewPage extends StatelessWidget {
     );
   }
 
-  Widget _soilNutrients(){
+
+
+  Widget _buildSoilNutrients(){
 
     return _card(
 
@@ -290,7 +465,9 @@ class CropOverviewPage extends StatelessWidget {
     );
   }
 
-  Widget _climate(){
+
+
+  Widget _buildClimateSection(){
 
     return _card(
 
@@ -306,13 +483,14 @@ class CropOverviewPage extends StatelessWidget {
           const Text(
             "Weather conditions indicate favorable temperature and humidity levels for crop growth."
           ),
-
         ],
       ),
     );
   }
 
-  Widget _growthTimeline(){
+
+
+  Widget _buildGrowthTimeline(){
 
     return _card(
 
@@ -335,7 +513,9 @@ class CropOverviewPage extends StatelessWidget {
     );
   }
 
-  Widget _yieldPrediction(){
+
+
+  Widget _buildYieldPrediction(){
 
     return _card(
 
@@ -355,7 +535,9 @@ class CropOverviewPage extends StatelessWidget {
     );
   }
 
-  Widget _pestRisk(){
+
+
+  Widget _buildPestRisk(){
 
     return _card(
 
@@ -368,14 +550,18 @@ class CropOverviewPage extends StatelessWidget {
 
           const SizedBox(height:10),
 
-          const Text("Moderate risk of leaf-eating insects. Regular monitoring recommended.")
+          const Text(
+            "Moderate risk of leaf-eating insects. Regular monitoring recommended."
+          )
 
         ],
       ),
     );
   }
 
-  Widget _farmingTips(){
+
+
+  Widget _buildFarmingTips(){
 
     return _card(
 
@@ -397,16 +583,26 @@ class CropOverviewPage extends StatelessWidget {
     );
   }
 
-  Widget _actions(BuildContext context){
+
+
+  /*
+  ================================================================
+  ACTION BUTTONS
+  ================================================================
+  */
+
+  Widget _buildActions(BuildContext context){
 
     return Column(
 
       children: [
 
         ElevatedButton(
+
           onPressed: (){
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Saved to History"))
+              const SnackBar(
+                content: Text("Saved to History"))
             );
           },
 
@@ -420,16 +616,24 @@ class CropOverviewPage extends StatelessWidget {
         const SizedBox(height:12),
 
         ElevatedButton(
+
           onPressed: (){
             Navigator.pushNamed(context,'/ai_chat');
           },
 
           child: const Text("Ask AI"),
         ),
-
       ],
     );
   }
+
+
+
+  /*
+  ================================================================
+  SMALL UI HELPERS
+  ================================================================
+  */
 
   Widget _title(IconData icon,String text){
 
@@ -452,6 +656,8 @@ class CropOverviewPage extends StatelessWidget {
     );
   }
 
+
+
   Widget _progress(String label,double value){
 
     return Column(
@@ -468,10 +674,11 @@ class CropOverviewPage extends StatelessWidget {
           color: const Color(0xFF2E7D32),
           backgroundColor: Colors.black12,
         ),
-
       ],
     );
   }
+
+
 
   Widget _nutrient(String name,String value){
 
@@ -492,6 +699,8 @@ class CropOverviewPage extends StatelessWidget {
     );
   }
 
+
+
   Widget _stage(String name,String time){
 
     return Padding(
@@ -504,12 +713,17 @@ class CropOverviewPage extends StatelessWidget {
 
           Text(name),
 
-          Text(time,style: const TextStyle(fontWeight: FontWeight.bold))
+          Text(
+            time,
+            style: const TextStyle(
+                fontWeight: FontWeight.bold))
 
         ],
       ),
     );
   }
+
+
 
   Widget _tip(String text){
 
@@ -519,7 +733,9 @@ class CropOverviewPage extends StatelessWidget {
       child: Row(
         children: [
 
-          const Icon(Icons.check_circle,color:Colors.green,size:18),
+          const Icon(Icons.check_circle,
+              color:Colors.green,
+              size:18),
 
           const SizedBox(width:8),
 
@@ -529,6 +745,8 @@ class CropOverviewPage extends StatelessWidget {
       ),
     );
   }
+
+
 
   Widget _card({required Widget child}){
 
@@ -546,6 +764,17 @@ class CropOverviewPage extends StatelessWidget {
     );
   }
 }
+
+
+
+/*
+====================================================================
+WAVE CLIPPER
+====================================================================
+
+Creates the curved glass UI background
+used at the bottom of the screen.
+*/
 
 class _OverviewWaveClipper extends CustomClipper<Path>{
 
@@ -566,5 +795,4 @@ class _OverviewWaveClipper extends CustomClipper<Path>{
 
   @override
   bool shouldReclip(CustomClipper<Path> oldClipper)=>false;
-
 }

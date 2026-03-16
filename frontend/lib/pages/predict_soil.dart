@@ -54,7 +54,7 @@ class _PredictSoilPageState extends State<PredictSoilPage> {
     final isSim = st == BleConnectionState.simulating;
 
     Color phColor = const Color(0xFF2E7D32);
-    String category = 'Waiting';
+    String category = '';
 
     if (_livePh != null) {
       final ph = _livePh!;
@@ -82,20 +82,22 @@ class _PredictSoilPageState extends State<PredictSoilPage> {
     if (isConn) {
       badgeLabel = '● Live';
       badgeColor = const Color(0xFF2E7D32);
-    } else if (isStab) {
+    }
+    if (isStab) {
       badgeLabel = '⏳ Stabilizing';
       badgeColor = const Color(0xFFF57C00);
-    } else if (isSim) {
+    }
+    if (isSim) {
       badgeLabel = '🔵 Simulated';
       badgeColor = const Color(0xFF1565C0);
     }
 
     return Card(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
         child: Column(
           children: [
             Row(
@@ -104,8 +106,9 @@ class _PredictSoilPageState extends State<PredictSoilPage> {
                 const Text(
                   'Live pH Reading',
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 17,
                     fontWeight: FontWeight.w900,
+                    color: Color(0xFF1B1B1B),
                   ),
                 ),
                 Container(
@@ -114,6 +117,7 @@ class _PredictSoilPageState extends State<PredictSoilPage> {
                   decoration: BoxDecoration(
                     color: badgeColor.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: badgeColor.withOpacity(0.4)),
                   ),
                   child: Text(
                     badgeLabel,
@@ -131,15 +135,15 @@ class _PredictSoilPageState extends State<PredictSoilPage> {
               Text(
                 _livePh!.toStringAsFixed(2),
                 style: TextStyle(
-                  fontSize: 52,
+                  fontSize: 56,
                   fontWeight: FontWeight.w900,
                   color: phColor,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
                 decoration: BoxDecoration(
                   color: phColor.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(20),
@@ -155,7 +159,7 @@ class _PredictSoilPageState extends State<PredictSoilPage> {
               ),
             ] else
               const SizedBox(
-                height: 60,
+                height: 56,
                 child: Center(
                   child: CircularProgressIndicator(
                     color: Color(0xFF2E7D32),
@@ -163,11 +167,35 @@ class _PredictSoilPageState extends State<PredictSoilPage> {
                 ),
               ),
             const SizedBox(height: 12),
+            if (_lastReading != null)
+              Text(
+                'Latest reading: ${_lastReading.toString()}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 12, color: Colors.black54),
+              ),
+            const SizedBox(height: 8),
             Text(
               _bleStatus.message,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, color: Colors.black54),
+              style: TextStyle(
+                fontSize: 12,
+                color: isConn ? const Color(0xFF2E7D32) : Colors.black45,
+                fontStyle: isSim ? FontStyle.italic : FontStyle.normal,
+              ),
             ),
+            if (_livePh != null && !isSim && _livePh! < 5.5)
+              const _TipBanner(
+                icon: Icons.warning_amber_rounded,
+                color: Color(0xFFD32F2F),
+                text:
+                    'pH too low – consider applying lime to improve soil health.',
+              ),
+            if (_livePh != null && !isSim && _livePh! > 7.5)
+              const _TipBanner(
+                icon: Icons.info_outline_rounded,
+                color: Color(0xFF1565C0),
+                text: 'pH too high – consider adding sulfur or compost.',
+              ),
           ],
         ),
       ),
@@ -182,6 +210,22 @@ class _PredictSoilPageState extends State<PredictSoilPage> {
       ),
     );
     BleService().startScanAndConnect();
+  }
+
+  void _goToRecommendation() {
+    Navigator.pushNamed(
+      context,
+      '/crop-recom',
+      arguments: {'ph': _livePh},
+    );
+  }
+
+  void _goToManualInput() {
+    Navigator.pushNamed(
+      context,
+      '/manual-soil',
+      arguments: {'ph': _livePh},
+    );
   }
 
   @override
@@ -234,23 +278,65 @@ class _PredictSoilPageState extends State<PredictSoilPage> {
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: _livePh != null
-                    ? () {
-                        Navigator.pushNamed(
-                          context,
-                          '/crop-recom',
-                          arguments: {'ph': _livePh},
-                        );
-                      }
-                    : null,
+                onPressed: _livePh != null ? _goToRecommendation : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF2E7D32),
                 ),
                 child: const Text('Proceed to Recommendation'),
               ),
             ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: _goToManualInput,
+              child: const Text(
+                'Continue with manual input soil pH\nto predict crops',
+                textAlign: TextAlign.center,
+              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _TipBanner extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String text;
+
+  const _TipBanner({
+    required this.icon,
+    required this.color,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 12,
+                color: color,
+                fontWeight: FontWeight.w600,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

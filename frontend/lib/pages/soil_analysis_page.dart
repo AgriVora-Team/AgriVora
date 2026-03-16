@@ -1,4 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import '../services/api_service.dart';
 
 class SoilAnalysisPage extends StatefulWidget {
   const SoilAnalysisPage({super.key});
@@ -17,6 +20,11 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
   String _selectedSoilTexture = 'Loamy';
   bool _isManualValid = false;
 
+  File? _image;
+  final ImagePicker _picker = ImagePicker();
+  bool _isAnalyzingImage = false;
+  Map<String, dynamic>? _imageResult;
+
   @override
   void initState() {
     super.initState();
@@ -27,6 +35,51 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
   void dispose() {
     _phController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final pickedFile = await _picker.pickImage(
+        source: source,
+        maxWidth: 1000,
+        maxHeight: 1000,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _image = File(pickedFile.path);
+          _imageResult = null;
+        });
+      }
+    } catch (_) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not access camera or gallery')),
+      );
+    }
+  }
+
+  Future<void> _analyzeImage() async {
+    if (_image == null) return;
+
+    setState(() => _isAnalyzingImage = true);
+
+    try {
+      final result = await ApiService.analyzeSoilImage(_image!);
+      if (!mounted) return;
+
+      setState(() {
+        _isAnalyzingImage = false;
+        _imageResult = result;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() => _isAnalyzingImage = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+      );
+    }
   }
 
   void _validateManualInput() {
@@ -61,15 +114,41 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
         title: const Text('Soil Analysis'),
         backgroundColor: const Color(0xFF2E7D32),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _buildModeToggle(),
-            const SizedBox(height: 20),
-            Expanded(child: _buildActiveModeCard()),
-          ],
-        ),
+      body: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _buildModeToggle(),
+                const SizedBox(height: 20),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        _buildActiveModeCard(),
+                        if (_activeMode == AnalysisMode.image &&
+                            _imageResult != null) ...[
+                          const SizedBox(height: 16),
+                          _buildImageResultCard(),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (_isAnalyzingImage)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black45,
+                child: const Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -113,11 +192,46 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
   }
 
   Widget _buildImageCard() {
-    return const Card(
-      child: Center(
-        child: Text(
-          'Image analysis mode',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            GestureDetector(
+              onTap: () => _pickImage(ImageSource.gallery),
+              child: Container(
+                height: 180,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  border: Border.all(color: const Color(0xFF2E7D32)),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: _image != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.file(_image!, fit: BoxFit.cover),
+                      )
+                    : const Center(
+                        child: Text('Tap to upload soil image'),
+                      ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: () => _pickImage(ImageSource.camera),
+              icon: const Icon(Icons.camera_alt),
+              label: const Text('Camera'),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed:
+                    _image == null || _isAnalyzingImage ? null : _analyzeImage,
+                child: const Text('Identify Soil Type'),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -181,10 +295,38 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
 
   Widget _buildSensorCard() {
     return const Card(
-      child: Center(
-        child: Text(
-          'Sensor reading mode',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      child: Padding(
+        padding: EdgeInsets.all(16),
+        child: Center(
+          child: Text(
+            'Sensor mode will display live pH data',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageResultCard() {
+    final result = _imageResult!;
+    final soilType =
+        (result['soil_type'] ?? result['texture'] ?? 'Unknown').toString();
+    final confidence = result['confidence'] != null
+        ? (result['confidence'] as num).toDouble()
+        : 0.0;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Text(
+              'Detected Soil Type: $soilType',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text('Confidence: ${(confidence * 100).toStringAsFixed(0)}%'),
+          ],
         ),
       ),
     );

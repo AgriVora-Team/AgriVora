@@ -12,4 +12,5 @@ async def predict_soil(file: UploadFile = File(...)):
     return {
         "success": True,
         "data": result,
+        "error": None,
     }

@@ -6,11 +6,19 @@ router = APIRouter(prefix="/soil", tags=["Soil CNN"])
 
 @router.post("/predict")
 async def predict_soil(file: UploadFile = File(...)):
-    contents = await file.read()
-    result = predict_soil_type(contents)
+    try:
+        contents = await file.read()
+        result = predict_soil_type(contents)
 
-    return {
-        "success": True,
-        "data": result,
-        "error": None,
-    }
+        return {
+            "success": True,
+            "data": result,
+            "error": None,
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "data": None,
+            "error": str(e),
+        }

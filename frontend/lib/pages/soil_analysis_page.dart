@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
+import '../services/ble_service.dart';
 
 class SoilAnalysisPage extends StatefulWidget {
   const SoilAnalysisPage({super.key});
@@ -25,15 +27,49 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
   bool _isAnalyzingImage = false;
   Map<String, dynamic>? _imageResult;
 
+  double? _livePh;
+  PhReading? _lastReading;
+  BleStatus _bleStatus = const BleStatus(
+    message: 'Initializing BLE…',
+    state: BleConnectionState.scanning,
+  );
+  final List<StreamSubscription> _subs = [];
+
   @override
   void initState() {
     super.initState();
     _phController.addListener(_validateManualInput);
+
+    _subs.add(BleService().phStream.listen((ph) {
+      if (mounted) {
+        setState(() => _livePh = ph);
+      }
+    }));
+
+    _subs.add(BleService().rawStream.listen((reading) {
+      if (mounted) {
+        setState(() => _lastReading = reading);
+      }
+    }));
+
+    _subs.add(BleService().statusStream.listen((status) {
+      if (mounted) {
+        setState(() => _bleStatus = status);
+      }
+    }));
+
+    BleService().startScanAndConnect();
   }
 
   @override
   void dispose() {
     _phController.dispose();
+
+    for (final sub in _subs) {
+      sub.cancel();
+    }
+
+    BleService().disconnect();
     super.dispose();
   }
 
@@ -84,6 +120,13 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
 
   void _validateManualInput() {
     final text = _phController.text.trim();
+    if (text.isEmpty) {
+      if (_isManualValid) {
+        setState(() => _isManualValid = false);
+      }
+      return;
+    }
+
     final ph = double.tryParse(text);
     final isValid = ph != null && ph >= 0 && ph <= 14;
 
@@ -103,6 +146,16 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
         'ph': ph,
         'soilType': _selectedSoilTexture,
       },
+    );
+  }
+
+  void _recommendFromSensor() {
+    if (_livePh == null) return;
+
+    Navigator.pushNamed(
+      context,
+      '/crop-recom',
+      arguments: {'ph': _livePh},
     );
   }
 
@@ -294,14 +347,56 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
   }
 
   Widget _buildSensorCard() {
-    return const Card(
+    final status = _bleStatus.state;
+    final isConnected = status == BleConnectionState.connected;
+    final isSimulating = status == BleConnectionState.simulating;
+
+    return Card(
       child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Center(
-          child: Text(
-            'Sensor mode will display live pH data',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Text(
+              _livePh != null ? _livePh!.toStringAsFixed(2) : '--',
+              style: const TextStyle(
+                fontSize: 42,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2E7D32),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _bleStatus.message,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              isConnected || isSimulating ? 'Connected' : 'Disconnected',
+              style: TextStyle(
+                color:
+                    isConnected || isSimulating ? Colors.green : Colors.redAccent,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            if (_lastReading != null) ...[
+              const SizedBox(height: 12),
+              Text('Last raw reading: ${_lastReading.toString()}'),
+            ],
+            const SizedBox(height: 16),
+            OutlinedButton.icon(
+              onPressed: () => BleService().startScanAndConnect(),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Refresh Sensor'),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _livePh != null ? _recommendFromSensor : null,
+                child: const Text('Recommend Crops'),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -326,6 +421,23 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
             ),
             const SizedBox(height: 8),
             Text('Confidence: ${(confidence * 100).toStringAsFixed(0)}%'),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () async {
+                final data = {
+                  'texture': soilType,
+                  'confidence': confidence,
+                  'type': 'Soil Analysis',
+                };
+                await ApiService.saveToHistory(data);
+
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Saved to history')),
+                );
+              },
+              child: const Text('Save to History'),
+            ),
           ],
         ),
       ),

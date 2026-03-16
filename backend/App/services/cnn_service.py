@@ -28,6 +28,13 @@ def _detect_img_size(model) -> int:
         h = inp[1]
         if h and isinstance(h, int) and h > 0:
             return h
+
+        cfg = model.get_config()
+        first_layer = cfg.get("layers", [{}])[0]
+        batch_shape = first_layer.get("config", {}).get("batch_shape", [None, None])
+        candidate = batch_shape[1] if len(batch_shape) > 1 else None
+        if candidate and isinstance(candidate, int) and candidate > 0:
+            return candidate
     except Exception:
         pass
     return 224
@@ -43,19 +50,30 @@ _task_counter_lock = threading.Lock()
 def _worker():
     model = None
     img_h = 224
+    img_w = 224
     load_err = None
 
     try:
         os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
         import tensorflow as tf
 
+        print("[CNN] Loading model...", flush=True)
         model = tf.keras.models.load_model(MODEL_PATH)
-        img_h = _detect_img_size(model)
 
-        dummy = np.zeros((1, img_h, img_h, 3), dtype="float32")
+        img_h = _detect_img_size(model)
+        img_w = img_h
+
+        print(f"[CNN] Model ready — input {img_h}x{img_w}x3", flush=True)
+
+        dummy = np.zeros((1, img_h, img_w, 3), dtype="float32")
         _ = model(tf.constant(dummy), training=False)
+        print("[CNN] Warm-up done.", flush=True)
+
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         load_err = str(e)
+        print(f"[CNN] Model load failed: {e}", flush=True)
 
     while True:
         task_id, img_bytes, event = _task_queue.get()
@@ -66,11 +84,13 @@ def _worker():
             import tensorflow as tf
 
             img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-            img = img.resize((img_h, img_h))
+            img = img.resize((img_w, img_h))
+
             arr = np.array(img, dtype="float32") / 255.0
             arr = np.expand_dims(arr, axis=0)
 
-            output = model(tf.constant(arr), training=False)
+            tensor = tf.constant(arr)
+            output = model(tensor, training=False)
             probs = output.numpy()[0]
 
             idx = int(np.argmax(probs))
@@ -89,6 +109,8 @@ def _worker():
                 _result_store[task_id] = ("ok", result)
 
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             with _store_lock:
                 _result_store[task_id] = ("err", str(e))
         finally:

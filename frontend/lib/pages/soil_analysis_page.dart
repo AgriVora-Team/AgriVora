@@ -12,6 +12,47 @@ enum AnalysisMode { image, manual, sensor }
 class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
   AnalysisMode _activeMode = AnalysisMode.image;
 
+  final TextEditingController _phController = TextEditingController();
+  String _selectedSoilColor = 'Brown';
+  String _selectedSoilTexture = 'Loamy';
+  bool _isManualValid = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _phController.addListener(_validateManualInput);
+  }
+
+  @override
+  void dispose() {
+    _phController.dispose();
+    super.dispose();
+  }
+
+  void _validateManualInput() {
+    final text = _phController.text.trim();
+    final ph = double.tryParse(text);
+    final isValid = ph != null && ph >= 0 && ph <= 14;
+
+    if (_isManualValid != isValid) {
+      setState(() => _isManualValid = isValid);
+    }
+  }
+
+  void _analyzeManual() {
+    final ph = double.tryParse(_phController.text.trim());
+    if (ph == null) return;
+
+    Navigator.pushNamed(
+      context,
+      '/crop-recom',
+      arguments: {
+        'ph': ph,
+        'soilType': _selectedSoilTexture,
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -83,11 +124,56 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
   }
 
   Widget _buildManualCard() {
-    return const Card(
-      child: Center(
-        child: Text(
-          'Manual soil data input mode',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            DropdownButtonFormField<String>(
+              initialValue: _selectedSoilColor,
+              decoration: const InputDecoration(labelText: 'Soil Color'),
+              items: ['Brown', 'Black', 'Red', 'Yellow']
+                  .map((color) =>
+                      DropdownMenuItem(value: color, child: Text(color)))
+                  .toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() => _selectedSoilColor = value);
+                }
+              },
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              initialValue: _selectedSoilTexture,
+              decoration: const InputDecoration(labelText: 'Soil Texture'),
+              items: ['Loamy', 'Clay', 'Sandy', 'Silt']
+                  .map((texture) =>
+                      DropdownMenuItem(value: texture, child: Text(texture)))
+                  .toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() => _selectedSoilTexture = value);
+                }
+              },
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _phController,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'pH Value (0.0 - 14.0)',
+              ),
+            ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _isManualValid ? _analyzeManual : null,
+                child: const Text('Recommend Crops'),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -25,4 +25,3 @@ try:
     print(json.dumps(resp.json(), indent=2))
 except Exception as e:
     print(f"Error: {e}")
-

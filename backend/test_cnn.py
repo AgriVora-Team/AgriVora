@@ -1,4 +1,5 @@
 import io
+import json
 
 import requests
 from PIL import Image
@@ -14,9 +15,9 @@ try:
     resp = requests.post(
         "http://localhost:8000/image/texture",
         files={"file": ("test.jpg", buf, "image/jpeg")},
-        timeout=60,
+        timeout=120,
     )
     print(f"Status: {resp.status_code}")
-    print(resp.text)
+    print(json.dumps(resp.json(), indent=2))
 except Exception as e:
     print(f"Error: {e}")

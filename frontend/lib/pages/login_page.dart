@@ -1,5 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
+import '../services/session_service.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -10,6 +12,7 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   bool _isLoaded = false;
+  bool _isLoading = false;
   bool _obscurePassword = true;
 
   final _emailController = TextEditingController();
@@ -31,8 +34,52 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ✅ Log in -> Role select page
-  void _login() {
-    Navigator.pushReplacementNamed(context, '/role');
+  Future<void> _login() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter all fields')),
+      );
+      return;
+    }
+
+    if (password.length < 8) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password must be at least 8 characters')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await ApiService.login(email, password);
+      if (mounted) {
+        // ✅ Persist the session so next cold-start skips onboarding
+        await SessionService.saveSession(
+          userId: ApiService.userId ?? '',
+          userName: ApiService.userName ?? '',
+          userEmail: ApiService.userEmail ?? '',
+          userPhone: ApiService.userPhone ?? '',
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(response['message'] ?? 'Login successful')),
+        );
+        final fullName = response['full_name']?.toString() ?? 'User';
+        Navigator.pushReplacementNamed(context, '/role', arguments: fullName);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -50,7 +97,6 @@ class _LoginPageState extends State<LoginPage> {
               fit: BoxFit.cover,
             ),
           ),
-
           SafeArea(
             child: Align(
               alignment: Alignment.topCenter,
@@ -64,7 +110,6 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
-
           AnimatedPositioned(
             duration: const Duration(milliseconds: 750),
             curve: Curves.easeOutQuart,
@@ -113,14 +158,12 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                           const SizedBox(height: 22),
-
                           _SoftInput(
                             icon: Icons.alternate_email,
                             hint: "Email or phone number",
                             controller: _emailController,
                           ),
                           const SizedBox(height: 14),
-
                           _SoftInput(
                             icon: Icons.lock,
                             hint: "Password",
@@ -140,13 +183,14 @@ class _LoginPageState extends State<LoginPage> {
                               },
                             ),
                           ),
-
                           const SizedBox(height: 10),
-
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.pushNamed(
+                                    context, '/forgot-password');
+                              },
                               child: const Text(
                                 "Forgot password?",
                                 style: TextStyle(
@@ -156,9 +200,7 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                             ),
                           ),
-
                           const SizedBox(height: 10),
-
                           SizedBox(
                             width: double.infinity,
                             height: 58,
@@ -173,24 +215,25 @@ class _LoginPageState extends State<LoginPage> {
                                 shadowColor:
                                     const Color(0xFF004D40).withOpacity(0.35),
                               ),
-                              child: const Text(
-                                "Log In",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
+                              child: _isLoading
+                                  ? const CircularProgressIndicator(
+                                      color: Colors.white)
+                                  : const Text(
+                                      "Log In",
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                             ),
                           ),
-
                           const SizedBox(height: 18),
-
                           const Text(
                             "Don't have an account?",
-                            style: TextStyle(color: Colors.black54, fontSize: 14),
+                            style:
+                                TextStyle(color: Colors.black54, fontSize: 14),
                           ),
-
                           TextButton(
                             onPressed: () =>
                                 Navigator.pushNamed(context, '/signup'),

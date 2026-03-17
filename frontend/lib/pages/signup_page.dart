@@ -1,5 +1,7 @@
 import 'dart:ui';
+import 'dart:convert'; // ✅ added for utf8.encode
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -10,6 +12,7 @@ class SignUpPage extends StatefulWidget {
 
 class _SignUpPageState extends State<SignUpPage> {
   bool _isLoaded = false;
+  bool _isLoading = false;
   bool _obscurePassword = true;
 
   final TextEditingController _nameController = TextEditingController();
@@ -34,9 +37,65 @@ class _SignUpPageState extends State<SignUpPage> {
     super.dispose();
   }
 
-  void _signup() {
-    // For now: just go back to Login (later connect backend)
-    Navigator.pop(context);
+  // ✅ FIXED SIGNUP METHOD (debug bytes + cleaner error display)
+  Future<void> _signup() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final phone = _phoneController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (name.isEmpty || email.isEmpty || phone.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill all fields')),
+      );
+      return;
+    }
+
+    if (password.length < 8) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password must be at least 8 characters')),
+      );
+      return;
+    }
+
+    // ✅ DEBUG: bcrypt limit is 72 BYTES (not characters)
+    final pwBytes = utf8.encode(password).length;
+    // ignore: avoid_print
+    print("SIGNUP password chars=${password.length}, bytes=$pwBytes");
+
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await ApiService.signup(
+        fullName: name,
+        email: email,
+        phone: phone,
+        password: password,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response['message']?.toString() ?? 'Account created!'),
+        ),
+      );
+
+      Navigator.pop(context); // Go back to login
+    } catch (e) {
+      if (!mounted) return;
+
+      final msg = e.toString().replaceAll('Exception: ', '');
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -123,21 +182,18 @@ class _SignUpPageState extends State<SignUpPage> {
                             ),
                           ),
                           const SizedBox(height: 18),
-
                           _SoftInput(
                             icon: Icons.person,
                             hint: "Full name",
                             controller: _nameController,
                           ),
                           const SizedBox(height: 12),
-
                           _SoftInput(
                             icon: Icons.alternate_email,
                             hint: "Email address",
                             controller: _emailController,
                           ),
                           const SizedBox(height: 12),
-
                           _SoftInput(
                             icon: Icons.phone,
                             hint: "Phone number",
@@ -145,7 +201,6 @@ class _SignUpPageState extends State<SignUpPage> {
                             keyboardType: TextInputType.phone,
                           ),
                           const SizedBox(height: 12),
-
                           _SoftInput(
                             icon: Icons.lock,
                             hint: "Create password",
@@ -165,14 +220,12 @@ class _SignUpPageState extends State<SignUpPage> {
                               },
                             ),
                           ),
-
                           const SizedBox(height: 18),
-
                           SizedBox(
                             width: double.infinity,
                             height: 58,
                             child: ElevatedButton(
-                              onPressed: _signup,
+                              onPressed: _isLoading ? null : _signup,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF004D40),
                                 shape: RoundedRectangleBorder(
@@ -182,22 +235,30 @@ class _SignUpPageState extends State<SignUpPage> {
                                 shadowColor:
                                     const Color(0xFF004D40).withOpacity(0.35),
                               ),
-                              child: const Text(
-                                "Sign Up",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2.5,
+                                      ),
+                                    )
+                                  : const Text(
+                                      "Sign Up",
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                             ),
                           ),
-
                           const SizedBox(height: 16),
-
                           const Text(
                             "Already have an account?",
-                            style: TextStyle(color: Colors.black54, fontSize: 14),
+                            style:
+                                TextStyle(color: Colors.black54, fontSize: 14),
                           ),
                           TextButton(
                             onPressed: () => Navigator.pop(context),

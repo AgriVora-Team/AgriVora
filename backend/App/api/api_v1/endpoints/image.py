@@ -1,7 +1,15 @@
-import io
+"""
+**Image Processing Endpoint**
+Responsible for: Receiving image uploads and triggering soil texture classification.
+Inputs/Outputs: Takes multipart file, returns predicted soil texture (CNN model) and confidence.
+Dependencies: cnn_service.py.
+"""
+
 import traceback
-from fastapi import APIRouter, UploadFile, File, HTTPException
+
+from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
+
 from app.services.cnn_service import predict_soil_type
 
 router = APIRouter()

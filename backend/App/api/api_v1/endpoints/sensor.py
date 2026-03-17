@@ -205,3 +205,27 @@ async def get_live(user_id: str):
         },
         "error": None,
     }
+
+@router.get("/ph/search_device")
+async def search_device():
+    """Mock endpoint to search for available ESP32 devices."""
+    import asyncio
+    try:
+        # Mocking a list of available devices
+        await asyncio.sleep(1.5)
+        devices = [
+            {"device": "AgriVora_pH_ESP32", "mac": "70:4B:CA:8D:A7:86", "status": "available"},
+            {"device": "AgriVora_pH_Sensor_02", "mac": "12:34:56:78:9A:BC", "status": "available"},
+            {"device": "SoilLab_Pro_03", "mac": "DE:AD:BE:EF:00:11", "status": "available"}
+        ]
+        return {
+            "success": True,
+            "data": {"devices": devices},
+            "error": None
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "data": None,
+            "error": str(e)
+        }

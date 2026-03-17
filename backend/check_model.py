@@ -8,6 +8,13 @@ MODEL_PATH = "app/models/soil_cnn/soil_model.h5"
 
 model = tf.keras.models.load_model(MODEL_PATH)
 
-print("Model loaded successfully")
 print("Input shape:", model.input_shape)
 print("Output shape:", model.output_shape)
+print("Layer count:", len(model.layers))
+print()
+
+for layer in model.layers:
+    try:
+        print(f"{layer.name} | {type(layer).__name__} | output: {layer.output_shape}")
+    except Exception:
+        print(f"{layer.name} | {type(layer).__name__} | output: ERROR")

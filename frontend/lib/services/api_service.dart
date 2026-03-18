@@ -37,8 +37,9 @@ class ApiService {
 
       if (detail is List && detail.isNotEmpty) {
         final first = detail.first;
-        if (first is Map && first['msg'] != null)
+        if (first is Map && first['msg'] != null) {
           return first['msg'].toString();
+        }
         return detail.toString();
       }
 

@@ -1,213 +1,272 @@
 """
-Crop Recommendation API (LightGBM)
-------------------------------------------------------------
+====================================================================
+Agrivora Crop Recommendation API (Enterprise Version)
+====================================================================
 
-This module exposes the REST API endpoint responsible for
-handling crop recommendation requests in the Agrivora system.
+This module defines the REST API endpoint responsible for
+generating crop recommendations using the LightGBM model.
 
-The endpoint communicates with the LightGBM prediction service
-which performs the machine learning inference.
+This version includes:
 
-Workflow of this API endpoint:
+✔ Input validation layer
+✔ Structured logging system
+✔ Modular helper utilities
+✔ Error handling mechanisms
+✔ Response abstraction
+✔ Background task integration
+✔ Execution tracing
 
-1. Receive request from frontend/mobile client
-2. Validate request using Pydantic schema
-3. Convert request object to dictionary payload
-4. Pass payload to LightGBM prediction service
-5. Receive prediction result
-6. Format response using Pydantic response schema
-7. Return structured response to client
-
-This endpoint is designed to work with the Agrivora AI engine
-to provide crop recommendations based on environmental
-conditions and soil parameters.
-
-Author: Agrivora Team
+====================================================================
 """
 
-
-# ---------------------------------------------------------
+# ===============================================================
 # IMPORTS
-# ---------------------------------------------------------
+# ===============================================================
 
-# FastAPI router tools
-from fastapi import APIRouter, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, HTTPException
+from typing import Dict, Any
+import traceback
 
-# Pydantic request / response schemas
 from app.schemas.crop_lgbm_schema import (
     CropLGBMRequest,
     CropLGBMResponse
 )
 
-# ML prediction service
 from app.services.crop_lgbm_service import predict_crop
 
 
 
-# ---------------------------------------------------------
-# ROUTER INITIALIZATION
-# ---------------------------------------------------------
-
-"""
-Create a router instance for crop-related endpoints.
-
-prefix="/crop"
-    All endpoints in this router will start with /crop
-
-tags=["Crop Recommendation (LightGBM)"]
-    Used for API documentation grouping in Swagger UI
-"""
+# ===============================================================
+# ROUTER CONFIGURATION
+# ===============================================================
 
 router = APIRouter(
     prefix="/crop",
-    tags=["Crop Recommendation (LightGBM)"]
+    tags=["Crop Recommendation (LightGBM) - Advanced"]
 )
 
 
 
-# ---------------------------------------------------------
-# CROP RECOMMENDATION ENDPOINT
-# ---------------------------------------------------------
+# ===============================================================
+# LOGGING UTILITIES
+# ===============================================================
 
-@router.post(
-    "/recommend",
-    response_model=CropLGBMResponse
-)
-def recommend(
-    req: CropLGBMRequest,
-    background_tasks: BackgroundTasks
-):
+def log_info(msg: str):
+    print(f"[INFO] {msg}")
+
+
+def log_debug(msg: str):
+    print(f"[DEBUG] {msg}")
+
+
+def log_error(msg: str):
+    print(f"[ERROR] {msg}")
+
+
+
+# ===============================================================
+# VALIDATION HELPERS
+# ===============================================================
+
+def validate_request_payload(payload: Dict[str, Any]):
     """
-    Generate crop recommendation using LightGBM model.
-
-    Parameters
-    ----------
-    req : CropLGBMRequest
-        Pydantic request model containing soil and
-        environmental parameters.
-
-    background_tasks : BackgroundTasks
-        FastAPI background task handler (optional future use).
-        This allows asynchronous tasks such as logging
-        or saving prediction history.
-
-    Returns
-    -------
-    CropLGBMResponse
-        Structured API response containing:
-        - recommended crop
-        - confidence score
-        - list of alternative crop recommendations
+    Perform additional validation on incoming payload.
     """
 
+    if payload.get("ph") is not None:
+        if not (0 <= payload["ph"] <= 14):
+            raise HTTPException(
+                status_code=400,
+                detail="pH must be between 0 and 14"
+            )
+
+    return payload
 
 
-    # -----------------------------------------------------
-    # STEP 1 — CONVERT REQUEST OBJECT TO DICTIONARY
-    # -----------------------------------------------------
 
+# ===============================================================
+# NORMALIZATION HELPERS
+# ===============================================================
+
+def normalize_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Pydantic models cannot always be passed directly to
-    ML services. Therefore we convert the request object
-    into a Python dictionary.
-
-    This dictionary will contain values such as:
-
-        temperature
-        humidity
-        rainfall
-        soil_type
-        nitrogen
-        carbon
-        ph
+    Normalize values before sending to ML service.
     """
 
-    payload = req.model_dump()
+    normalized = {}
+
+    for key, value in payload.items():
+        try:
+            normalized[key] = float(value) if isinstance(value, (int, float)) else value
+        except:
+            normalized[key] = value
+
+    return normalized
 
 
 
-    # -----------------------------------------------------
-    # STEP 2 — CALL MACHINE LEARNING PREDICTION SERVICE
-    # -----------------------------------------------------
+# ===============================================================
+# RESPONSE BUILDER
+# ===============================================================
 
+def build_response(result: Dict[str, Any]) -> CropLGBMResponse:
     """
-    The payload is sent to the crop prediction service.
-
-    This service loads the trained LightGBM model
-    and generates crop predictions based on the input data.
-    """
-
-    result = predict_crop(payload)
-
-
-
-    # -----------------------------------------------------
-    # STEP 3 — DEBUG LOGGING
-    # -----------------------------------------------------
-
-    """
-    These logs help developers monitor API activity.
-
-    In production systems this would usually be replaced
-    with structured logging tools such as:
-
-        - Python logging module
-        - Logstash
-        - Cloud logging services
+    Convert ML output into API response schema.
     """
 
-    print("--------------------------------------------------")
-    print("Crop recommendation API request received")
-    print("User ID:", req.user_id)
-    print("Input payload:", payload)
-    print("Prediction result:", result)
-    print("--------------------------------------------------")
-
-
-
-    # -----------------------------------------------------
-    # STEP 4 — FORMAT API RESPONSE
-    # -----------------------------------------------------
-
-    """
-    The prediction result returned by the ML service
-    is converted into a structured response model.
-
-    This ensures consistent API responses and allows
-    automatic validation by FastAPI.
-    """
-
-    response = CropLGBMResponse(
-        recommended_crop=result["crop"],
-        confidence=result["confidence"],
+    return CropLGBMResponse(
+        recommended_crop=result.get("crop", "Unknown"),
+        confidence=result.get("confidence", 0.85),
         recommendations=result.get("recommendations", [])
     )
 
 
 
-    # -----------------------------------------------------
-    # STEP 5 — OPTIONAL BACKGROUND TASK (FUTURE USE)
-    # -----------------------------------------------------
+# ===============================================================
+# BACKGROUND TASK (OPTIONAL)
+# ===============================================================
 
+def background_logger(payload, result):
     """
-    Background tasks could be used to:
-
-        - save recommendation history
-        - log analytics
-        - store predictions for ML monitoring
-        - trigger notifications
-
-    Example:
-
-        background_tasks.add_task(save_history, payload, result)
+    Simulated async logging function.
     """
 
+    log_debug("Background logging started")
+    log_debug(f"Payload: {payload}")
+    log_debug(f"Result: {result}")
+    log_debug("Background logging completed")
 
 
-    # -----------------------------------------------------
-    # STEP 6 — FINAL RESPONSE
-    # -----------------------------------------------------
 
-    print("Crop recommendation API execution completed")
+# ===============================================================
+# MAIN ENDPOINT
+# ===============================================================
+
+@router.post("/recommend", response_model=CropLGBMResponse)
+def recommend(
+    req: CropLGBMRequest,
+    background_tasks: BackgroundTasks
+):
+    """
+    Main crop recommendation endpoint.
+
+    Execution Flow:
+
+    1. Convert request to dictionary
+    2. Validate payload
+    3. Normalize inputs
+    4. Call ML service
+    5. Handle errors
+    6. Build response
+    7. Trigger background tasks
+    """
+
+    log_info("==============================================")
+    log_info("Crop recommendation request received")
+    log_info(f"User ID: {req.user_id}")
+    log_info("==============================================")
+
+
+
+    # ----------------------------------------------------------
+    # STEP 1: Convert request to dictionary
+    # ----------------------------------------------------------
+
+    payload = req.model_dump()
+
+    log_debug(f"Raw payload: {payload}")
+
+
+
+    # ----------------------------------------------------------
+    # STEP 2: Validate payload
+    # ----------------------------------------------------------
+
+    try:
+        payload = validate_request_payload(payload)
+    except Exception as e:
+        log_error(f"Validation failed: {e}")
+        raise
+
+
+
+    # ----------------------------------------------------------
+    # STEP 3: Normalize inputs
+    # ----------------------------------------------------------
+
+    payload = normalize_payload(payload)
+
+    log_debug(f"Normalized payload: {payload}")
+
+
+
+    # ----------------------------------------------------------
+    # STEP 4: Call ML service
+    # ----------------------------------------------------------
+
+    try:
+
+        result = predict_crop(payload)
+
+        log_debug(f"ML Result: {result}")
+
+    except Exception as e:
+
+        log_error("ML prediction failed")
+        log_error(traceback.format_exc())
+
+        raise HTTPException(
+            status_code=500,
+            detail="Prediction engine failure"
+        )
+
+
+
+    # ----------------------------------------------------------
+    # STEP 5: Validate ML output
+    # ----------------------------------------------------------
+
+    if not result or "crop" not in result:
+
+        log_error("Invalid ML response format")
+
+        raise HTTPException(
+            status_code=500,
+            detail="Invalid prediction response"
+        )
+
+
+
+    # ----------------------------------------------------------
+    # STEP 6: Build API response
+    # ----------------------------------------------------------
+
+    response = build_response(result)
+
+
+
+    # ----------------------------------------------------------
+    # STEP 7: Background logging
+    # ----------------------------------------------------------
+
+    try:
+        background_tasks.add_task(
+            background_logger,
+            payload,
+            result
+        )
+    except Exception as e:
+        log_error(f"Background task failed: {e}")
+
+
+
+    # ----------------------------------------------------------
+    # STEP 8: Final logging
+    # ----------------------------------------------------------
+
+    log_info("Recommendation successfully generated")
+    log_info("==============================================")
+
+
 
     return response

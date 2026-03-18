@@ -1,22 +1,17 @@
 class SessionService {
-  static final SessionService _instance = SessionService._internal();
-  factory SessionService() => _instance;
-
-  SessionService._internal();
-
-  SharedPreferences? _prefs;
-
-  Future<void> init() async {
-    _prefs = await SharedPreferences.getInstance();
+  static Future<void> saveUser(String id, String name) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('id', id);
+    await prefs.setString('name', name);
   }
 
-  String? get userId => _prefs?.getString('userId');
-
-  Future<void> saveUser(String id) async {
-    await _prefs?.setString('userId', id);
+  static Future<bool> isLoggedIn() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('id') != null;
   }
 
-  Future<void> logout() async {
-    await _prefs?.clear();
+  static Future<void> logout() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
   }
 }

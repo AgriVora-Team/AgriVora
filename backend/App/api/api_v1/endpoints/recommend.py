@@ -1,14 +1,21 @@
 """
 ====================================================================
-Agrivora Crop Recommendation API (Enhanced Version)
+Agrivora Crop Recommendation API (ULTRA EXTENDED VERSION)
 ====================================================================
 
-This version introduces:
-- Structured logging
-- Input normalization
-- Response builder abstraction
-- Improved readability and modularity
-- Better debugging support
+This module provides a highly structured, scalable, and maintainable
+API for crop recommendation using soil and weather data.
+
+Enhancements in this version:
+------------------------------------------------------------
+✔ Advanced logging utilities
+✔ Input normalization & validation layer
+✔ Modular helper functions
+✔ Structured response formatting
+✔ Error-safe execution pipeline
+✔ Firestore persistence abstraction
+✔ Debug-friendly outputs
+✔ Clean architecture separation
 
 ====================================================================
 """
@@ -20,38 +27,47 @@ This version introduces:
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from datetime import datetime
+from typing import Dict, Any, Tuple
 
+
+
+# Internal services
 from app.services.recommend_service import recommend_crops
 from app.utils.firestore import save_scan_history
 
 
 
 # ================================================================
-# ROUTER SETUP
+# ROUTER CONFIGURATION
 # ================================================================
 
 router = APIRouter(
     prefix="/recommendation",
-    tags=["Crop Recommendation - Enhanced"]
+    tags=["Crop Recommendation - Ultra Extended"]
 )
 
 
 
 # ================================================================
-# REQUEST MODEL
+# REQUEST SCHEMA
 # ================================================================
 
 class RecommendRequest(BaseModel):
+    """
+    Defines the expected structure of incoming API request.
+    """
 
-    userId: str = Field(..., description="User identifier")
+    userId: str = Field(..., description="Unique user identifier")
 
-    soilType: str = Field(..., description="Soil category")
+    soilType: str = Field(..., description="Type of soil (Sandy/Clay/Loamy)")
 
-    ph: float = Field(..., ge=0, le=14, description="Soil pH")
+    ph: float = Field(..., ge=0, le=14, description="Soil pH value")
 
-    temperature: float
-    rainfall: float
-    humidity: float
+    temperature: float = Field(..., description="Temperature in Celsius")
+
+    rainfall: float = Field(..., description="Rainfall in mm")
+
+    humidity: float = Field(..., description="Humidity percentage")
 
 
 
@@ -59,7 +75,7 @@ class RecommendRequest(BaseModel):
 # CONSTANTS
 # ================================================================
 
-SOIL_MAP = {
+SOIL_MAP: Dict[str, Dict[str, float]] = {
     "Sandy": {"sand": 70, "clay": 10, "organicCarbon": 0.5},
     "Clay": {"sand": 20, "clay": 60, "organicCarbon": 1.5},
     "Loamy": {"sand": 40, "clay": 30, "organicCarbon": 1.2}
@@ -68,69 +84,160 @@ SOIL_MAP = {
 
 
 # ================================================================
-# LOGGING HELPERS
+# LOGGING UTILITIES
 # ================================================================
 
-def log_step(message: str):
-    print(f"[RECOMMENDATION API] {message}")
+def log_info(message: str):
+    print(f"[INFO] {message}")
+
+
+def log_debug(message: str):
+    print(f"[DEBUG] {message}")
+
+
+def log_warning(message: str):
+    print(f"[WARNING] {message}")
 
 
 def log_error(message: str):
-    print(f"[RECOMMENDATION ERROR] {message}")
+    print(f"[ERROR] {message}")
 
 
 
 # ================================================================
-# HELPER FUNCTIONS
+# VALIDATION LAYER
 # ================================================================
 
-def normalize_inputs(data: RecommendRequest):
+def validate_request(data: RecommendRequest):
     """
-    Normalize and sanitize incoming data
+    Perform additional validation beyond Pydantic.
     """
 
-    return {
+    if data.temperature < -10 or data.temperature > 60:
+        raise HTTPException(status_code=400, detail="Invalid temperature")
+
+    if data.humidity < 0 or data.humidity > 100:
+        raise HTTPException(status_code=400, detail="Invalid humidity")
+
+    if data.rainfall < 0:
+        raise HTTPException(status_code=400, detail="Invalid rainfall")
+
+
+
+# ================================================================
+# NORMALIZATION LAYER
+# ================================================================
+
+def normalize_inputs(data: RecommendRequest) -> Dict[str, float]:
+    """
+    Convert all inputs into standardized float values.
+    """
+
+    normalized = {
         "temperature": float(data.temperature),
         "rainfall": float(data.rainfall),
         "humidity": float(data.humidity),
         "ph": float(data.ph)
     }
 
+    log_debug(f"Normalized Inputs: {normalized}")
 
-def get_soil_summary(soil_type: str):
-
-    soil_summary = SOIL_MAP.get(soil_type)
-
-    if soil_summary is None:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Unsupported soil type: {soil_type}"
-        )
-
-    return soil_summary
+    return normalized
 
 
-def build_weather(data):
 
-    return {
-        "temperature": data["temperature"],
-        "rainfall": data["rainfall"],
-        "humidity": data["humidity"]
+# ================================================================
+# SOIL PROCESSING
+# ================================================================
+
+def resolve_soil(soil_type: str) -> Dict[str, float]:
+    """
+    Convert soil type string into structured soil data.
+    """
+
+    soil = SOIL_MAP.get(soil_type)
+
+    if soil is None:
+        log_error(f"Invalid soil type: {soil_type}")
+        raise HTTPException(status_code=400, detail="Invalid soil type")
+
+    log_debug(f"Soil resolved: {soil}")
+
+    return soil
+
+
+
+# ================================================================
+# WEATHER CONSTRUCTION
+# ================================================================
+
+def build_weather(normalized: Dict[str, float]) -> Dict[str, float]:
+    """
+    Create weather payload for ML model.
+    """
+
+    weather = {
+        "temperature": normalized["temperature"],
+        "rainfall": normalized["rainfall"],
+        "humidity": normalized["humidity"]
     }
 
+    log_debug(f"Weather payload: {weather}")
 
-def build_response(results):
+    return weather
+
+
+
+# ================================================================
+# ML EXECUTION LAYER
+# ================================================================
+
+def execute_prediction(soil, weather, ph) -> Tuple[Any, Any]:
+    """
+    Run the ML model prediction safely.
+    """
+
+    try:
+        return recommend_crops({
+            "soil": soil,
+            "weather": weather,
+            "ph": ph
+        })
+
+    except Exception as e:
+        log_error(f"Prediction failed: {e}")
+        raise HTTPException(status_code=500, detail="Prediction error")
+
+
+
+# ================================================================
+# RESPONSE BUILDER
+# ================================================================
+
+def format_response(results):
+    """
+    Format final API response.
+    """
 
     return {
         "success": True,
         "data": {
-            "crops": results
+            "crops": results,
+            "count": len(results)
         },
         "error": None
     }
 
 
-def save_history(user_id, soil, weather, ph, results):
+
+# ================================================================
+# HISTORY STORAGE
+# ================================================================
+
+def store_history(user_id, soil, weather, ph, results):
+    """
+    Save recommendation result into Firestore.
+    """
 
     payload = {
         "userId": user_id,
@@ -141,105 +248,82 @@ def save_history(user_id, soil, weather, ph, results):
         "createdAt": datetime.utcnow()
     }
 
-    save_scan_history(payload)
+    try:
+        save_scan_history(payload)
+        log_info("History saved successfully")
+
+    except Exception as e:
+        log_warning(f"History save failed: {e}")
 
 
 
 # ================================================================
-# MAIN ENDPOINT
+# MAIN API ENDPOINT
 # ================================================================
 
 @router.post("/recommend")
 def recommend(data: RecommendRequest):
 
-    log_step("Incoming crop recommendation request")
+    log_info("Request received")
 
     # ------------------------------------------------------------
-    # STEP 1: Normalize Inputs
+    # STEP 1: Validate Request
+    # ------------------------------------------------------------
+
+    validate_request(data)
+
+    # ------------------------------------------------------------
+    # STEP 2: Normalize Inputs
     # ------------------------------------------------------------
 
     normalized = normalize_inputs(data)
 
-    log_step(f"Normalized data: {normalized}")
-
-
     # ------------------------------------------------------------
-    # STEP 2: Soil Processing
+    # STEP 3: Resolve Soil
     # ------------------------------------------------------------
 
-    soil_summary = get_soil_summary(data.soilType)
-
-    log_step(f"Soil summary resolved: {soil_summary}")
-
+    soil = resolve_soil(data.soilType)
 
     # ------------------------------------------------------------
-    # STEP 3: Weather Construction
+    # STEP 4: Build Weather
     # ------------------------------------------------------------
 
-    weather_summary = build_weather(normalized)
-
-    log_step(f"Weather summary: {weather_summary}")
-
+    weather = build_weather(normalized)
 
     # ------------------------------------------------------------
-    # STEP 4: ML Prediction
+    # STEP 5: Run Prediction
     # ------------------------------------------------------------
 
-    try:
-
-        results, error = recommend_crops({
-            "soil": soil_summary,
-            "weather": weather_summary,
-            "ph": normalized["ph"]
-        })
-
-    except Exception as e:
-        log_error(f"Prediction crash: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail="Internal prediction failure"
-        )
-
+    results, error = execute_prediction(
+        soil,
+        weather,
+        normalized["ph"]
+    )
 
     # ------------------------------------------------------------
-    # STEP 5: Error Handling
+    # STEP 6: Handle Model Errors
     # ------------------------------------------------------------
 
     if error or results is None:
-
-        log_error(f"Model error: {error}")
-
-        raise HTTPException(
-            status_code=500,
-            detail="Crop recommendation failed"
-        )
-
+        log_error(f"Model returned error: {error}")
+        raise HTTPException(status_code=500, detail="Recommendation failed")
 
     # ------------------------------------------------------------
-    # STEP 6: Save History
+    # STEP 7: Save History
     # ------------------------------------------------------------
 
-    try:
-
-        save_history(
-            data.userId,
-            soil_summary,
-            weather_summary,
-            normalized["ph"],
-            results
-        )
-
-        log_step("History saved successfully")
-
-    except Exception as e:
-
-        log_error(f"History save failed: {e}")
-
+    store_history(
+        data.userId,
+        soil,
+        weather,
+        normalized["ph"],
+        results
+    )
 
     # ------------------------------------------------------------
-    # STEP 7: Return Response
+    # STEP 8: Return Response
     # ------------------------------------------------------------
 
-    log_step("Returning recommendation response")
+    log_info("Returning response")
 
-    return build_response(results)
+    return format_response(results)

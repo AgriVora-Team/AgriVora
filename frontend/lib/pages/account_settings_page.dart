@@ -1,11 +1,16 @@
+/// **AccountSettingsPage**
+/// Responsible for: Profile editing and password updates.
+/// API Dependency: PUT /api/users/profile, /api/users/change-password
+
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/api_service.dart';
 import '../services/session_service.dart';
-import '../widgets/agri_bottom_nav_bar.dart';
 
 class AccountSettingsPage extends StatefulWidget {
   const AccountSettingsPage({super.key});
@@ -18,16 +23,13 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
   bool get isGuest => ApiService.userId == null;
   String? _profileImagePath;
 
-  final bool _notifsEnabled = true;
-  final bool _darkModeEnabled = false;
+  bool _isLoadingProfile = false;
+  bool _isLoadingPassword = false;
 
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _oldPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
-
-  bool _isLoadingProfile = false;
-  bool _isLoadingPassword = false;
 
   @override
   void initState() {
@@ -35,6 +37,34 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     _loadProfilePic();
     _nameController.text = ApiService.userName ?? '';
     _phoneController.text = ApiService.userPhone ?? '';
+    _refreshProfileSilently();
+  }
+
+  /// Silently re-fetches profile from backend so the UI shows the latest name/phone
+  Future<void> _refreshProfileSilently() async {
+    if (ApiService.userId == null) return;
+    try {
+      final base = await ApiService.getBaseUrl();
+      final response = await http.get(
+        Uri.parse('$base/api/users/profile/${ApiService.userId}'),
+        headers: {'Accept': 'application/json'},
+      ).timeout(const Duration(seconds: 10));
+      if (response.statusCode == 200) {
+        final d = jsonDecode(response.body) as Map<String, dynamic>;
+        if (d['success'] == true && d['data'] != null) {
+          final data = d['data'] as Map<String, dynamic>;
+          ApiService.userName = data['full_name']?.toString();
+          ApiService.userEmail = data['email']?.toString();
+          ApiService.userPhone = data['phone']?.toString();
+          if (mounted) {
+            setState(() {
+              _nameController.text = ApiService.userName ?? '';
+              _phoneController.text = ApiService.userPhone ?? '';
+            });
+          }
+        }
+      }
+    } catch (_) {} // silent — non-critical
   }
 
   Future<void> _loadProfilePic() async {
@@ -130,19 +160,42 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                       : () async {
                           final name = _nameController.text.trim();
                           final phone = _phoneController.text.trim();
-                          if (name.isEmpty || phone.isEmpty) return;
+                          if (name.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text('Name cannot be empty')));
+                            return;
+                          }
 
                           setDialogState(() => _isLoadingProfile = true);
                           try {
                             await ApiService.updateProfile(
-                                fullName: name, phone: phone);
-                            if (mounted) setState(() {});
+                                fullName: name.isNotEmpty ? name : null,
+                                phone: phone.isNotEmpty ? phone : null);
+                            // Close the dialog first
                             if (ctx.mounted) Navigator.pop(ctx);
+                            // Then rebuild the page to show updated name/phone
+                            if (mounted) {
+                              setState(() {});
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(const SnackBar(
+                                content: Text('Profile updated successfully!'),
+                                backgroundColor: Color(0xFF2E7D32),
+                                duration: Duration(seconds: 2),
+                              ));
+                            }
                           } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(e.toString())));
+                            if (mounted) {
+                              ScaffoldMessenger.of(context)
+                                  .showSnackBar(SnackBar(
+                                content: Text(
+                                    e.toString().replaceAll('Exception: ', '')),
+                                backgroundColor: Colors.redAccent,
+                              ));
+                            }
                           } finally {
-                            setDialogState(() => _isLoadingProfile = false);
+                            if (mounted)
+                              setDialogState(() => _isLoadingProfile = false);
                           }
                         },
                   child: _isLoadingProfile
@@ -231,26 +284,42 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                       : () async {
                           final oldPw = _oldPasswordController.text.trim();
                           final newPw = _newPasswordController.text.trim();
-                          if (oldPw.isEmpty || newPw.isEmpty) return;
+                          if (oldPw.isEmpty || newPw.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content:
+                                        Text('Please fill in both fields')));
+                            return;
+                          }
+                          if (newPw.length < 8) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text(
+                                        'New password must be at least 8 characters')));
+                            return;
+                          }
 
                           setDialogState(() => _isLoadingPassword = true);
+                          // Capture ScaffoldMessenger before async gap
+                          final messenger = ScaffoldMessenger.of(context);
                           try {
                             await ApiService.changePassword(
                                 oldPassword: oldPw, newPassword: newPw);
-                            if (ctx.mounted) {
-                              Navigator.pop(ctx);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text(
-                                          "Password changed successfully!")));
-                            }
+                            // Close first, then show snackbar
+                            if (ctx.mounted) Navigator.pop(ctx);
+                            messenger.showSnackBar(const SnackBar(
+                              content: Text('Password changed successfully!'),
+                              backgroundColor: Color(0xFF2E7D32),
+                              duration: Duration(seconds: 2),
+                            ));
                           } catch (e) {
-                            ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-                                content: Text(e
-                                    .toString()
-                                    .replaceAll("Exception: ", ""))));
+                            messenger.showSnackBar(SnackBar(
+                                content: Text(
+                                    e.toString().replaceAll('Exception: ', '')),
+                                backgroundColor: Colors.redAccent));
                           } finally {
-                            setDialogState(() => _isLoadingPassword = false);
+                            if (mounted)
+                              setDialogState(() => _isLoadingPassword = false);
                           }
                         },
                   child: _isLoadingPassword

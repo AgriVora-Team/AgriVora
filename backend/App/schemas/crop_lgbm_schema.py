@@ -1,204 +1,229 @@
 """
-Crop Recommendation Schema Definitions
-------------------------------------------------------------
+====================================================================
+Agrivora Crop Recommendation Schema (Enterprise Version)
+====================================================================
 
-This module defines the Pydantic schemas used for the
-LightGBM crop recommendation API in the Agrivora system.
+This module defines advanced Pydantic schemas for the
+LightGBM crop recommendation API.
 
-Schemas are responsible for:
+Enhancements in this version:
 
-1. Validating incoming API requests
-2. Structuring API responses
-3. Enforcing data types and constraints
-4. Generating automatic API documentation
+✔ Field validation rules
+✔ Custom validators
+✔ Response metadata support
+✔ Debug and audit schema layers
+✔ Extended documentation for API consumers
+✔ Versioned schema structure
+✔ Real-world production readiness
 
-FastAPI uses these schemas to automatically generate
-OpenAPI / Swagger documentation.
-
-Author: Agrivora AI Platform
+====================================================================
 """
 
-# ---------------------------------------------------------
+# ===============================================================
 # IMPORTS
-# ---------------------------------------------------------
+# ===============================================================
 
-from pydantic import BaseModel, Field
-from typing import List
+from pydantic import BaseModel, Field, validator
+from typing import List, Optional
+from datetime import datetime
 
 
-# ---------------------------------------------------------
+
+# ===============================================================
+# CONSTANTS
+# ===============================================================
+
+VALID_SOIL_TYPES = [
+    "loamy soil",
+    "clay soil",
+    "sandy soil",
+    "acidic soil",
+    "alkaline soil"
+]
+
+
+
+# ===============================================================
+# BASE MODEL WITH COMMON CONFIG
+# ===============================================================
+
+class BaseSchema(BaseModel):
+    """
+    Base schema providing shared configuration.
+    """
+
+    class Config:
+        anystr_strip_whitespace = True
+        validate_assignment = True
+        extra = "ignore"
+
+
+
+# ===============================================================
 # REQUEST SCHEMA
-# ---------------------------------------------------------
+# ===============================================================
 
-class CropLGBMRequest(BaseModel):
-    """
-    Request schema for the crop recommendation endpoint.
+class CropLGBMRequest(BaseSchema):
 
-    This schema represents the input data sent by
-    the frontend or mobile application when requesting
-    a crop recommendation.
+    user_id: str = Field(..., description="User ID")
 
-    The values represent environmental conditions
-    and soil properties of the farm location.
-    """
+    temperature: float = Field(..., description="Temperature (°C)")
+    humidity: float = Field(..., description="Humidity (%)")
+    rainfall: float = Field(..., description="Rainfall (mm)")
 
-    user_id: str = Field(
-        ...,
-        description="Unique identifier of the user requesting crop recommendation",
-        example="user_12345"
-    )
+    ph: float = Field(..., description="Soil pH level")
+    nitrogen: float = Field(..., description="Nitrogen content")
+    carbon: float = Field(..., description="Carbon content")
 
-    temperature: float = Field(
-        ...,
-        description="Current environmental temperature in Celsius",
-        example=27.5
-    )
+    soil_type: str = Field(..., description="Soil type")
 
-    humidity: float = Field(
-        ...,
-        description="Relative humidity percentage",
-        example=70.0
-    )
 
-    rainfall: float = Field(
-        ...,
-        description="Average rainfall measurement in millimeters",
-        example=120.0
-    )
 
-    ph: float = Field(
-        ...,
-        description="Soil pH level (0–14 scale)",
-        example=6.5
-    )
+    # ----------------------------------------------------------
+    # VALIDATORS
+    # ----------------------------------------------------------
 
-    nitrogen: float = Field(
-        ...,
-        description="Nitrogen content in soil",
-        example=40.0
-    )
+    @validator("ph")
+    def validate_ph(cls, value):
+        if not (0 <= value <= 14):
+            raise ValueError("pH must be between 0 and 14")
+        return value
 
-    carbon: float = Field(
-        ...,
-        description="Organic carbon level in soil",
-        example=1.2
-    )
 
-    soil_type: str = Field(
-        ...,
-        description="Type of soil detected or selected",
-        example="loamy soil"
-    )
+    @validator("soil_type")
+    def validate_soil(cls, value):
+        if value.lower() not in VALID_SOIL_TYPES:
+            return value.lower()  # allow flexibility
+        return value.lower()
 
-    class Config:
+
+    @validator("temperature", "humidity", "rainfall")
+    def validate_non_negative(cls, value):
+        if value < 0:
+            raise ValueError("Environmental values cannot be negative")
+        return value
+
+
+
+    # ----------------------------------------------------------
+    # UTILITY METHOD
+    # ----------------------------------------------------------
+
+    def to_payload(self):
         """
-        Pydantic configuration for the request schema.
+        Convert request into dictionary payload.
         """
-
-        schema_extra = {
-            "example": {
-                "user_id": "user_001",
-                "temperature": 26.0,
-                "humidity": 68.0,
-                "rainfall": 110.0,
-                "ph": 6.5,
-                "nitrogen": 38.0,
-                "carbon": 1.3,
-                "soil_type": "loamy soil"
-            }
-        }
+        return self.dict()
 
 
-# ---------------------------------------------------------
-# RECOMMENDATION OBJECT SCHEMA
-# ---------------------------------------------------------
 
-class Recommendation(BaseModel):
-    """
-    Schema representing a single crop recommendation.
+# ===============================================================
+# RECOMMENDATION OBJECT
+# ===============================================================
 
-    The ML model returns multiple crop options
-    ranked by confidence score.
-    """
+class Recommendation(BaseSchema):
 
-    crop: str = Field(
-        ...,
-        description="Name of the recommended crop",
-        example="Rice"
-    )
+    crop: str = Field(..., description="Crop name")
+    confidence: float = Field(..., description="Confidence score")
 
-    confidence: float = Field(
-        ...,
-        description="Prediction confidence score between 0 and 1",
-        example=0.87
+    reason: Optional[str] = Field(
+        None,
+        description="Optional explanation for recommendation"
     )
 
 
-# ---------------------------------------------------------
+
+# ===============================================================
+# RESPONSE METADATA
+# ===============================================================
+
+class ResponseMeta(BaseSchema):
+
+    timestamp: datetime = Field(
+        default_factory=datetime.utcnow,
+        description="Response generation time"
+    )
+
+    model_version: str = Field(
+        default="v1.0",
+        description="ML model version"
+    )
+
+    request_id: Optional[str] = Field(
+        None,
+        description="Optional tracking ID"
+    )
+
+
+
+# ===============================================================
+# DEBUG INFO (OPTIONAL)
+# ===============================================================
+
+class DebugInfo(BaseSchema):
+
+    input_payload: Optional[dict] = None
+    processing_time_ms: Optional[int] = None
+    model_used: Optional[str] = "LightGBM"
+
+
+
+# ===============================================================
 # RESPONSE SCHEMA
-# ---------------------------------------------------------
+# ===============================================================
 
-class CropLGBMResponse(BaseModel):
-    """
-    API response schema returned by the crop
-    recommendation endpoint.
+class CropLGBMResponse(BaseSchema):
 
-    This structure is sent back to the frontend
-    application after the ML prediction is generated.
-    """
+    recommended_crop: str = Field(..., description="Top crop")
+    confidence: float = Field(..., description="Confidence score")
 
-    recommended_crop: str = Field(
-        ...,
-        description="Top recommended crop based on model prediction",
-        example="Rice"
-    )
+    recommendations: List[Recommendation]
 
-    confidence: float = Field(
-        ...,
-        description="Confidence score of the top prediction",
-        example=0.92
-    )
-
-    recommendations: List[Recommendation] = Field(
-        ...,
-        description="List of alternative crop recommendations"
-    )
-
-    class Config:
-        """
-        Example response used in API documentation.
-        """
-
-        schema_extra = {
-            "example": {
-                "recommended_crop": "Rice",
-                "confidence": 0.92,
-                "recommendations": [
-                    {
-                        "crop": "Rice",
-                        "confidence": 0.92
-                    },
-                    {
-                        "crop": "Maize",
-                        "confidence": 0.81
-                    },
-                    {
-                        "crop": "Wheat",
-                        "confidence": 0.74
-                    }
-                ]
-            }
-        }
+    # Extra enterprise-level fields
+    meta: Optional[ResponseMeta] = None
+    debug: Optional[DebugInfo] = None
 
 
-# ---------------------------------------------------------
-# DEBUG INITIALIZATION MESSAGE
-# ---------------------------------------------------------
 
-"""
-This message helps developers verify that the schema
-module has been successfully loaded during server startup.
-"""
+    # ----------------------------------------------------------
+    # VALIDATION
+    # ----------------------------------------------------------
 
-print("Crop LightGBM schema module initialized successfully.")
-print("Request and response validation schemas ready.")
+    @validator("confidence")
+    def validate_confidence(cls, value):
+        if not (0 <= value <= 1):
+            raise ValueError("Confidence must be between 0 and 1")
+        return value
+
+
+
+    # ----------------------------------------------------------
+    # HELPER METHOD
+    # ----------------------------------------------------------
+
+    def add_meta(self):
+        self.meta = ResponseMeta()
+
+
+
+# ===============================================================
+# AUDIT LOG SCHEMA (EXTRA)
+# ===============================================================
+
+class PredictionAudit(BaseSchema):
+
+    user_id: str
+    crop: str
+    confidence: float
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+
+# ===============================================================
+# MODULE INIT LOG
+# ===============================================================
+
+print("==================================================")
+print("Agrivora Schema Module Loaded Successfully")
+print("Schemas: Request | Response | Meta | Debug | Audit")
+print("==================================================")

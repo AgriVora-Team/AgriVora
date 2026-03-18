@@ -1,22 +1,23 @@
+import 'dart:convert';
+
 class SessionService {
-  static final SessionService _instance = SessionService._internal();
-  factory SessionService() => _instance;
+  static const _key = "session";
 
-  SessionService._internal();
-
-  SharedPreferences? _prefs;
-
-  Future<void> init() async {
-    _prefs = await SharedPreferences.getInstance();
+  static Future<void> save(Map<String, dynamic> user) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_key, jsonEncode(user));
   }
 
-  String? get userId => _prefs?.getString('userId');
+  static Future<Map<String, dynamic>?> load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final data = prefs.getString(_key);
+    if (data == null) return null;
 
-  Future<void> saveUser(String id) async {
-    await _prefs?.setString('userId', id);
+    return jsonDecode(data);
   }
 
-  Future<void> logout() async {
-    await _prefs?.clear();
+  static Future<void> clear() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_key);
   }
 }

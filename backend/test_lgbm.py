@@ -1,29 +1,21 @@
 """
 ====================================================================
-Agrivora LightGBM Crop Prediction Test Suite
+AGRIVORA LIGHTGBM CROP PREDICTION TEST SUITE (ULTRA EXTENDED)
 ====================================================================
 
-This script is used to validate the crop prediction model used
-in the Agrivora AI platform.
+This script is an advanced testing utility designed to validate
+the Agrivora AI crop recommendation model.
 
-Purpose
--------
-The test suite performs multiple prediction tests using
-different soil and climate conditions to ensure the model
-responds correctly under various agricultural scenarios.
+This version includes:
+✔ Extensive logging
+✔ Input validation
+✔ Performance tracking
+✔ Stress testing
+✔ Batch execution
+✔ Auto-generated test scenarios
+✔ Detailed debug outputs
+✔ Modular design for scalability
 
-Test Categories
----------------
-1. Neutral soil environment
-2. Alkaline soil conditions
-3. Acidic soil conditions
-4. Tropical climate environment
-5. Dry climate scenario
-
-Each test case evaluates whether the LightGBM model can
-generate meaningful crop predictions based on input data.
-
-Author: Agrivora AI Team
 ====================================================================
 """
 
@@ -35,22 +27,21 @@ import os
 import sys
 import datetime
 import time
+import json
+import random
+import traceback
 
 
 
 # ================================================================
-# CONFIGURE PYTHON PATH
+# PATH CONFIGURATION
 # ================================================================
 
 """
-Ensure the backend directory is included in the Python path.
-
-This allows the test script to import internal services
-without needing to run the entire backend server.
+Ensure backend path is available for imports.
 """
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
 sys.path.insert(0, BASE_DIR)
 
 
@@ -59,256 +50,308 @@ sys.path.insert(0, BASE_DIR)
 # IMPORT MODEL SERVICE
 # ================================================================
 
-"""
-Import the crop prediction function used by the API.
-"""
-
 from app.services.crop_lgbm_service import predict_crop
 
 
 
 # ================================================================
-# TEST METRICS
+# GLOBAL METRICS
 # ================================================================
-
-"""
-Track overall test performance.
-"""
 
 TOTAL_TESTS = 0
 SUCCESS_TESTS = 0
 FAILED_TESTS = 0
+SKIPPED_TESTS = 0
 
 
 
 # ================================================================
-# HEADER DISPLAY
+# LOGGING SYSTEM
+# ================================================================
+
+def log_line():
+    print("=" * 70)
+
+
+def log_subline():
+    print("-" * 70)
+
+
+def log_info(msg):
+    print(f"[INFO] {msg}")
+
+
+def log_success(msg):
+    print(f"[SUCCESS] {msg}")
+
+
+def log_error(msg):
+    print(f"[ERROR] {msg}")
+
+
+def log_warning(msg):
+    print(f"[WARNING] {msg}")
+
+
+def log_debug(msg):
+    print(f"[DEBUG] {msg}")
+
+
+
+# ================================================================
+# HEADER / FOOTER
 # ================================================================
 
 def print_header():
 
-    """
-    Print the test suite header and start time.
-    """
+    log_line()
+    print("AGRIVORA LIGHTGBM TEST SUITE - EXTENDED VERSION")
+    print("Execution Started:", datetime.datetime.now())
+    log_line()
 
-    print("\n===================================================")
-    print("        Agrivora LightGBM Model Test Suite")
-    print("        Test Execution Started")
-    print("        Time:", datetime.datetime.now())
-    print("===================================================")
-
-
-
-# ================================================================
-# FOOTER DISPLAY
-# ================================================================
 
 def print_footer():
 
-    """
-    Print summary of test execution.
-    """
+    log_line()
+    print("FINAL RESULTS")
+    log_subline()
 
-    print("\n===================================================")
-    print("                TEST SUMMARY")
-    print("---------------------------------------------------")
-    print("Total Tests:", TOTAL_TESTS)
-    print("Successful:", SUCCESS_TESTS)
-    print("Failed:", FAILED_TESTS)
-    print("===================================================\n")
+    print("Total Tests     :", TOTAL_TESTS)
+    print("Successful      :", SUCCESS_TESTS)
+    print("Failed          :", FAILED_TESTS)
+    print("Skipped         :", SKIPPED_TESTS)
+
+    log_line()
 
 
 
 # ================================================================
-# SINGLE TEST EXECUTION
+# VALIDATION UTILITIES
+# ================================================================
+
+def validate_input(data):
+
+    """
+    Validate input structure and value ranges.
+    """
+
+    required = [
+        "ph", "temperature", "humidity",
+        "rainfall", "nitrogen", "carbon", "soil_type"
+    ]
+
+    for key in required:
+        if key not in data:
+            raise ValueError(f"Missing field: {key}")
+
+    if not (0 <= data["ph"] <= 14):
+        raise ValueError("Invalid pH value")
+
+
+
+# ================================================================
+# DATA FORMATTING
+# ================================================================
+
+def pretty_print_json(data):
+    return json.dumps(data, indent=2)
+
+
+
+# ================================================================
+# PERFORMANCE TIMER
+# ================================================================
+
+def measure_execution(func, *args, **kwargs):
+
+    start = time.time()
+    result = func(*args, **kwargs)
+    end = time.time()
+
+    return result, round(end - start, 5)
+
+
+
+# ================================================================
+# CORE TEST FUNCTION
 # ================================================================
 
 def run_test_case(title, data):
 
-    """
-    Run a single test case.
-
-    Parameters
-    ----------
-    title : str
-        Name of the test case
-
-    data : dict
-        Input parameters passed to the model
-    """
-
-    global TOTAL_TESTS
-    global SUCCESS_TESTS
-    global FAILED_TESTS
+    global TOTAL_TESTS, SUCCESS_TESTS, FAILED_TESTS
 
     TOTAL_TESTS += 1
 
-    print("\n---------------------------------------------------")
-    print("Running Test Case:", title)
-    print("Input Data:", data)
-
-    start_time = time.time()
+    log_subline()
+    log_info(f"Running Test Case: {title}")
 
     try:
 
-        result = predict_crop(data)
+        validate_input(data)
 
-        execution_time = time.time() - start_time
+        result, exec_time = measure_execution(predict_crop, data)
 
-        print("Prediction Result:", result)
-        print("Execution Time:", round(execution_time, 4), "seconds")
+        print("INPUT:")
+        print(pretty_print_json(data))
+
+        print("OUTPUT:")
+        print(result)
+
+        print("Execution Time:", exec_time, "seconds")
 
         if result:
-
             SUCCESS_TESTS += 1
-
-            print("Status: SUCCESS")
+            log_success("Test Passed")
 
         else:
-
             FAILED_TESTS += 1
-
-            print("Status: NO RESULT RETURNED")
+            log_warning("No result returned")
 
     except Exception as e:
 
         FAILED_TESTS += 1
 
-        print("Prediction Error:", str(e))
-        print("Status: FAILED")
+        log_error("Test Failed")
+        log_debug(traceback.format_exc())
 
 
 
 # ================================================================
-# TEST SUITE EXECUTION
+# BATCH EXECUTION
+# ================================================================
+
+def run_batch(test_cases):
+
+    for title, data in test_cases:
+        run_test_case(title, data)
+
+
+
+# ================================================================
+# STANDARD TEST CASES
+# ================================================================
+
+def get_standard_tests():
+
+    return [
+
+        ("Neutral Soil", {
+            "ph": 6.5, "temperature": 27, "humidity": 75,
+            "rainfall": 120, "nitrogen": 40,
+            "carbon": 1.2, "soil_type": "loamy soil"
+        }),
+
+        ("Alkaline Soil", {
+            "ph": 8.0, "temperature": 25, "humidity": 65,
+            "rainfall": 100, "nitrogen": 40,
+            "carbon": 1.2, "soil_type": "loamy soil"
+        }),
+
+        ("Acidic Soil", {
+            "ph": 5.0, "temperature": 25, "humidity": 65,
+            "rainfall": 100, "nitrogen": 40,
+            "carbon": 1.2, "soil_type": "loamy soil"
+        }),
+
+        ("Tropical Climate", {
+            "ph": 6.8, "temperature": 30, "humidity": 85,
+            "rainfall": 200, "nitrogen": 50,
+            "carbon": 1.5, "soil_type": "clay soil"
+        }),
+
+        ("Dry Climate", {
+            "ph": 7.0, "temperature": 33, "humidity": 40,
+            "rainfall": 40, "nitrogen": 35,
+            "carbon": 0.9, "soil_type": "sandy soil"
+        }),
+    ]
+
+
+
+# ================================================================
+# EXTREME TEST CASES
+# ================================================================
+
+def get_extreme_tests():
+
+    return [
+
+        ("Extreme Heat", {
+            "ph": 6.2, "temperature": 45, "humidity": 20,
+            "rainfall": 10, "nitrogen": 20,
+            "carbon": 0.8, "soil_type": "sandy soil"
+        }),
+
+        ("Flood Condition", {
+            "ph": 6.5, "temperature": 28, "humidity": 95,
+            "rainfall": 400, "nitrogen": 60,
+            "carbon": 2.0, "soil_type": "clay soil"
+        }),
+
+        ("Cold Climate", {
+            "ph": 6.0, "temperature": 10, "humidity": 60,
+            "rainfall": 50, "nitrogen": 30,
+            "carbon": 1.1, "soil_type": "loamy soil"
+        }),
+
+    ]
+
+
+
+# ================================================================
+# RANDOM STRESS TEST
+# ================================================================
+
+def generate_random_test(index):
+
+    return (
+        f"Random Test {index}",
+        {
+            "ph": round(random.uniform(4, 9), 2),
+            "temperature": random.randint(15, 40),
+            "humidity": random.randint(30, 90),
+            "rainfall": random.randint(20, 300),
+            "nitrogen": random.randint(10, 60),
+            "carbon": round(random.uniform(0.5, 2.5), 2),
+            "soil_type": random.choice([
+                "loamy soil", "clay soil", "sandy soil"
+            ])
+        }
+    )
+
+
+
+def run_stress_tests(count=20):
+
+    log_line()
+    log_info("Running Stress Tests")
+
+    for i in range(count):
+        title, data = generate_random_test(i + 1)
+        run_test_case(title, data)
+
+
+
+# ================================================================
+# MAIN EXECUTION
 # ================================================================
 
 def run_all_tests():
 
-    """
-    Execute all predefined crop prediction tests.
-    """
-
     print_header()
 
+    run_batch(get_standard_tests())
+    run_batch(get_extreme_tests())
 
-
-    # ------------------------------------------------------------
-    # TEST CASE 1
-    # Neutral soil environment
-    # ------------------------------------------------------------
-
-    run_test_case(
-        "Neutral Soil Environment",
-
-        {
-            "ph": 6.5,
-            "temperature": 27.0,
-            "humidity": 75.0,
-            "rainfall": 120.0,
-            "nitrogen": 40.0,
-            "carbon": 1.2,
-            "soil_type": "loamy soil"
-        }
-    )
-
-
-
-    # ------------------------------------------------------------
-    # TEST CASE 2
-    # Alkaline soil conditions
-    # ------------------------------------------------------------
-
-    run_test_case(
-        "Alkaline Soil Conditions",
-
-        {
-            "ph": 8.0,
-            "temperature": 25.0,
-            "humidity": 65.0,
-            "rainfall": 100.0,
-            "nitrogen": 40.0,
-            "carbon": 1.2,
-            "soil_type": "loamy soil"
-        }
-    )
-
-
-
-    # ------------------------------------------------------------
-    # TEST CASE 3
-    # Acidic soil environment
-    # ------------------------------------------------------------
-
-    run_test_case(
-        "Acidic Soil Environment",
-
-        {
-            "ph": 5.0,
-            "temperature": 25.0,
-            "humidity": 65.0,
-            "rainfall": 100.0,
-            "nitrogen": 40.0,
-            "carbon": 1.2,
-            "soil_type": "loamy soil"
-        }
-    )
-
-
-
-    # ------------------------------------------------------------
-    # TEST CASE 4
-    # Tropical rainfall scenario
-    # ------------------------------------------------------------
-
-    run_test_case(
-        "Tropical Climate Conditions",
-
-        {
-            "ph": 6.8,
-            "temperature": 30.0,
-            "humidity": 85.0,
-            "rainfall": 200.0,
-            "nitrogen": 50.0,
-            "carbon": 1.5,
-            "soil_type": "clay soil"
-        }
-    )
-
-
-
-    # ------------------------------------------------------------
-    # TEST CASE 5
-    # Dry climate environment
-    # ------------------------------------------------------------
-
-    run_test_case(
-        "Dry Climate Conditions",
-
-        {
-            "ph": 7.0,
-            "temperature": 33.0,
-            "humidity": 40.0,
-            "rainfall": 40.0,
-            "nitrogen": 35.0,
-            "carbon": 0.9,
-            "soil_type": "sandy soil"
-        }
-    )
-
-
+    run_stress_tests(15)
 
     print_footer()
 
 
 
 # ================================================================
-# SCRIPT ENTRY POINT
+# ENTRY POINT
 # ================================================================
-
-"""
-Run the test suite when the script is executed directly.
-"""
 
 if __name__ == "__main__":
 

@@ -1,23 +1,22 @@
 class SessionService {
-  static Future<void> save(Map<String, dynamic> user) async {
-    final prefs = await SharedPreferences.getInstance();
-    user.forEach((key, value) {
-      if (value is String) prefs.setString(key, value);
-    });
+  static final SessionService _instance = SessionService._internal();
+  factory SessionService() => _instance;
+
+  SessionService._internal();
+
+  SharedPreferences? _prefs;
+
+  Future<void> init() async {
+    _prefs = await SharedPreferences.getInstance();
   }
 
-  static Future<Map<String, String>> load() async {
-    final prefs = await SharedPreferences.getInstance();
-    return {
-      'id': prefs.getString('id') ?? '',
-      'name': prefs.getString('name') ?? '',
-      'email': prefs.getString('email') ?? '',
-      'phone': prefs.getString('phone') ?? '',
-    };
+  String? get userId => _prefs?.getString('userId');
+
+  Future<void> saveUser(String id) async {
+    await _prefs?.setString('userId', id);
   }
 
-  static Future<void> clear() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+  Future<void> logout() async {
+    await _prefs?.clear();
   }
 }

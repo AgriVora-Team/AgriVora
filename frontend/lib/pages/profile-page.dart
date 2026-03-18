@@ -22,7 +22,7 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _isLoadingHistory = true;
   int _totalPredictions = 0;
   String _topCrop = "None";
-  String _avgHealth = "Good";
+  final String _avgHealth = "Good";
   String _lastAnalysis = "N/A";
 
   @override
@@ -62,7 +62,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _fetchHistoryStats() async {
     try {
       final res = await ApiService.getUserHistory();
-      if (mounted && res is List && res.isNotEmpty) {
+      if (mounted && res.isNotEmpty) {
         int total = res.length;
         Map<String, int> cropCounts = {};
         for (var item in res) {

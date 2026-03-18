@@ -2,6 +2,7 @@
 /// Responsible for: Providing options for soil analysis methods.
 /// Role: Allows the user to choose between IoT/BLE soil scanning or manual entry.
 /// Dependencies: Navigates to StartScanScreen or ManualSoilAnalysisPage.
+library;
 
 import 'dart:async';
 import 'dart:io';

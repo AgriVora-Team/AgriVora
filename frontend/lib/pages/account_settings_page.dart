@@ -18,8 +18,8 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
   bool get isGuest => ApiService.userId == null;
   String? _profileImagePath;
 
-  bool _notifsEnabled = true;
-  bool _darkModeEnabled = false;
+  final bool _notifsEnabled = true;
+  final bool _darkModeEnabled = false;
 
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -712,7 +712,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
               Switch(
                 value: value,
                 onChanged: onChanged,
-                activeColor: Colors.white,
+                activeThumbColor: Colors.white,
                 activeTrackColor: const Color(0xFF2E7D32),
                 inactiveThumbColor: Colors.white,
                 inactiveTrackColor: Colors.grey.shade400,

@@ -206,8 +206,9 @@ class _AIChatPageState extends State<AIChatPage> {
                                 itemCount:
                                     _messages.length + (_isLoading ? 1 : 0),
                                 itemBuilder: (context, index) {
-                                  if (index == _messages.length)
+                                  if (index == _messages.length) {
                                     return _buildLoadingBubble();
+                                  }
                                   final msg = _messages[index];
                                   return _buildBubble(msg.text, msg.isUser);
                                 },

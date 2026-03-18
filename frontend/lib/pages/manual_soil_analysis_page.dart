@@ -530,7 +530,7 @@ class _GlassCardContainer extends StatelessWidget {
   final Widget child;
   final EdgeInsets? padding;
 
-  const _GlassCardContainer({required this.child, this.padding});
+  const _GlassCardContainer({required this.child});
 
   @override
   Widget build(BuildContext context) {

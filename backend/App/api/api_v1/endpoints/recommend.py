@@ -27,16 +27,13 @@ class RecommendRequest(BaseModel):
 @router.post("/recommend")
 def recommend(data: RecommendRequest):
 
-    print("Recommendation request received for user:", data.userId)
-
-    # Validate pH
     if not (0 <= data.ph <= 14):
         raise HTTPException(
             status_code=400,
             detail="Invalid pH value"
         )
 
-    # Soil type mapping
+    # Convert soilType to numeric values (example mapping)
     soil_map = {
         "Sandy": {"sand": 70, "clay": 10, "organicCarbon": 0.5},
         "Clay": {"sand": 20, "clay": 60, "organicCarbon": 1.5},
@@ -46,22 +43,15 @@ def recommend(data: RecommendRequest):
     soil_summary = soil_map.get(data.soilType)
 
     if soil_summary is None:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid soil type"
-        )
+        raise HTTPException(status_code=400, detail="Invalid soil type")
 
-    # Weather summary
     weather_summary = {
         "temperature": data.temperature,
         "rainfall": data.rainfall,
         "humidity": data.humidity
     }
 
-    print("Soil summary:", soil_summary)
-    print("Weather summary:", weather_summary)
-
-    # ML prediction
+    # ML Prediction
     results, error = recommend_crops({
         "soil": soil_summary,
         "weather": weather_summary,
@@ -74,7 +64,7 @@ def recommend(data: RecommendRequest):
             detail="Recommendation failed"
         )
 
-    # Save scan history
+    # Save to Firestore
     save_scan_history({
         "userId": data.userId,
         "soilSummary": soil_summary,
@@ -83,8 +73,6 @@ def recommend(data: RecommendRequest):
         "results": results,
         "createdAt": datetime.utcnow()
     })
-
-    print("Recommendation saved to Firestore")
 
     return {
         "success": True,

@@ -1,28 +1,21 @@
 from pydantic import BaseModel
-from typing import List
-
+from typing import Optional, List
 
 class CropLGBMRequest(BaseModel):
-    user_id: str
-    temperature: float
-    humidity: float
-    rainfall: float
+    user_id: Optional[str] = None
     ph: float
-    nitrogen: float
-    carbon: float
-    soil_type: str
+    temperature: Optional[float] = None
+    humidity: Optional[float] = None
+    rainfall: Optional[float] = None
+    nitrogen: Optional[float] = 40.0
+    carbon: Optional[float] = 1.2
+    soil_type: Optional[str] = "loamy soil"
 
-
-class Recommendation(BaseModel):
+class CropRecommendation(BaseModel):
     crop: str
     confidence: float
 
-
 class CropLGBMResponse(BaseModel):
     recommended_crop: str
-    confidence: float
-    recommendations: List[Recommendation]
-
-
-# Debug helper
-print("Crop LGBM schema loaded")
+    confidence: Optional[float] = None
+    recommendations: List[CropRecommendation] = []

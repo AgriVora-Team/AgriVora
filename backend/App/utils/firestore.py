@@ -59,3 +59,4 @@ def get_scan_history(user_id: str):
     except Exception as e:
         print("Firestore fetch error:", e)
         return []
+

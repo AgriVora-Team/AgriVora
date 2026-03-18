@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'services/session_service.dart';
 
 // 🌿 UI pages (your base flow)
 import 'pages/welcome_page.dart';
@@ -6,20 +8,24 @@ import 'pages/permission_page.dart';
 import 'pages/login_page.dart';
 import 'pages/signup_page.dart';
 import 'pages/role_select_page.dart';
-import 'pages/home_page.dart';
+import 'pages/main_screen.dart';
 
 import 'pages/soil_analysis_page.dart';
 import 'pages/manual_soil_analysis_page.dart';
+import 'pages/predict_soil.dart';
 
 // 🧪 Dev1 scan flow
 import 'scan_flow/start_scan_screen.dart';
 
 // ✅ Added pages from main2.dart (CHANGE paths if your files are in another folder)
 import 'pages/crop_recom_page.dart';
+import 'pages/history_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/crop_overview_page.dart';
 import 'pages/map_page.dart';
 import 'pages/ai_chat_page.dart';
+import 'pages/forgot_password_page.dart';
+import 'pages/account_settings_page.dart';
 
 /// ------------------
 /// ScanSession model
@@ -147,11 +153,8 @@ class RecommendationResult {
 /// ------------------
 /// ENTRY POINT
 /// ------------------
-void main() {
-  final testSession = ScanSession.empty('test_001');
-  // ignore: avoid_print
-  print(testSession.toJson());
-
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
@@ -171,25 +174,31 @@ class MyApp extends StatelessWidget {
         fontFamily: 'Roboto',
       ),
 
-      // First screen (your base flow)
-      home: const WelcomePage(),
+      // Startup router decides: Home / Login / Welcome
+      home: const SplashRouter(),
 
       // Routes (merged)
       routes: {
         // ✅ Base routes
+        '/welcome': (_) => const WelcomePage(),
         '/permission': (_) => const PermissionPage(),
         '/login': (_) => const LoginPage(),
         '/signup': (_) => const SignUpPage(),
         '/role': (_) => const RoleSelectPage(),
-        '/home': (_) => const HomePage(),
+        '/home': (_) => const MainScreen(),
+        '/forgot-password': (_) => const ForgotPasswordPage(),
+        '/account-settings': (_) => const AccountSettingsPage(),
 
         '/soil-analysis': (_) => const SoilAnalysisPage(),
         '/manual-soil': (_) => const ManualSoilAnalysisPage(),
+        '/predict-soil': (_) => const PredictSoilPage(),
         '/start-scan': (_) => const StartScanScreen(),
 
         // ✅ Added routes from main2.dart (aliases too)
         '/crop-recom': (_) => const CropRecomPage(),
         '/crop_recom_page': (_) => const CropRecomPage(),
+
+        '/history': (_) => const HistoryPage(),
 
         '/profile': (_) => const ProfilePage(),
         '/profile_page': (_) => const ProfilePage(),
@@ -201,7 +210,8 @@ class MyApp extends StatelessWidget {
         '/map_page': (_) => const MapPage(),
 
         '/crop-overview': (ctx) {
-          final args = ModalRoute.of(ctx)?.settings.arguments as Map<String, dynamic>?;
+          final args =
+              ModalRoute.of(ctx)?.settings.arguments as Map<String, dynamic>?;
           return CropOverviewPage(
             name: args?['name'] ?? 'Crop',
             scientific: args?['scientific'] ?? 'Species',
@@ -209,7 +219,8 @@ class MyApp extends StatelessWidget {
           );
         },
         '/crop_overview': (ctx) {
-          final args = ModalRoute.of(ctx)?.settings.arguments as Map<String, dynamic>?;
+          final args =
+              ModalRoute.of(ctx)?.settings.arguments as Map<String, dynamic>?;
           return CropOverviewPage(
             name: args?['name'] ?? 'Crop',
             scientific: args?['scientific'] ?? 'Species',
@@ -220,6 +231,92 @@ class MyApp extends StatelessWidget {
         // Alias to keep compatibility with main2 naming
         '/soil_analysis': (_) => const SoilAnalysisPage(),
       },
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SplashRouter — shown on every cold start.
+// Performs the async session check and routes accordingly:
+//   • Logged-in session found  →  /home  (skip Welcome + Permissions + Login)
+//   • Permissions granted, no session  →  /login  (skip Welcome + Permissions)
+//   • Fresh install / no history  →  WelcomePage
+// ─────────────────────────────────────────────────────────────────────────────
+class SplashRouter extends StatefulWidget {
+  const SplashRouter({super.key});
+
+  @override
+  State<SplashRouter> createState() => _SplashRouterState();
+}
+
+class _SplashRouterState extends State<SplashRouter> {
+  bool _visible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fade in the logo immediately
+    Future.microtask(() {
+      if (mounted) setState(() => _visible = true);
+    });
+    // Start the session check
+    _checkSession();
+  }
+
+  Future<void> _checkSession() async {
+    if (kDebugMode) {
+      await SessionService.clearSession();
+    }
+
+    // Small minimum display time so the splash doesn't flash too fast
+    final results = await Future.wait([
+      SessionService.restoreSession(),
+      SessionService.hasGrantedPermissions(),
+      Future.delayed(const Duration(milliseconds: 900)),
+    ]);
+
+    if (!mounted) return;
+
+    final bool hasSession = results[0] as bool;
+    final bool hasPermissions = results[1] as bool;
+
+    if (hasSession) {
+      // Fully logged in — go straight to Home, clearing the back-stack
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+    } else if (hasPermissions) {
+      // Permissions granted, no session — show Login screen
+      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+    } else {
+      // No active session — show the Get Started screen
+      Navigator.pushNamedAndRemoveUntil(context, '/welcome', (route) => false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF2E8D5),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/bg_fields.png',
+              fit: BoxFit.cover,
+            ),
+          ),
+          Center(
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 600),
+              opacity: _visible ? 1.0 : 0.0,
+              child: Image.asset(
+                'assets/images/logo_agrivora.png',
+                height: 180,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

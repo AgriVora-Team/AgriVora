@@ -264,10 +264,6 @@ class _SplashRouterState extends State<SplashRouter> {
   }
 
   Future<void> _checkSession() async {
-    if (kDebugMode) {
-      await SessionService.clearSession();
-    }
-
     // Small minimum display time so the splash doesn't flash too fast
     final results = await Future.wait([
       SessionService.restoreSession(),

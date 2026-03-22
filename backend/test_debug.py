@@ -26,4 +26,3 @@ print("Written hex to error_hex.txt")
 safe = ''.join(c if 32 <= ord(c) < 127 else '_' for c in detail)
 print("SAFE DETAIL:")
 print(safe)
-

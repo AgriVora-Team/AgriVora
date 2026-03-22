@@ -1,3 +1,6 @@
+/// **PhStepScreen**
+/// Responsible for: Getting pH value either manually or via BLE connected sensor.
+
 import 'package:flutter/material.dart';
 
 import '../main.dart'; // ScanSession

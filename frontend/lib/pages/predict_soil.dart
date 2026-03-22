@@ -2,7 +2,6 @@
 /// Responsible for: Location-based soil prediction fetching.
 /// Role: Grabs current GPS, fetches soil grids data via backend, and provides automated crop recommendations.
 /// API Dependency: /location/summary, /recommend
-library;
 
 import 'dart:async';
 import 'dart:ui';

@@ -1,58 +1,83 @@
+"""
+**History API Endpoint**
+Responsible for: Saving and retrieving past soil scan/recommendation history for users.
+Dependencies: Firestore history collection.
+"""
+
+from datetime import datetime
+
 from fastapi import APIRouter, HTTPException
-from app.utils.firestore import db, get_scan_history
+
+from app.utils.firestore import get_scan_history
 
 router = APIRouter()
 
 
-def success_response(data):
-    return {
-        "success": True,
-        "data": data,
-        "error": None
-    }
-
-
-def server_error(exc: Exception):
-    raise HTTPException(
-        status_code=500,
-        detail=str(exc)
-    )
+def _serialize(obj):
+    """Recursively convert Firestore Timestamps and datetime objects to ISO strings."""
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    # Firestore DatetimeWithNanoseconds is a subclass of datetime — handled above
+    if isinstance(obj, dict):
+        return {k: _serialize(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_serialize(i) for i in obj]
+    return obj
 
 
 # =====================================================
-# GET FULL SCAN HISTORY
+# ⚠️  ORDER MATTERS: /history/latest/{user_id} MUST come
+#    BEFORE /history/{user_id}, otherwise FastAPI will
+#    match "latest" as the {user_id} path parameter.
 # =====================================================
-@router.get("/history/{user_id}")
-def get_history(user_id: str):
-    try:
-        history = get_scan_history(user_id)
-        return success_response(history)
-    except Exception as e:
-        server_error(e)
-
 
 # =====================================================
-# GET LATEST SCAN (FOR DASHBOARD)
+# GET LATEST SCAN (FOR DASHBOARD) — registered first!
 # =====================================================
+
 @router.get("/history/latest/{user_id}")
 def get_latest_history(user_id: str):
     try:
-        query = (
-            db.collection("scan_history")
-            .where("userId", "==", user_id)
-            .order_by("createdAt", direction="DESCENDING")
-            .limit(1)
-            .stream()
-        )
-
-        latest_record = None
-
-        for doc in query:
-            latest_record = doc.to_dict()
-            latest_record["id"] = doc.id
-            break
-
-        return success_response(latest_record)
-
+        results = get_scan_history(user_id)
+        if results:
+            return {
+                "success": True,
+                "data": _serialize(results[0]),
+                "error": None,
+            }
+        return {"success": True, "data": None, "error": None}
     except Exception as e:
-        server_error(e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =====================================================
+# SAVE SCAN HISTORY EXPLICITLY
+# =====================================================
+
+@router.post("/history/save")
+def add_history(data: dict):
+    try:
+        from app.utils.firestore import save_scan_history
+        success = save_scan_history(data)
+        if success:
+            return {"success": True, "data": "Saved successfully", "error": None}
+        raise HTTPException(status_code=500, detail="Firestore save failed")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =====================================================
+# GET FULL SCAN HISTORY — registered last (catch-all)
+# =====================================================
+
+@router.get("/history/{user_id}")
+def get_history(user_id: str):
+    try:
+        results = get_scan_history(user_id)
+        return {
+            "success": True,
+            "data": _serialize(results),
+            "error": None,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

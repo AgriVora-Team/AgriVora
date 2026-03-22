@@ -1,3 +1,7 @@
+/// **ImageStepScreen**
+/// Responsible for: Capturing or uploading soil image for CNN texture analysis.
+/// API Dependency: /image/texture
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';

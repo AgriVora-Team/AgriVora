@@ -1,8 +1,12 @@
+/// **CropRecomPage**
+/// Responsible for: Displaying crop recommendations.
+/// Role: Receives recommendation results and displays ranked list of crops suitable for the analyzed soil.
+/// Navigation: Pushed after LightGBM or Random Forest API calls succeed.
+
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../services/location_service.dart';
-import '../widgets/agri_bottom_nav_bar.dart';
 
 class CropRecomPage extends StatefulWidget {
   const CropRecomPage({super.key});
@@ -221,8 +225,6 @@ class _CropRecomPageState extends State<CropRecomPage> {
               ),
             ),
           ),
-
-
         ],
       ),
     );

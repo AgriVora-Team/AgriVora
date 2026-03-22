@@ -1,3 +1,7 @@
+/// **BleService**
+/// Responsible for: Bluetooth Low Energy communication.
+/// Role: Scanning for IoT sensors, connecting, and reading pH data.
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';

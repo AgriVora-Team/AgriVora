@@ -1,3 +1,7 @@
+/// **ForgotPasswordPage**
+/// Responsible for: Initiating password reset.
+/// Role: Collects email, sends OTP request, and handles OTP verification.
+
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';

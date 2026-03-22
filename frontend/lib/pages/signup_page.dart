@@ -1,3 +1,8 @@
+/// **SignUpPage**
+/// Responsible for: New user registration.
+/// Role: Collects user details, validates form input, and hits the signup endpoint.
+/// API Dependency: /api/auth/signup
+
 import 'dart:ui';
 import 'dart:convert'; // ✅ added for utf8.encode
 import 'package:flutter/material.dart';

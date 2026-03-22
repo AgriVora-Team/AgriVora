@@ -1,3 +1,8 @@
+/// **LoginPage**
+/// Responsible for: User authentication (login).
+/// Role: Captures email/phone and password, calls ApiService.login(), uses SessionService to save session state.
+/// API Dependency: /api/auth/login
+
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';

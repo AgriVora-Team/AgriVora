@@ -1,12 +1,21 @@
+"""
+**Auth API Endpoint**
+Responsible for: Handling user registration (signup) and login.
+Inputs/Outputs: Accepts email/phone+pwd, returns user ID and session details. Also handles password reset OTP process.
+Dependencies: Firebase config / Authentication utils.
+"""
+
+import hashlib
+import random
+import uuid
+from datetime import datetime, timedelta
+
+import bcrypt
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr, Field
-from datetime import datetime, timedelta
-from app.utils.firestore import db
+
 from app.utils.email import send_otp_email
-import uuid
-import hashlib
-import bcrypt
-import random
+from app.utils.firestore import db
 
 router = APIRouter()
 

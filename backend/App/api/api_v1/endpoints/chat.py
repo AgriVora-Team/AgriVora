@@ -1,99 +1,80 @@
+"""
+**Chat AI Endpoint**
+Responsible for: Handling conversational questions using an LLM.
+"""
+
 import os
-from fastapi import APIRouter
-from pydantic import BaseModel
-from openai import OpenAI
+
 from dotenv import load_dotenv
-from g4f.client import Client as FreeClient
+from fastapi import APIRouter
+from openai import OpenAI
+from pydantic import BaseModel
 
 load_dotenv(override=True)
 
 router = APIRouter()
 
+# Initialize OpenAI client
+# It's better to do this inside the function if you want to handle missing API key gracefully during startup
+# or just ensure it's in .env
 
 class ChatRequest(BaseModel):
     message: str
 
-
-def success_response(reply: str):
-    return {
-        "success": True,
-        "data": {"reply": reply},
-        "error": None
-    }
-
-
-def error_response(message: str):
-    return {
-        "success": False,
-        "data": None,
-        "error": message
-    }
-
-
-def get_system_prompt():
-    return (
-        "You are AgriVora AI, a highly specialized agricultural expert. "
-        "You help farmers optimize their crop yields, analyze soil health, "
-        "and provide sustainable farming practices. Be professional, "
-        "encouraging, and provide specific, actionable advice."
-    )
-
-
-def ask_openai(api_key: str, user_message: str, system_prompt: str) -> str:
-    client = OpenAI(api_key=api_key)
-
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
-        ],
-        max_tokens=500,
-        temperature=0.7
-    )
-
-    return response.choices[0].message.content
-
-
-def ask_free_client(user_message: str, system_prompt: str) -> str:
-    client = FreeClient()
-
-    response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_message}
-        ]
-    )
-
-    return response.choices[0].message.content
-
-
-def should_fallback(error_text: str) -> bool:
-    fallback_errors = [
-        "insufficient_quota",
-        "invalid_api_key",
-        "Incorrect API key"
-    ]
-    return any(item in error_text for item in fallback_errors)
-
-
 @router.post("/chat")
 async def chat_with_ai(data: ChatRequest):
     api_key = os.getenv("OPENAI_API_KEY")
-    system_prompt = get_system_prompt()
+    system_prompt = "You are AgriVora AI, a highly specialized agricultural expert. You help farmers optimize their crop yields, analyze soil health, and provide sustainable farming practices. Be professional, encouraging, and provide specific, actionable advice."
 
     if api_key and api_key.strip():
         try:
-            reply = ask_openai(api_key, data.message, system_prompt)
-            return success_response(reply)
+            client = OpenAI(api_key=api_key)
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": data.message}
+                ],
+                max_tokens=500,
+                temperature=0.7
+            )
+            return {"success": True, "data": {"reply": response.choices[0].message.content}, "error": None}
         except Exception as e:
             error_msg = str(e)
-            if not should_fallback(error_msg):
-                return error_response(error_msg)
+            if "insufficient_quota" in error_msg or "invalid_api_key" in error_msg or "Incorrect API key" in error_msg:
+                # Flow down to the free alternative
+                pass
+            else:
+                return {"success": False, "data": None, "error": error_msg}
 
+    # Free GPT Alternative Pipeline
     try:
-        reply = ask_free_client(data.message, system_prompt)
-        return success_response(reply)
+        import shutil
+        from pathlib import Path
+
+        # Clear local g4f scraper disk caches to prevent ENOSPC (no space left)
+        g4f_cache_path = Path.home() / ".cache" / "g4f"
+        if g4f_cache_path.exists():
+            shutil.rmtree(str(g4f_cache_path), ignore_errors=True)
+
+        from g4f.client import Client as FreeClient
+        from g4f.Provider import PollinationsAI
+        
+        free_client = FreeClient()
+        response = free_client.chat.completions.create(
+            model="openai",
+            provider=PollinationsAI,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": data.message}
+            ]
+        )
+        reply_content = response.choices[0].message.content
+        return {"success": True, "data": {"reply": reply_content}, "error": None}
     except Exception as e:
-        return error_response(f"AgriVora Free Agent error: {str(e)}")
+        # Avoid presenting raw disk errors inside chat UI
+        return {
+            "success": False, 
+            "data": None, 
+            "error": "The AI assistant is temporarily unavailable. Please try again shortly."
+        }

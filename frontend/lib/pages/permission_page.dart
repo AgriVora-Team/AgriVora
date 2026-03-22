@@ -1,3 +1,7 @@
+/// **PermissionPage**
+/// Responsible for: Requesting mandatory local permissions (Location, Bluetooth, Camera).
+/// Dependency: permission_handler.
+
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../services/session_service.dart';

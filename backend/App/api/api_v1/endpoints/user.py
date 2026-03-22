@@ -1,9 +1,17 @@
+"""
+**User API Endpoint**
+Responsible for: Retrieving and updating user profile information.
+Dependencies: Firestore.
+"""
+
+from datetime import datetime
+from typing import Optional
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr
-from typing import Optional
-from app.utils.firestore import db
-from datetime import datetime
+
 from app.api.api_v1.endpoints.auth import hash_password, verify_password
+# from app.utils.firestore import db
 
 router = APIRouter()
 

@@ -1,3 +1,6 @@
+/// **GpsStepScreen**
+/// Responsible for: Fetching GPS coords for the scan session.
+
 import 'package:flutter/material.dart';
 
 import '../main.dart'; // to use ScanSession
@@ -113,7 +116,7 @@ class _GpsStepScreenState extends State<GpsStepScreen> {
                     lat == null || lon == null
                         ? 'Not fetched yet'
                         : 'Latitude: ${lat.toStringAsFixed(4)}, '
-                          'Longitude: ${lon.toStringAsFixed(4)}',
+                            'Longitude: ${lon.toStringAsFixed(4)}',
                     style: const TextStyle(fontSize: 14),
                   ),
                 ],

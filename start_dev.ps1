@@ -1,51 +1,123 @@
 #!/usr/bin/env pwsh
-# AgriVora Dev Launcher
-# Runs adb reverse (so backend is reachable from physical Android device)
-# then starts the Flutter app.
-# Usage: .\start_dev.ps1
+<#
+    AgriVora — All-in-One Localhost Dev Launcher
+    ─────────────────────────────────────────────
+    • Starts the FastAPI backend on localhost:8000
+    • Runs `adb reverse` so the Android device treats 127.0.0.1:8000 as the PC
+    • Launches the Flutter app
 
-$ADB = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
+    Usage:
+        .\start_dev.ps1
 
-Write-Host ""
-Write-Host "=================================" -ForegroundColor Cyan
-Write-Host "  AgriVora Dev Launcher" -ForegroundColor Cyan
-Write-Host "=================================" -ForegroundColor Cyan
-Write-Host ""
+    Requirements:
+        • Android SDK platform-tools (adb.exe)
+        • Python venv in backend\.venv  (or backend\venv)
+        • Flutter SDK on PATH
+#>
 
-# Check adb exists
-if (-not (Test-Path $ADB)) {
-    Write-Host "[ERROR] adb.exe not found at: $ADB" -ForegroundColor Red
-    Write-Host "Make sure Android SDK platform-tools are installed." -ForegroundColor Yellow
-    exit 1
+# ─── Paths ─────────────────────────────────────────────────────────────────────
+$ROOT        = $PSScriptRoot
+$BACKEND_DIR = Join-Path $ROOT "backend"
+$FRONTEND_DIR = Join-Path $ROOT "frontend"
+$ADB         = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
+
+# Prefer the hidden .venv, fall back to venv
+$PYTHON = $null
+foreach ($venvName in @(".venv", "venv")) {
+    $candidate = Join-Path $BACKEND_DIR "$venvName\Scripts\python.exe"
+    if (Test-Path $candidate) {
+        $PYTHON = $candidate
+        break
+    }
+}
+if (-not $PYTHON) {
+    # Last resort: use system Python
+    $PYTHON = "py"
 }
 
-# Show connected devices
-Write-Host "[1/3] Checking connected devices..." -ForegroundColor Yellow
-& $ADB devices
+# ─── Banner ────────────────────────────────────────────────────────────────────
+Write-Host ""
+Write-Host "╔══════════════════════════════════════════╗" -ForegroundColor Green
+Write-Host "║     AgriVora · Localhost Dev Launcher    ║" -ForegroundColor Green
+Write-Host "╚══════════════════════════════════════════╝" -ForegroundColor Green
+Write-Host ""
+Write-Host "  Backend  : http://127.0.0.1:8000" -ForegroundColor Cyan
+Write-Host "  LAN IP   : http://192.168.8.106:8000" -ForegroundColor Cyan
+Write-Host "  Python   : $PYTHON" -ForegroundColor DarkGray
+Write-Host ""
+
+# ─── Step 1: Start Backend ─────────────────────────────────────────────────────
+Write-Host "[1/3] Starting FastAPI backend on 0.0.0.0:8000..." -ForegroundColor Yellow
+
+# Kill any existing uvicorn process on port 8000 (clean restart)
+$existingProc = Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue |
+                Select-Object -ExpandProperty OwningProcess -Unique
+if ($existingProc) {
+    foreach ($pid in $existingProc) {
+        Write-Host "      Stopping existing process on port 8000 (PID $pid)..." -ForegroundColor DarkYellow
+        Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
+    }
+    Start-Sleep -Milliseconds 1000
+}
+
+# Launch backend in a new minimized PowerShell window
+$backendCmd = "Set-Location '$BACKEND_DIR'; " +
+              "Write-Host '[Backend] Starting...' -ForegroundColor Green; " +
+              "& '$PYTHON' -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000; " +
+              "Write-Host '[Backend] Stopped. Press any key to close.' -ForegroundColor Red; " +
+              "Read-Host"
+
+Start-Process powershell -ArgumentList "-NoLogo", "-Command", $backendCmd `
+    -WindowStyle Normal
+
+Write-Host "      ✅ Backend starting in new window..." -ForegroundColor Green
+Write-Host "      ⏳ Waiting 4 seconds for backend to boot..." -ForegroundColor DarkGray
+Start-Sleep -Seconds 4
+
+# Quick health check
+try {
+    $resp = Invoke-RestMethod -Uri "http://127.0.0.1:8000/health" -TimeoutSec 5
+    if ($resp.success -eq $true) {
+        Write-Host "      ✅ Backend healthy: $($resp.data)" -ForegroundColor Green
+    }
+} catch {
+    Write-Host "      ⚠️  Backend health check failed — it may still be loading." -ForegroundColor Yellow
+    Write-Host "         (The TensorFlow CNN model takes 30-60 s on first cold start)" -ForegroundColor DarkGray
+}
 
 Write-Host ""
-Write-Host "[2/3] Setting up adb reverse (port 8000)..." -ForegroundColor Yellow
-$result = & $ADB reverse tcp:8000 tcp:8000 2>&1
-if ($LASTEXITCODE -eq 0) {
-    Write-Host "      adb reverse tcp:8000 tcp:8000 -> OK ($result)" -ForegroundColor Green
+
+# ─── Step 2: adb reverse ───────────────────────────────────────────────────────
+Write-Host "[2/3] Setting up adb reverse (phone → localhost:8000)..." -ForegroundColor Yellow
+
+if (Test-Path $ADB) {
+    # Show connected devices
+    $devices = & $ADB devices 2>&1
+    Write-Host ""
+    Write-Host $devices -ForegroundColor DarkGray
+    Write-Host ""
+
+    # Run adb reverse for the backend port
+    $result = & $ADB reverse tcp:8000 tcp:8000 2>&1
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "      ✅ adb reverse tcp:8000 tcp:8000  →  OK" -ForegroundColor Green
+        Write-Host "         Phone 127.0.0.1:8000 now tunnels to this PC" -ForegroundColor DarkGray
+    } else {
+        Write-Host "      ⚠️  adb reverse failed: $result" -ForegroundColor Yellow
+        Write-Host "         Falling back to LAN IP: 192.168.8.104:8000" -ForegroundColor Yellow
+        Write-Host "         Make sure the phone is on the same Wi-Fi network." -ForegroundColor DarkGray
+    }
 } else {
-    Write-Host "[WARN] adb reverse failed (device may not be connected via USB)" -ForegroundColor Yellow
-    Write-Host "       The app will fall back to Wi-Fi IP 172.20.10.4" -ForegroundColor Yellow
+    Write-Host "      ⚠️  adb.exe not found at:" -ForegroundColor Yellow
+    Write-Host "         $ADB" -ForegroundColor DarkGray
+    Write-Host "         Skipping adb reverse — app will try LAN IP (192.168.8.104:8000)" -ForegroundColor Yellow
 }
 
-
-# ─── Start Backend ──────────────────────────────────────────────────────────
-Write-Host ""
-Write-Host "To start the backend, run in a SEPARATE terminal:" -ForegroundColor Cyan
-Write-Host "  cd backend" -ForegroundColor White
-Write-Host "  .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000" -ForegroundColor Green
-Write-Host ""
-Write-Host "  --host 0.0.0.0  makes it reachable over WiFi (172.20.10.4) AND via adb reverse (127.0.0.1)" -ForegroundColor Yellow
 Write-Host ""
 
-# ─── Start Flutter App ──────────────────────────────────────────────────────
-Write-Host "[3/3] Starting Flutter app..." -ForegroundColor Yellow
+# ─── Step 3: Flutter run ───────────────────────────────────────────────────────
+Write-Host "[3/3] Launching Flutter app..." -ForegroundColor Yellow
 Write-Host ""
 
-Set-Location "$PSScriptRoot\frontend"
+Set-Location $FRONTEND_DIR
 flutter run

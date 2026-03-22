@@ -1,6 +1,10 @@
+/// **AIChatPage**
+/// Responsible for: Interacting with the backend AI chat.
+/// Role: Sends user messages to the backend and displays the AI's response.
+/// API Dependency: /chat
+
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../widgets/agri_bottom_nav_bar.dart';
 import '../services/api_service.dart';
 
 class AIChatPage extends StatefulWidget {
@@ -58,14 +62,11 @@ class _AIChatPageState extends State<AIChatPage> {
       }
     } catch (e) {
       if (mounted) {
-        String errorMsg = e.toString().contains('Exception: ')
-            ? e.toString().replaceAll('Exception: ', '')
-            : "Connection error. Ensure backend is running.";
+        const errorMsg = "The AI assistant is temporarily unavailable. Please try again shortly.";
 
         setState(() {
           _messages.add(
-            ChatMessage(text: "AgriVora Error: $errorMsg", isUser: false),
-          );
+              ChatMessage(text: errorMsg, isUser: false));
           _isLoading = false;
         });
         _scrollToBottom();
@@ -111,10 +112,9 @@ class _AIChatPageState extends State<AIChatPage> {
                         height: 1.1,
                         shadows: [
                           Shadow(
-                            color: Colors.black45,
-                            blurRadius: 10,
-                            offset: Offset(0, 2),
-                          ),
+                              color: Colors.black45,
+                              blurRadius: 10,
+                              offset: Offset(0, 2)),
                         ],
                       ),
                     ),
@@ -127,10 +127,9 @@ class _AIChatPageState extends State<AIChatPage> {
                         fontWeight: FontWeight.w600,
                         shadows: [
                           Shadow(
-                            color: Colors.black45,
-                            blurRadius: 8,
-                            offset: Offset(0, 1),
-                          ),
+                              color: Colors.black45,
+                              blurRadius: 8,
+                              offset: Offset(0, 1)),
                         ],
                       ),
                     ),
@@ -147,10 +146,9 @@ class _AIChatPageState extends State<AIChatPage> {
                             color: Colors.white,
                             shadows: [
                               Shadow(
-                                color: Colors.black45,
-                                blurRadius: 4,
-                                offset: Offset(0, 1),
-                              ),
+                                  color: Colors.black45,
+                                  blurRadius: 4,
+                                  offset: Offset(0, 1)),
                             ],
                           ),
                         ),
@@ -165,11 +163,8 @@ class _AIChatPageState extends State<AIChatPage> {
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white.withOpacity(0.4)),
                   ),
-                  child: const Icon(
-                    Icons.smart_toy,
-                    color: Colors.white,
-                    size: 28,
-                  ),
+                  child: const Icon(Icons.smart_toy,
+                      color: Colors.white, size: 28),
                 ),
               ],
             ),
@@ -200,9 +195,7 @@ class _AIChatPageState extends State<AIChatPage> {
                             : ListView.builder(
                                 controller: _scrollController,
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 0,
-                                  vertical: 10,
-                                ),
+                                    horizontal: 0, vertical: 10),
                                 itemCount:
                                     _messages.length + (_isLoading ? 1 : 0),
                                 itemBuilder: (context, index) {
@@ -239,10 +232,9 @@ class _AIChatPageState extends State<AIChatPage> {
       child: const Text(
         "AI Powered • Real-Time Soil Data • Weather Integrated",
         style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.bold,
-          color: Color(0xFF2E7D32),
-        ),
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF2E7D32)),
       ),
     );
   }
@@ -260,11 +252,8 @@ class _AIChatPageState extends State<AIChatPage> {
               color: Colors.white.withOpacity(0.6),
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.waving_hand_rounded,
-              color: Color(0xFF2E7D32),
-              size: 48,
-            ),
+            child: const Icon(Icons.waving_hand_rounded,
+                color: Color(0xFF2E7D32), size: 48),
           ),
           const SizedBox(height: 16),
           const Text(
@@ -334,9 +323,7 @@ class _AIChatPageState extends State<AIChatPage> {
           width: 20,
           height: 20,
           child: CircularProgressIndicator(
-            strokeWidth: 2,
-            color: Color(0xFF2E7D32),
-          ),
+              strokeWidth: 2, color: Color(0xFF2E7D32)),
         ),
       ),
     );
@@ -348,15 +335,13 @@ class _AIChatPageState extends State<AIChatPage> {
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
-        ),
+        constraints:
+            BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         margin: const EdgeInsets.symmetric(vertical: 6),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isUser
-              ? const Color(0xFFE8F5E9)
-              : Colors.white.withOpacity(0.9),
+          color:
+              isUser ? const Color(0xFFE8F5E9) : Colors.white.withOpacity(0.9),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(20),
             topRight: const Radius.circular(20),
@@ -365,10 +350,9 @@ class _AIChatPageState extends State<AIChatPage> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
+                color: Colors.black.withOpacity(0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 3)),
           ],
           border: Border.all(
             color: isUser
@@ -377,27 +361,20 @@ class _AIChatPageState extends State<AIChatPage> {
           ),
         ),
         child: Column(
-          crossAxisAlignment: isUser
-              ? CrossAxisAlignment.end
-              : CrossAxisAlignment.start,
+          crossAxisAlignment:
+              isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
-            Text(
-              text,
-              style: TextStyle(
-                color: isUser ? const Color(0xFF1B1B1B) : Colors.black87,
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-            ),
+            Text(text,
+                style: TextStyle(
+                    color: isUser ? const Color(0xFF1B1B1B) : Colors.black87,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14)),
             const SizedBox(height: 4),
-            Text(
-              time,
-              style: const TextStyle(
-                color: Colors.black45,
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            Text(time,
+                style: const TextStyle(
+                    color: Colors.black45,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500)),
           ],
         ),
       ),
@@ -427,15 +404,12 @@ class _AIChatPageState extends State<AIChatPage> {
             Expanded(
               child: TextField(
                 controller: _controller,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
+                style:
+                    const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                 decoration: const InputDecoration(
-                  hintText: "Ask AgriVora...",
-                  hintStyle: TextStyle(color: Colors.black54),
-                  border: InputBorder.none,
-                ),
+                    hintText: "Ask AgriVora...",
+                    hintStyle: TextStyle(color: Colors.black54),
+                    border: InputBorder.none),
                 onSubmitted: (_) => _sendMessage(),
               ),
             ),
@@ -447,11 +421,8 @@ class _AIChatPageState extends State<AIChatPage> {
                   color: Color(0xFF2E7D32),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.send_rounded,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                child: const Icon(Icons.send_rounded,
+                    color: Colors.white, size: 20),
               ),
             ),
           ],

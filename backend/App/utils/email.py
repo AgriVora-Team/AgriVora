@@ -1,7 +1,12 @@
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+"""
+**Email Utility**
+Responsible for: Sending emails (e.g., OTP codes) using SMTP.
+"""
+
 import os
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 # 🌿 Email Configuration
 # You should set these in your environment variables for security

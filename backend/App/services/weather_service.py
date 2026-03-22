@@ -1,40 +1,46 @@
+"""
+**Weather Service**
+Responsible for: Fetching local weather data (temperature, rainfall) from Open-Meteo or similar API.
+"""
+
 import requests
+
 from app.utils.cache import get_cache, set_cache
 
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
 
 def fetch_weather_data(lat: float, lon: float):
     try:
-        key = f"weather:{round(lat, 3)}:{round(lon, 3)}"
-        cached_data = get_cache(key)
+        cache_key = f"weather:{round(lat,3)}:{round(lon,3)}"
+        cached = get_cache(cache_key)
 
-        if cached_data:
+        if cached:
             print("WEATHER CACHE HIT")
-            return cached_data, None
+            return cached, None
 
         print("WEATHER API CALL")
 
-        query = {
+        params = {
             "latitude": lat,
             "longitude": lon,
-            "current": ["temperature_2m", "relative_humidity_2m", "precipitation"],
+            "current": "temperature_2m,relative_humidity_2m,precipitation",
             "timezone": "auto"
         }
 
-        res = requests.get(OPEN_METEO_URL, params=query, timeout=10)
-        res.raise_for_status()
+        response = requests.get(OPEN_METEO_URL, params=params, timeout=10)
+        response.raise_for_status()
 
-        payload = res.json()
-        current_data = payload.get("current", {})
+        data = response.json()
+        current = data.get("current", {})
 
-        weather_info = {
-            "temperature": current_data.get("temperature_2m"),
-            "rainfall": current_data.get("precipitation"),
-            "humidity": current_data.get("relative_humidity_2m")
+        weather = {
+            "temperature": current.get("temperature_2m"),
+            "rainfall": current.get("precipitation"),
+            "humidity": current.get("relative_humidity_2m")
         }
 
-        set_cache(key, weather_info)
-        return weather_info, None
+        set_cache(cache_key, weather)
+        return weather, None
 
-    except Exception as err:
-        return None, str(err)
+    except Exception as e:
+        return None, str(e)

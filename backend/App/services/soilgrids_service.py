@@ -1,14 +1,17 @@
+"""
+**SoilGrids Service**
+Responsible for: Making external API calls to the ISRIC SoilGrids REST API to fetch soil properties (pH, organic carbon, nitrogen) via GPS coordinates.
+"""
+
 import requests
+
 from app.utils.cache import get_cache, set_cache
 
 SOILGRIDS_URL = "https://rest.isric.org/soilgrids/v2.0/properties/query"
-REQUEST_TIMEOUT = 10
-
-SOIL_PERCENT_DIVISOR = 10
-SOC_DIVISOR = 100
 
 def fetch_soil_data(lat: float, lon: float):
     try:
+        # --- Cache key (rounded to reduce duplicates)
         cache_key = f"soil:{round(lat,3)}:{round(lon,3)}"
         cached = get_cache(cache_key)
 
@@ -25,7 +28,7 @@ def fetch_soil_data(lat: float, lon: float):
             "depth": ["0-5cm"]
         }
 
-        response = requests.get(SOILGRIDS_URL, params=params, timeout=REQUEST_TIMEOUT)
+        response = requests.get(SOILGRIDS_URL, params=params, timeout=6)
         response.raise_for_status()
 
         data = response.json()
@@ -45,11 +48,11 @@ def fetch_soil_data(lat: float, lon: float):
                 continue
 
             if name == "sand":
-                soil["sand"] = round(mean / SOIL_PERCENT_DIVISOR, 2)
+                soil["sand"] = round(mean / 10, 2)          # %
             elif name == "clay":
-                soil["clay"] = round(mean / SOIL_PERCENT_DIVISOR, 2)
+                soil["clay"] = round(mean / 10, 2)          # %
             elif name == "soc":
-                soil["organicCarbon"] = round(mean / SOC_DIVISOR, 2)
+                soil["organicCarbon"] = round(mean / 100, 2)
 
         set_cache(cache_key, soil)
         return soil, None

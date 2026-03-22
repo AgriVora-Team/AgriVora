@@ -1,11 +1,17 @@
+"""
+**Sensor Endpoint**
+Responsible for: Managing hardware IoT sensor requests (e.g., pH readings if routed through backend proxy).
+"""
+
+import logging
+import statistics
+import uuid
+from collections import deque
+from datetime import datetime, timezone
+from typing import List, Optional
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
-from typing import List, Optional
-import logging
-import uuid
-from datetime import datetime, timezone
-from collections import deque
-import statistics
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -94,7 +100,7 @@ def _validate_readings(readings: List[PhReadingIn]) -> List[dict]:
             logger.warning(f"Discarding spike jump {prev}→{r.ph}")
             continue
         prev = r.ph
-        valid.append(r.dict())
+        valid.append(r.model_dump())
     return valid
 
 
@@ -110,7 +116,7 @@ async def start_session(body: SessionStart):
         "deviceId":   body.deviceId,
         "startedAt":  datetime.now(timezone.utc).isoformat(),
         "endedAt":    None,
-        "gps":        body.gps.dict() if body.gps else None,
+        "gps":        body.gps.model_dump() if body.gps else None,
         "readings":   [],
         "summary":    {},
     }

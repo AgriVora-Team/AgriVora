@@ -1,3 +1,7 @@
+/// **SessionService**
+/// Responsible for: Managing user session persistence.
+/// Role: Stores/loads JWT tokens, user metadata, and permission statuses using SharedPreferences.
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart';
 
@@ -5,13 +9,13 @@ import 'api_service.dart';
 /// Keys are intentionally short and stable.
 class SessionService {
   // ── Shared Preferences keys ────────────────────────────────────────────────
-  static const _kUserId    = 'session_user_id';
-  static const _kUserName  = 'session_user_name';
-  static const _kUserEmail    = 'session_user_email';
-  static const _kUserPhone    = 'session_user_phone';
+  static const _kUserId = 'session_user_id';
+  static const _kUserName = 'session_user_name';
+  static const _kUserEmail = 'session_user_email';
+  static const _kUserPhone = 'session_user_phone';
   static const _kPermsGranted = 'session_perms_granted';
-  static const _kIsGuest      = 'session_is_guest';
-  static const _kProfilePic   = 'session_profile_pic';
+  static const _kIsGuest = 'session_is_guest';
+  static const _kProfilePic = 'session_profile_pic';
 
   // ──────────────────────────────────────────────────────────────────────────
   // Save (called right after a successful login)
@@ -23,8 +27,8 @@ class SessionService {
     required String userPhone,
   }) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kUserId,    userId);
-    await prefs.setString(_kUserName,  userName);
+    await prefs.setString(_kUserId, userId);
+    await prefs.setString(_kUserName, userName);
     await prefs.setString(_kUserEmail, userEmail);
     await prefs.setString(_kUserPhone, userPhone);
   }
@@ -51,7 +55,7 @@ class SessionService {
   // ──────────────────────────────────────────────────────────────────────────
   static Future<bool> restoreSession() async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     // Check if Guest
     final isGuest = prefs.getBool(_kIsGuest) ?? false;
     if (isGuest) {
@@ -63,8 +67,8 @@ class SessionService {
     if (userId == null || userId.isEmpty) return false;
 
     // Reload into ApiService memory
-    ApiService.userId    = userId;
-    ApiService.userName  = prefs.getString(_kUserName)  ?? '';
+    ApiService.userId = userId;
+    ApiService.userName = prefs.getString(_kUserName) ?? '';
     ApiService.userEmail = prefs.getString(_kUserEmail) ?? '';
     ApiService.userPhone = prefs.getString(_kUserPhone) ?? '';
     return true;

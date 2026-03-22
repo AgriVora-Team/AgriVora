@@ -1,3 +1,7 @@
+/// **StartScanScreen**
+/// Responsible for: Initiating the device-based soil scan flow.
+/// Role: Starts a new ScanSession and navigates to the GPS step.
+
 import 'package:flutter/material.dart';
 
 import '../main.dart'; // to use ScanSession from main.dart

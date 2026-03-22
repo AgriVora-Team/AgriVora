@@ -1,8 +1,12 @@
+/// **ManualSoilAnalysisPage**
+/// Responsible for: Manual input of soil metrics (pH, Nitrogen, etc.).
+/// Role: Collects manual entries to trigger crop recommendation by calling ApiService.predictCropLGBM().
+/// API Dependency: /crop/recommend (LightGBM)
+
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../services/location_service.dart';
-import '../widgets/agri_bottom_nav_bar.dart';
 
 class ManualSoilAnalysisPage extends StatefulWidget {
   const ManualSoilAnalysisPage({super.key});
@@ -89,7 +93,7 @@ class _ManualSoilAnalysisPageState extends State<ManualSoilAnalysisPage> {
         ph: ph,
         nitrogen: 40.0,
         carbon: 1.2, // Default or implied
-        soilType: 'Loamy',
+        soilType: 'loamy soil',
       );
 
       if (mounted) {
@@ -216,8 +220,6 @@ class _ManualSoilAnalysisPageState extends State<ManualSoilAnalysisPage> {
               ),
             ),
           ),
-
-
         ],
       ),
     );
@@ -530,7 +532,7 @@ class _GlassCardContainer extends StatelessWidget {
   final Widget child;
   final EdgeInsets? padding;
 
-  const _GlassCardContainer({required this.child});
+  const _GlassCardContainer({super.key, required this.child, this.padding});
 
   @override
   Widget build(BuildContext context) {

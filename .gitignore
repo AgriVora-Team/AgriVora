@@ -47,3 +47,7 @@ Thumbs.db
 *.pt
 *.pth
 *.onnx
+
+# Logs / temp files
+*.txt
+!README.md

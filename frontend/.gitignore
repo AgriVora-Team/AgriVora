@@ -50,3 +50,9 @@ Thumbs.db
 migrate_working_dir/
 app.*.symbols
 app.*.map.json
+
+# Secrets
+.env
+*.env
+firebase-key.json
+backend/firebase-key.json

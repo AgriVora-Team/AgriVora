@@ -3,8 +3,7 @@
 /// Role: Encapsulates network requests to the deployed Railway backend,
 ///       error handling, and JSON parsing.
 ///
-/// Backend base URL: https://agrivora-production.up.railway.app
-
+/// Backend base URL: https://agrivora-production-d669.up.railway.app/
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -17,7 +16,7 @@ class ApiService {
   // Single production base URL — no discovery logic needed.
   // ─────────────────────────────────────────────────────────────
   static const String baseUrl =
-      'https://agrivora-production.up.railway.app';
+      'https://agrivora-production-d669.up.railway.app';
 
   /// Trigger used to notify the UI (HistoryPage) that it needs to refresh.
   static final ValueNotifier<int> historyRefreshTrigger = ValueNotifier(0);

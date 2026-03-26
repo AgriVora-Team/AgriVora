@@ -110,9 +110,9 @@ class _MapPageState extends State<MapPage> {
     }
 
     try {
-      // Use shorter timeout and request permission via our service
-      final pos = await LocationService.getCurrentLocation()
-          .timeout(const Duration(seconds: 10));
+      // Use our new robust service to request permission & get location
+      final pos = await LocationService.getCurrentLocation(context);
+      if (pos == null) return;
       if (mounted) {
         setState(() {
           _locationDenied = false;
@@ -176,8 +176,9 @@ class _MapPageState extends State<MapPage> {
         if (weather['temperature'] != null) return;
       }
     } catch (e) {
-    // ── Fallback: call Open-Meteo + Nominatim directly ─────────────────────
-    await _fetchWeatherDirect(lat, lon);
+      // ── Fallback: call Open-Meteo + Nominatim directly ─────────────────────
+      await _fetchWeatherDirect(lat, lon);
+    }
   }
 
   Future<void> _fetchWeatherDirect(double lat, double lon) async {

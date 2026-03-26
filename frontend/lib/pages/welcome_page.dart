@@ -47,23 +47,11 @@ class _WelcomePageState extends State<WelcomePage>
   }
 
   Future<void> _handleGetStarted() async {
-    final hasPerms = await SessionService.hasGrantedPermissions();
-    if (!mounted) return;
-    if (hasPerms) {
-      Navigator.pushNamed(context, '/login');
-    } else {
-      Navigator.pushNamed(context, '/permission');
-    }
+    Navigator.pushNamed(context, '/login');
   }
 
   Future<void> _handleGuest() async {
-    final hasPerms = await SessionService.hasGrantedPermissions();
-    if (!mounted) return;
-    if (hasPerms) {
-      Navigator.pushNamed(context, '/role', arguments: 'Guest');
-    } else {
-      Navigator.pushNamed(context, '/permission', arguments: {'isGuest': true});
-    }
+    Navigator.pushNamed(context, '/role', arguments: 'Guest');
   }
 
   @override

@@ -92,22 +92,27 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> _getUserLocation() async {
-    // 1. Try last known for instant centering
-    final lastPos = await Geolocator.getLastKnownPosition();
-    if (lastPos != null && mounted) {
-      setState(() => _currentLocation = lastPos);
-      if (_mapReady) {
-        try {
-          _mapController.move(LatLng(lastPos.latitude, lastPos.longitude), 16);
-        } catch (_) {}
+    // 1. Try last known for instant centering (safely)
+    try {
+      final lastPos = await Geolocator.getLastKnownPosition();
+      if (lastPos != null && mounted) {
+        setState(() => _currentLocation = lastPos);
+        if (_mapReady) {
+          try {
+            _mapController.move(LatLng(lastPos.latitude, lastPos.longitude), 16);
+          } catch (_) {}
+        }
+        // Fetch weather immediately for this cached coordinate
+        _fetchWeatherData(lastPos); // Don't await here to avoid blocking
       }
-      // Fetch weather load immediately for this cached coordinate
-      await _fetchWeatherData(lastPos);
+    } catch (e) {
+      debugPrint("Last known location failed: $e");
     }
 
     try {
+      // Use shorter timeout and request permission via our service
       final pos = await LocationService.getCurrentLocation()
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 10));
       if (mounted) {
         setState(() {
           _locationDenied = false;
@@ -118,7 +123,7 @@ class _MapPageState extends State<MapPage> {
             _mapController.move(LatLng(pos.latitude, pos.longitude), 16);
           } catch (_) {}
         }
-        await _fetchWeatherData(pos);
+        _fetchWeatherData(pos);
       }
     } catch (e) {
       debugPrint("Location fetch failed: $e");
@@ -126,19 +131,21 @@ class _MapPageState extends State<MapPage> {
         if (mounted) setState(() => _locationDenied = true);
         return;
       }
-      // Fallback to medium accuracy
+      // Fallback to medium accuracy if 'best' is taking too long
       try {
         final fallbackPos = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.medium,
-        ).timeout(const Duration(seconds: 8));
+          timeLimit: const Duration(seconds: 7),
+        );
         if (mounted) {
           setState(() {
             _locationDenied = false;
             _currentLocation = fallbackPos;
           });
-          await _fetchWeatherData(fallbackPos);
+          _fetchWeatherData(fallbackPos);
         }
       } catch (fallbackE) {
+        debugPrint("Fallback location also failed: $fallbackE");
         if (fallbackE.toString().toLowerCase().contains("denied")) {
           if (mounted) setState(() => _locationDenied = true);
         }
@@ -157,31 +164,37 @@ class _MapPageState extends State<MapPage> {
       final summary = await ApiService.getLocationSummary(lat, lon)
           .timeout(const Duration(seconds: 8));
       final weather = summary['weatherSummary'];
-      if (mounted && weather != null && weather['temperature'] != null) {
+      if (mounted && weather != null) {
         setState(() {
           _temperature = "${weather['temperature'] ?? '--'}°C";
           _rainfall = "${weather['rainfall'] ?? '--'}mm";
           _humidity = "${weather['humidity'] ?? '--'}%";
           _cityName = summary['location'] ?? "My Fields";
         });
-        return; // success — done
+        
+        // If we got temperature, we are satisfied with the summary
+        if (weather['temperature'] != null) return;
       }
     } catch (e) {
-      debugPrint("Backend weather failed, falling back to direct APIs: $e");
-    }
-
     // ── Fallback: call Open-Meteo + Nominatim directly ─────────────────────
     await _fetchWeatherDirect(lat, lon);
   }
 
   Future<void> _fetchWeatherDirect(double lat, double lon) async {
-    // Open-Meteo (free, no key)
+    // Parallelize both to speed up fallback
+    await Future.wait([
+      _fetchWeatherFromOpenMeteo(lat, lon),
+      _fetchNameFromNominatim(lat, lon),
+    ]);
+  }
+
+  Future<void> _fetchWeatherFromOpenMeteo(double lat, double lon) async {
     try {
       final url = Uri.parse('https://api.open-meteo.com/v1/forecast'
           '?latitude=$lat&longitude=$lon'
           '&current=temperature_2m,relative_humidity_2m,precipitation'
           '&timezone=auto');
-      final res = await http.get(url).timeout(const Duration(seconds: 10));
+      final res = await http.get(url).timeout(const Duration(seconds: 8));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         final current = data['current'] ?? {};
@@ -194,16 +207,17 @@ class _MapPageState extends State<MapPage> {
         }
       }
     } catch (e) {
-      debugPrint("Open-Meteo direct call failed: $e");
+      debugPrint("Open-Meteo fallback failed: $e");
     }
+  }
 
-    // Nominatim reverse geocoding (free, no key)
+  Future<void> _fetchNameFromNominatim(double lat, double lon) async {
     try {
       final url = Uri.parse('https://nominatim.openstreetmap.org/reverse'
           '?format=json&lat=$lat&lon=$lon&zoom=10');
       final res = await http.get(url, headers: {
         'User-Agent': 'AgriVoraApp/1.0'
-      }).timeout(const Duration(seconds: 10));
+      }).timeout(const Duration(seconds: 8));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         final address = data['address'] ?? {};
@@ -215,8 +229,7 @@ class _MapPageState extends State<MapPage> {
         if (mounted) setState(() => _cityName = name);
       }
     } catch (e) {
-      debugPrint("Nominatim direct call failed: $e");
-      if (mounted) setState(() => _cityName = "My Fields");
+      debugPrint("Nominatim reverse geocoding fallback failed: $e");
     }
   }
 

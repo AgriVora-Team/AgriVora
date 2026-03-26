@@ -401,7 +401,7 @@ class ApiService {
             headers: _headers,
             body: jsonEncode({'lat': lat, 'lon': lon}),
           )
-          .timeout(const Duration(seconds: 20));
+          .timeout(const Duration(seconds: 12));
 
       final decoded = _safeJsonDecode(response.body);
       if (response.statusCode == 200 &&

@@ -1,3 +1,8 @@
+/// **LoginPage**
+/// Responsible for: User authentication (login).
+/// Role: Captures email/phone and password, calls ApiService.login(), uses SessionService to save session state.
+/// API Dependency: /api/auth/login
+
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
@@ -33,15 +38,15 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  //  Log in
+  // ✅ Log in -> Role select page
   Future<void> _login() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please enter all fields')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter all fields')),
+      );
       return;
     }
 
@@ -57,6 +62,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final response = await ApiService.login(email, password);
       if (mounted) {
+        // ✅ Persist the session so next cold-start skips onboarding
         await SessionService.saveSession(
           userId: ApiService.userId ?? '',
           userName: ApiService.userName ?? '',
@@ -188,9 +194,7 @@ class _LoginPageState extends State<LoginPage> {
                             child: TextButton(
                               onPressed: () {
                                 Navigator.pushNamed(
-                                  context,
-                                  '/forgot-password',
-                                );
+                                    context, '/forgot-password');
                               },
                               child: const Text(
                                 "Forgot password?",
@@ -213,14 +217,12 @@ class _LoginPageState extends State<LoginPage> {
                                   borderRadius: BorderRadius.circular(34),
                                 ),
                                 elevation: 10,
-                                shadowColor: const Color(
-                                  0xFF004D40,
-                                ).withOpacity(0.35),
+                                shadowColor:
+                                    const Color(0xFF004D40).withOpacity(0.35),
                               ),
                               child: _isLoading
                                   ? const CircularProgressIndicator(
-                                      color: Colors.white,
-                                    )
+                                      color: Colors.white)
                                   : const Text(
                                       "Log In",
                                       style: TextStyle(
@@ -234,10 +236,8 @@ class _LoginPageState extends State<LoginPage> {
                           const SizedBox(height: 18),
                           const Text(
                             "Don't have an account?",
-                            style: TextStyle(
-                              color: Colors.black54,
-                              fontSize: 14,
-                            ),
+                            style:
+                                TextStyle(color: Colors.black54, fontSize: 14),
                           ),
                           TextButton(
                             onPressed: () =>

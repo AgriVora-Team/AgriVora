@@ -1,7 +1,14 @@
+/// **SessionService**
+/// Responsible for: Managing user session persistence.
+/// Role: Stores/loads JWT tokens, user metadata, and permission statuses using SharedPreferences.
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart';
 
+/// Handles reading and writing the persisted user session.
+/// Keys are intentionally short and stable.
 class SessionService {
+  // ── Shared Preferences keys ────────────────────────────────────────────────
   static const _kUserId = 'session_user_id';
   static const _kUserName = 'session_user_name';
   static const _kUserEmail = 'session_user_email';
@@ -10,6 +17,9 @@ class SessionService {
   static const _kIsGuest = 'session_is_guest';
   static const _kProfilePic = 'session_profile_pic';
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Save (called right after a successful login)
+  // ──────────────────────────────────────────────────────────────────────────
   static Future<void> saveSession({
     required String userId,
     required String userName,
@@ -23,16 +33,26 @@ class SessionService {
     await prefs.setString(_kUserPhone, userPhone);
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Save Guest Session
+  // ──────────────────────────────────────────────────────────────────────────
   static Future<void> saveGuestSession() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_kIsGuest, true);
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Mark that the user has accepted permissions (called on "Allow All")
+  // ──────────────────────────────────────────────────────────────────────────
   static Future<void> markPermissionsGranted() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_kPermsGranted, true);
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Restore (called at app startup)
+  // Returns true if a valid logged-in session exists.
+  // ──────────────────────────────────────────────────────────────────────────
   static Future<bool> restoreSession() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -54,11 +74,17 @@ class SessionService {
     return true;
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Check if permissions have been accepted before
+  // ──────────────────────────────────────────────────────────────────────────
   static Future<bool> hasGrantedPermissions() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_kPermsGranted) ?? false;
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Profile Picture
+  // ──────────────────────────────────────────────────────────────────────────
   static Future<void> saveProfilePic(String path) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kProfilePic, path);
@@ -69,6 +95,9 @@ class SessionService {
     return prefs.getString(_kProfilePic);
   }
 
+  // ──────────────────────────────────────────────────────────────────────────
+  // Clear (called on logout)
+  // ──────────────────────────────────────────────────────────────────────────
   static Future<void> clearSession() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_kUserId);

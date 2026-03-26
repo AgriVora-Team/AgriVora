@@ -1,3 +1,8 @@
+/// **HistoryPage**
+/// Responsible for: Showing the user's past soil analyses.
+/// Role: Fetches and lists historical scan records from the database via ApiService.
+/// API Dependency: /history/{userId}
+
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
@@ -18,6 +23,7 @@ class _HistoryPageState extends State<HistoryPage> {
   void initState() {
     super.initState();
     _fetchHistory();
+    // Listen for automatic history updates from API service
     ApiService.historyRefreshTrigger.addListener(_fetchHistorySilently);
   }
 
@@ -26,9 +32,13 @@ class _HistoryPageState extends State<HistoryPage> {
     ApiService.historyRefreshTrigger.removeListener(_fetchHistorySilently);
     super.dispose();
   }
+
+  /// Silently fetch history in the background without showing full loading screen
   Future<void> _fetchHistorySilently() async {
     try {
+      // Step 1: Attempt to fetch user history from ApiService
       final res = await ApiService.getUserHistory();
+      // Step 2: If mounted, update the state with fetched history and clear error message
       if (mounted) {
         setState(() {
           _historyData = res;
@@ -36,17 +46,20 @@ class _HistoryPageState extends State<HistoryPage> {
         });
       }
     } catch (_) {
-    
+      // Step 3: Catch and ignore any background errors
     }
   }
 
   Future<void> _fetchHistory() async {
+    // Step 1: Set loading state to true and clear any previous error message
     setState(() {
       _isLoading = true;
       _errorMsg = null;
     });
     try {
+      // Step 2: Try fetching history records via ApiService
       final res = await ApiService.getUserHistory();
+      // Step 3: If successful and widget is still mounted, update state with data and stop loading indicator
       if (mounted) {
         setState(() {
           _historyData = res;
@@ -54,6 +67,8 @@ class _HistoryPageState extends State<HistoryPage> {
         });
       }
     } catch (e) {
+      // Step 4: If an error is caught and widget is mounted, format error message and stop loading indicator
+      if (mounted) {
         setState(() {
           _errorMsg = e.toString().replaceFirst("Exception: ", "");
           _isLoading = false;
@@ -64,14 +79,17 @@ class _HistoryPageState extends State<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Step 1: Initialize screen dimensions and safe area paddings
     final size = MediaQuery.of(context).size;
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
+    // Step 2: Build main Scaffold and Stack structure for layered UI
     return Scaffold(
       backgroundColor: const Color(0xFFF2E8D5),
       body: Stack(
         children: [
-          //  Background
+          // Step 3: Add full-screen background image
+          // 🌾 Background
           Positioned.fill(
             child: Image.asset(
               'assets/images/bg_fields.png',
@@ -79,7 +97,8 @@ class _HistoryPageState extends State<HistoryPage> {
             ),
           ),
 
-          //  Top Header
+          // Step 4: Add floating top header containing title and icon
+          // ✅ Top Header (Floating over the image)
           Positioned(
             top: MediaQuery.of(context).padding.top + 55,
             left: 24,
@@ -137,7 +156,8 @@ class _HistoryPageState extends State<HistoryPage> {
             ),
           ),
 
-          //  Large Wavy Glass Panel
+          // Step 5: Create a frosted glass container with a wavy cutout for main content
+          // ✅ Large Wavy Glass Panel
           Align(
             alignment: Alignment.bottomCenter,
             child: ClipPath(
@@ -155,6 +175,7 @@ class _HistoryPageState extends State<HistoryPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Step 6: Display summary analytics dashboard if data is available and no errors occurred
                       // Summary Analytics Dashboard
                       if (!_isLoading &&
                           _historyData.isNotEmpty &&
@@ -165,6 +186,7 @@ class _HistoryPageState extends State<HistoryPage> {
                           _errorMsg == null)
                         const SizedBox(height: 16),
 
+                      // Step 7: Render the main body content (loading, error, empty, or list of cards)
                       Expanded(
                         child: _buildBody(),
                       ),
@@ -175,7 +197,7 @@ class _HistoryPageState extends State<HistoryPage> {
             ),
           ),
 
-          //  The Floating Navigation Bar
+          // 🧭 The Floating Navigation Bar
 
         ],
       ),
@@ -187,11 +209,12 @@ class _HistoryPageState extends State<HistoryPage> {
     if (_historyData.isNotEmpty) {
       Map<String, int> cropCounts = {};
       for (var item in _historyData) {
+        // Shape 1: LightGBM /crop/recommend saves recommended_crop directly
         if (item['recommended_crop'] != null) {
           String c = item['recommended_crop'].toString();
           cropCounts[c] = (cropCounts[c] ?? 0) + 1;
         }
-
+        // Shape 2: /recommend saves results as a list of {name, score, ...}
         else if (item['results'] != null && item['results'] is List) {
           final results = item['results'] as List;
           if (results.isNotEmpty) {
@@ -204,6 +227,7 @@ class _HistoryPageState extends State<HistoryPage> {
               cropCounts[c] = (cropCounts[c] ?? 0) + 1;
           }
         }
+        // Shape 3: has 'crop' key directly
         else if (item['crop'] != null) {
           String c = item['crop'].toString();
           cropCounts[c] = (cropCounts[c] ?? 0) + 1;
@@ -438,12 +462,12 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 
   Widget _buildHistoryCard(BuildContext context, Map<String, dynamic> item) {
-    //  Detect card type 
+    // ── Detect card type ──────────────────────────────────────────
     final bool isTexture = item.containsKey('texture') ||
         (item['scan_type']?.toString() == 'soil_scan');
     final bool isCropLGBM = item.containsKey('recommended_crop');
 
-    //  Top Crop: handle all save shapes 
+    // ── Top Crop: handle all save shapes ─────────────────────────
     String topCrop = 'N/A';
     if (!isTexture) {
       if (isCropLGBM && item['recommended_crop'] != null) {
@@ -461,7 +485,7 @@ class _HistoryPageState extends State<HistoryPage> {
       }
     }
 
-    //  pH: may be at root or inside soilSummary 
+    // ── pH: may be at root or inside soilSummary ─────────────────
     String phStr = 'N/A';
     if (item['ph'] != null) {
       phStr = item['ph'].toString();
@@ -470,7 +494,7 @@ class _HistoryPageState extends State<HistoryPage> {
       phStr = item['soilSummary']['ph'].toString();
     }
 
-    //  Soil type: detect from multiple fields 
+    // ── Soil type: detect from multiple fields ────────────────────
     String soilTypeStr = 'Unknown';
     if (item['soil_type'] != null) {
       soilTypeStr = item['soil_type'].toString();
@@ -486,7 +510,7 @@ class _HistoryPageState extends State<HistoryPage> {
       }
     }
 
-    //  Confidence 
+    // ── Confidence ────────────────────────────────────────────────
     String confStr = '—';
     if (item['confidence'] != null) {
       final conf = item['confidence'];
@@ -495,7 +519,7 @@ class _HistoryPageState extends State<HistoryPage> {
           : conf.toString();
     }
 
-    //  Date formatting 
+    // ── Date formatting ───────────────────────────────────────────
     String dateStr = 'Unknown Date';
     String timeStr = '';
     try {
@@ -514,7 +538,7 @@ class _HistoryPageState extends State<HistoryPage> {
       }
     } catch (_) {}
 
-    //  Card visuals 
+    // ── Card visuals ──────────────────────────────────────────────
     final IconData cardIcon =
         isTexture ? Icons.science_rounded : Icons.eco_rounded;
     final Color cardAccent =
@@ -527,9 +551,10 @@ class _HistoryPageState extends State<HistoryPage> {
 
     return InkWell(
       onTap: () {
+        // Normally open detail, skip for now or navigate to crop overview
       },
       onLongPress: () {
-
+        // Shows delete prompt (implement later)
       },
       borderRadius: BorderRadius.circular(22),
       child: Container(

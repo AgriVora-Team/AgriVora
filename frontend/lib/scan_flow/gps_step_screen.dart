@@ -1,12 +1,18 @@
+/// **GpsStepScreen**
+/// Responsible for: Fetching GPS coords for the scan session.
+
 import 'package:flutter/material.dart';
 
-import '../main.dart';
-import 'ph_step_screen.dart';
+import '../main.dart'; // to use ScanSession
+import 'ph_step_screen.dart'; // we'll create this next
 
 class GpsStepScreen extends StatefulWidget {
   final ScanSession session;
 
-  const GpsStepScreen({super.key, required this.session});
+  const GpsStepScreen({
+    super.key,
+    required this.session,
+  });
 
   @override
   State<GpsStepScreen> createState() => _GpsStepScreenState();
@@ -23,6 +29,7 @@ class _GpsStepScreenState extends State<GpsStepScreen> {
   }
 
   Future<void> _fakeGetLocation() async {
+    // TODO: replace this with real GPS (geolocator) later
     setState(() {
       _isFetching = true;
     });
@@ -31,7 +38,7 @@ class _GpsStepScreenState extends State<GpsStepScreen> {
 
     setState(() {
       _currentSession = _currentSession.copyWith(
-        latitude: 6.9271,
+        latitude: 6.9271, // Colombo (just as sample)
         longitude: 79.8612,
       );
       _isFetching = false;
@@ -52,7 +59,9 @@ class _GpsStepScreenState extends State<GpsStepScreen> {
 
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => PhStepScreen(session: _currentSession)),
+      MaterialPageRoute(
+        builder: (_) => PhStepScreen(session: _currentSession),
+      ),
     );
   }
 
@@ -74,7 +83,10 @@ class _GpsStepScreenState extends State<GpsStepScreen> {
           children: [
             const Text(
               'Get GPS Location',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
             ),
             const SizedBox(height: 12),
             const Text(
@@ -94,14 +106,17 @@ class _GpsStepScreenState extends State<GpsStepScreen> {
                 children: [
                   const Text(
                     'Current coordinates',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     lat == null || lon == null
                         ? 'Not fetched yet'
                         : 'Latitude: ${lat.toStringAsFixed(4)}, '
-                              'Longitude: ${lon.toStringAsFixed(4)}',
+                            'Longitude: ${lon.toStringAsFixed(4)}',
                     style: const TextStyle(fontSize: 14),
                   ),
                 ],
@@ -124,9 +139,8 @@ class _GpsStepScreenState extends State<GpsStepScreen> {
                         width: 22,
                         child: CircularProgressIndicator(
                           strokeWidth: 2.5,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
+                          valueColor:
+                              AlwaysStoppedAnimation<Color>(Colors.white),
                         ),
                       )
                     : const Text(

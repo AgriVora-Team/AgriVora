@@ -5,7 +5,11 @@ class AgriBottomNavBar extends StatelessWidget {
   final int activeIndex;
   final ValueChanged<int>? onTap;
 
-  const AgriBottomNavBar({super.key, required this.activeIndex, this.onTap});
+  const AgriBottomNavBar({
+    super.key,
+    required this.activeIndex,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -13,11 +17,7 @@ class AgriBottomNavBar extends StatelessWidget {
       alignment: Alignment.bottomCenter,
       child: Padding(
         padding: EdgeInsets.fromLTRB(
-          10,
-          0,
-          10,
-          MediaQuery.of(context).padding.bottom + 12,
-        ),
+            10, 0, 10, MediaQuery.of(context).padding.bottom + 12),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: BackdropFilter(
@@ -35,26 +35,11 @@ class AgriBottomNavBar extends StatelessWidget {
                   _navItem(context, Icons.home_rounded, "Home", 0, '/home'),
                   _navItem(context, Icons.map_outlined, "Map", 1, '/map'),
                   _navItem(
-                    context,
-                    Icons.history_rounded,
-                    "History",
-                    2,
-                    '/history',
-                  ),
+                      context, Icons.history_rounded, "History", 2, '/history'),
+                  _navItem(context, Icons.smart_toy_outlined, "AI Chat", 3,
+                      '/ai-chat'),
                   _navItem(
-                    context,
-                    Icons.smart_toy_outlined,
-                    "AI Chat",
-                    3,
-                    '/ai-chat',
-                  ),
-                  _navItem(
-                    context,
-                    Icons.person_outline,
-                    "Profile",
-                    4,
-                    '/profile',
-                  ),
+                      context, Icons.person_outline, "Profile", 4, '/profile'),
                 ],
               ),
             ),
@@ -64,13 +49,8 @@ class AgriBottomNavBar extends StatelessWidget {
     );
   }
 
-  Widget _navItem(
-    BuildContext context,
-    IconData icon,
-    String label,
-    int index,
-    String route,
-  ) {
+  Widget _navItem(BuildContext context, IconData icon, String label, int index,
+      String route) {
     final selected = activeIndex == index;
     return InkWell(
       onTap: () {

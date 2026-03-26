@@ -1,3 +1,8 @@
+/// **CropRecomPage**
+/// Responsible for: Displaying crop recommendations.
+/// Role: Receives recommendation results and displays ranked list of crops suitable for the analyzed soil.
+/// Navigation: Pushed after LightGBM or Random Forest API calls succeed.
+
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
@@ -39,10 +44,8 @@ class _CropRecomPageState extends State<CropRecomPage> {
       try {
         final pos = await LocationService.getCurrentLocation(context);
         if (pos == null) return;
-        final summary = await ApiService.getLocationSummary(
-          pos.latitude,
-          pos.longitude,
-        );
+        final summary =
+            await ApiService.getLocationSummary(pos.latitude, pos.longitude);
 
         final weather = summary['weatherSummary'] ?? {};
         final soil = summary['soilSummary'] ?? {};
@@ -51,8 +54,7 @@ class _CropRecomPageState extends State<CropRecomPage> {
         humid = (weather['humidity'] as num?)?.toDouble();
         rain = (weather['rainfall'] as num?)?.toDouble();
 
-        carbon =
-            (soil['organicCarbon'] as num?)?.toDouble() ??
+        carbon = (soil['organicCarbon'] as num?)?.toDouble() ??
             (soil['soc'] as num?)?.toDouble();
       } catch (e) {
         debugPrint("Location/Weather fetch failed: $e");
@@ -71,9 +73,8 @@ class _CropRecomPageState extends State<CropRecomPage> {
             ? data['rainfall'].toDouble()
             : (rain ?? 100.0),
         ph: (data['ph'] ?? 6.5).toDouble(),
-        nitrogen: (data['nitrogen'] != null)
-            ? data['nitrogen'].toDouble()
-            : 40.0,
+        nitrogen:
+            (data['nitrogen'] != null) ? data['nitrogen'].toDouble() : 40.0,
         carbon: (data['carbon'] != null)
             ? data['carbon'].toDouble()
             : (carbon ?? 1.2),
@@ -94,7 +95,7 @@ class _CropRecomPageState extends State<CropRecomPage> {
           "humidity": (data['humidity']?.toDouble()) ?? (humid ?? 75.0),
           "rainfall": (data['rainfall']?.toDouble()) ?? (rain ?? 100.0),
           "soil_type": data['soilType']?.toString() ?? 'loamy soil',
-          "type": "Crop Recommendation (LightGBM)",
+          "type": "Crop Recommendation (LightGBM)"
         });
       }
     } catch (e) {
@@ -146,10 +147,9 @@ class _CropRecomPageState extends State<CropRecomPage> {
                           height: 1.1,
                           shadows: [
                             Shadow(
-                              color: Colors.black45,
-                              blurRadius: 10,
-                              offset: Offset(0, 2),
-                            ),
+                                color: Colors.black45,
+                                blurRadius: 10,
+                                offset: Offset(0, 2))
                           ],
                         ),
                       ),
@@ -162,10 +162,9 @@ class _CropRecomPageState extends State<CropRecomPage> {
                           fontWeight: FontWeight.w600,
                           shadows: [
                             Shadow(
-                              color: Colors.black45,
-                              blurRadius: 8,
-                              offset: Offset(0, 1),
-                            ),
+                                color: Colors.black45,
+                                blurRadius: 8,
+                                offset: Offset(0, 1))
                           ],
                         ),
                       ),
@@ -174,9 +173,7 @@ class _CropRecomPageState extends State<CropRecomPage> {
                           padding: const EdgeInsets.only(top: 4),
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
+                                horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(8),
@@ -184,13 +181,12 @@ class _CropRecomPageState extends State<CropRecomPage> {
                             child: Text(
                               "pH: ${(_args!['ph'] as double).toStringAsFixed(1)} | ${_args!['soilType'] ?? 'Loamy Soil'}",
                               style: const TextStyle(
-                                fontSize: 11,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
+                                  fontSize: 11,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
                             ),
                           ),
-                        ),
+                        )
                     ],
                   ),
                 ),
@@ -199,15 +195,11 @@ class _CropRecomPageState extends State<CropRecomPage> {
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.4),
-                    ),
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: 0.4)),
                   ),
-                  child: const Icon(
-                    Icons.eco_rounded,
-                    color: Colors.white,
-                    size: 28,
-                  ),
+                  child: const Icon(Icons.eco_rounded,
+                      color: Colors.white, size: 28),
                 ),
               ],
             ),
@@ -226,9 +218,8 @@ class _CropRecomPageState extends State<CropRecomPage> {
                   padding: EdgeInsets.fromLTRB(16, 120, 16, bottomPad + 70),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF2E8D5).withValues(alpha: 0.68),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.18),
-                    ),
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: 0.18)),
                   ),
                   child: _buildBody(),
                 ),
@@ -248,13 +239,9 @@ class _CropRecomPageState extends State<CropRecomPage> {
           children: [
             const CircularProgressIndicator(color: Color(0xFF2E7D32)),
             const SizedBox(height: 16),
-            Text(
-              _loadingState,
-              style: const TextStyle(
-                color: Colors.black54,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            Text(_loadingState,
+                style: const TextStyle(
+                    color: Colors.black54, fontWeight: FontWeight.w600)),
           ],
         ),
       );
@@ -267,34 +254,25 @@ class _CropRecomPageState extends State<CropRecomPage> {
           children: [
             const Icon(Icons.error_outline, color: Colors.redAccent, size: 50),
             const SizedBox(height: 16),
-            const Text(
-              "Prediction Failed",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black87,
-              ),
-            ),
+            const Text("Prediction Failed",
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87)),
             const SizedBox(height: 8),
-            Text(
-              _errorMsg!,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 14, color: Colors.black54),
-            ),
+            Text(_errorMsg!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 14, color: Colors.black54)),
             const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () => Navigator.pop(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2E7D32),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-              child: const Text(
-                "Go Back",
-                style: TextStyle(color: Colors.white),
-              ),
-            ),
+                  backgroundColor: const Color(0xFF2E7D32),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20))),
+              child:
+                  const Text("Go Back", style: TextStyle(color: Colors.white)),
+            )
           ],
         ),
       );
@@ -315,15 +293,13 @@ class _CropRecomPageState extends State<CropRecomPage> {
           _prediction!['recommended_crop'] ?? _prediction!['crop'] ?? "Unknown";
       final conf = _prediction!['confidence'] ?? 0.85;
       recommendations = [
-        {"crop": cropName, "confidence": conf},
+        {"crop": cropName, "confidence": conf}
       ];
     }
 
     final topRec = recommendations.first;
-    final otherRecs = recommendations
-        .skip(1)
-        .take(3)
-        .toList(); // Up to 3 alternatives
+    final otherRecs =
+        recommendations.skip(1).take(3).toList(); // Up to 3 alternatives
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -336,14 +312,11 @@ class _CropRecomPageState extends State<CropRecomPage> {
           _buildPrimaryCropCard(topRec),
           if (otherRecs.isNotEmpty) ...[
             const SizedBox(height: 24),
-            const Text(
-              "Alternative Options",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFF1B1B1B),
-              ),
-            ),
+            const Text("Alternative Options",
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF1B1B1B))),
             const SizedBox(height: 12),
             ...otherRecs.map((rec) => _buildSecondaryCropCard(rec)),
           ],
@@ -362,34 +335,24 @@ class _CropRecomPageState extends State<CropRecomPage> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.4),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.grass_rounded,
-              size: 50,
-              color: Color(0xFF2E7D32),
-            ),
+                color: Colors.white.withValues(alpha: 0.4),
+                shape: BoxShape.circle),
+            child: const Icon(Icons.grass_rounded,
+                size: 50, color: Color(0xFF2E7D32)),
           ),
           const SizedBox(height: 16),
-          const Text(
-            "No Recommendations Yet",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF1B1B1B),
-            ),
-          ),
+          const Text("No Recommendations Yet",
+              style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF1B1B1B))),
           const SizedBox(height: 8),
-          const Text(
-            "Analyze soil to generate smart\ncrop suggestions.",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.black54,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          const Text("Analyze soil to generate smart\ncrop suggestions.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.black54,
+                  fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -408,14 +371,11 @@ class _CropRecomPageState extends State<CropRecomPage> {
           Icon(Icons.auto_awesome, size: 14, color: Color(0xFF2E7D32)),
           SizedBox(width: 8),
           Flexible(
-            child: Text(
-              "Based on Soil Data • AI Prediction",
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2E7D32),
-              ),
-            ),
+            child: Text("Based on Soil Data • AI Prediction",
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2E7D32))),
           ),
         ],
       ),
@@ -445,10 +405,9 @@ class _CropRecomPageState extends State<CropRecomPage> {
         border: Border.all(color: Colors.white.withValues(alpha: 0.6)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 16,
+              offset: const Offset(0, 6))
         ],
       ),
       child: Column(
@@ -466,23 +425,17 @@ class _CropRecomPageState extends State<CropRecomPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      cropName,
-                      style: const TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF1B5E20),
-                      ),
-                    ),
+                    Text(cropName,
+                        style: const TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF1B5E20))),
                     const SizedBox(height: 2),
-                    Text(
-                      condition,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: condColor,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                    Text(condition,
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: condColor,
+                            fontWeight: FontWeight.w700)),
                   ],
                 ),
               ),
@@ -492,22 +445,16 @@ class _CropRecomPageState extends State<CropRecomPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                "Suitability Score",
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black54,
-                ),
-              ),
-              Text(
-                "${(score * 100).toInt()}% Match",
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                  color: condColor,
-                ),
-              ),
+              const Text("Suitability Score",
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black54)),
+              Text("${(score * 100).toInt()}% Match",
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      color: condColor)),
             ],
           ),
           const SizedBox(height: 8),
@@ -524,28 +471,20 @@ class _CropRecomPageState extends State<CropRecomPage> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF2E7D32).withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(12),
-            ),
+                color: const Color(0xFF2E7D32).withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(12)),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
-                  Icons.info_outline,
-                  color: Color(0xFF2E7D32),
-                  size: 16,
-                ),
+                const Icon(Icons.info_outline,
+                    color: Color(0xFF2E7D32), size: 16),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    "AI models indicate that $cropName is structurally aligned with the current soil profile and location climate factors.",
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF1B5E20),
-                      height: 1.4,
-                    ),
-                  ),
-                ),
+                      "AI models indicate that $cropName is structurally aligned with the current soil profile and location climate factors.",
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF1B5E20), height: 1.4)),
+                )
               ],
             ),
           ),
@@ -555,30 +494,21 @@ class _CropRecomPageState extends State<CropRecomPage> {
               Expanded(
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.pushNamed(
-                      context,
-                      '/crop_overview',
-                      arguments: {
-                        'name': cropName,
-                        'image': 'assets/images/${cropName.toLowerCase()}.png',
-                        'scientific': '$cropName Species',
-                      },
-                    );
+                    Navigator.pushNamed(context, '/crop_overview', arguments: {
+                      'name': cropName,
+                      'image': 'assets/images/${cropName.toLowerCase()}.png',
+                      'scientific': '$cropName Species'
+                    });
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2E7D32),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+                        borderRadius: BorderRadius.circular(16)),
                   ),
-                  child: const Text(
-                    "View Crop Overview",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  child: const Text("View Crop Overview",
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold)),
                 ),
               ),
               const SizedBox(width: 10),
@@ -587,21 +517,17 @@ class _CropRecomPageState extends State<CropRecomPage> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: const Color(0xFF2E7D32).withValues(alpha: 0.3),
-                  ),
+                      color: const Color(0xFF2E7D32).withValues(alpha: 0.3)),
                 ),
                 child: IconButton(
-                  icon: const Icon(
-                    Icons.bookmark_border_rounded,
-                    color: Color(0xFF2E7D32),
-                  ),
+                  icon: const Icon(Icons.bookmark_border_rounded,
+                      color: Color(0xFF2E7D32)),
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Saved to history")),
-                    );
+                        const SnackBar(content: Text("Saved to history")));
                   },
                 ),
-              ),
+              )
             ],
           ),
         ],
@@ -627,55 +553,40 @@ class _CropRecomPageState extends State<CropRecomPage> {
           CircleAvatar(
             radius: 22,
             backgroundColor: const Color(0xFF2E7D32).withValues(alpha: 0.1),
-            child: const Icon(
-              Icons.eco_rounded,
-              color: Color(0xFF2E7D32),
-              size: 20,
-            ),
+            child: const Icon(Icons.eco_rounded,
+                color: Color(0xFF2E7D32), size: 20),
           ),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  cropName,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF1B5E20),
-                  ),
-                ),
-                const Text(
-                  "Alternative Option",
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.black54,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                Text(cropName,
+                    style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF1B5E20))),
+                const Text("Alternative Option",
+                    style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.black54,
+                        fontWeight: FontWeight.w600)),
               ],
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
-                "${(score * 100).toInt()}%",
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF2E7D32),
-                ),
-              ),
-              const Text(
-                "Match",
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.black54,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              Text("${(score * 100).toInt()}%",
+                  style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF2E7D32))),
+              const Text("Match",
+                  style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.black54,
+                      fontWeight: FontWeight.bold)),
             ],
           ),
         ],
@@ -696,37 +607,23 @@ class _CropRecomPageState extends State<CropRecomPage> {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.tips_and_updates_rounded,
-                color: Color(0xFFF57C00),
-              ),
+              const Icon(Icons.tips_and_updates_rounded,
+                  color: Color(0xFFF57C00)),
               const SizedBox(width: 8),
-              const Text(
-                "Soil Improvement Tips",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF1B1B1B),
-                ),
-              ),
+              const Text("Soil Improvement Tips",
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF1B1B1B))),
             ],
           ),
           const SizedBox(height: 16),
-          _buildTipRow(
-            "Adjust pH Levels",
-            "Balance acidity explicitly for optimal root absorption",
-            true,
-          ),
-          _buildTipRow(
-            "Improve Nitrogen Output",
-            "Add organic compost to strengthen vegetative growth",
-            false,
-          ),
-          _buildTipRow(
-            "Utilize N-P-K Formula",
-            "Look into adding specialized multi-tiered fertilizer",
-            false,
-          ),
+          _buildTipRow("Adjust pH Levels",
+              "Balance acidity explicitly for optimal root absorption", true),
+          _buildTipRow("Improve Nitrogen Output",
+              "Add organic compost to strengthen vegetative growth", false),
+          _buildTipRow("Utilize N-P-K Formula",
+              "Look into adding specialized multi-tiered fertilizer", false),
         ],
       ),
     );
@@ -752,23 +649,17 @@ class _CropRecomPageState extends State<CropRecomPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1B1B1B),
-                  ),
-                ),
+                Text(title,
+                    style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1B1B1B))),
                 const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Colors.black54,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                Text(subtitle,
+                    style: const TextStyle(
+                        fontSize: 11,
+                        color: Colors.black54,
+                        fontWeight: FontWeight.w500)),
               ],
             ),
           ),

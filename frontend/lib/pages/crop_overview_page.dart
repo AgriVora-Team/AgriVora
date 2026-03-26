@@ -1,3 +1,8 @@
+/// **CropOverviewPage**
+/// Responsible for: Showing detailed info about a specific recommended crop.
+/// Role: A static/dynamic view providing crop parameters like name, scientific name, and images.
+/// Navigational: Accessed from CropRecomPage.
+
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
@@ -52,10 +57,9 @@ class CropOverviewPage extends StatelessWidget {
                           height: 1.1,
                           shadows: [
                             Shadow(
-                              color: Colors.black45,
-                              blurRadius: 10,
-                              offset: Offset(0, 2),
-                            ),
+                                color: Colors.black45,
+                                blurRadius: 10,
+                                offset: Offset(0, 2))
                           ],
                         ),
                       ),
@@ -68,10 +72,9 @@ class CropOverviewPage extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                           shadows: [
                             Shadow(
-                              color: Colors.black45,
-                              blurRadius: 8,
-                              offset: Offset(0, 1),
-                            ),
+                                color: Colors.black45,
+                                blurRadius: 8,
+                                offset: Offset(0, 1))
                           ],
                         ),
                       ),
@@ -79,28 +82,23 @@ class CropOverviewPage extends StatelessWidget {
                         padding: const EdgeInsets.only(top: 6),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
+                              horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(
-                              0xFF2E7D32,
-                            ).withValues(alpha: 0.8),
+                            color:
+                                const Color(0xFF2E7D32).withValues(alpha: 0.8),
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.3),
-                            ),
+                                color: Colors.white.withValues(alpha: 0.3)),
                           ),
                           child: const Text(
                             "85% Suitable",
                             style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
+                                fontSize: 11,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
                           ),
                         ),
-                      ),
+                      )
                     ],
                   ),
                 ),
@@ -111,22 +109,17 @@ class CropOverviewPage extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      width: 3,
-                    ),
+                        color: Colors.white.withValues(alpha: 0.8), width: 3),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.2),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
-                      ),
+                      )
                     ],
                   ),
-                  child: const Icon(
-                    Icons.spa_rounded,
-                    color: Colors.white,
-                    size: 32,
-                  ),
+                  child: const Icon(Icons.spa_rounded,
+                      color: Colors.white, size: 32),
                 ),
               ],
             ),
@@ -145,9 +138,8 @@ class CropOverviewPage extends StatelessWidget {
                   padding: EdgeInsets.fromLTRB(16, 80, 16, bottomPad + 70),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF2E8D5).withValues(alpha: 0.75),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.3),
-                    ),
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: 0.3)),
                   ),
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
@@ -185,42 +177,26 @@ class CropOverviewPage extends StatelessWidget {
             children: [
               const Icon(Icons.info_outline_rounded, color: Color(0xFF2E7D32)),
               const SizedBox(width: 8),
-              const Text(
-                "Crop Overview",
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF1B1B1B),
-                ),
-              ),
+              const Text("Crop Overview",
+                  style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF1B1B1B))),
             ],
           ),
           const SizedBox(height: 12),
           Text(
-            "$name ($scientific) is highly suitable for your chosen field. It requires a balanced nutrient supply and can thrive well in the upcoming tropical growing season.",
-            style: const TextStyle(
-              fontSize: 13,
-              color: Colors.black87,
-              height: 1.4,
-            ),
-          ),
+              "$name ($scientific) is highly suitable for your chosen field. It requires a balanced nutrient supply and can thrive well in the upcoming tropical growing season.",
+              style: const TextStyle(
+                  fontSize: 13, color: Colors.black87, height: 1.4)),
           const SizedBox(height: 16),
           _buildParamRow(Icons.science_outlined, "Ideal pH Range", "6.0 - 7.5"),
           _buildParamRow(
-            Icons.thermostat_outlined,
-            "Temperature",
-            "20°C - 30°C",
-          ),
+              Icons.thermostat_outlined, "Temperature", "20°C - 30°C"),
           _buildParamRow(
-            Icons.water_drop_outlined,
-            "Water Needs",
-            "Moderate (400mm)",
-          ),
+              Icons.water_drop_outlined, "Water Needs", "Moderate (400mm)"),
           _buildParamRow(
-            Icons.date_range_rounded,
-            "Growing Season",
-            "Maha / Yala",
-          ),
+              Icons.date_range_rounded, "Growing Season", "Maha / Yala"),
         ],
       ),
     );
@@ -236,33 +212,25 @@ class CropOverviewPage extends StatelessWidget {
             children: [
               const Icon(Icons.landscape_rounded, color: Color(0xFF795548)),
               const SizedBox(width: 8),
-              const Text(
-                "Soil Compatibility",
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF1B1B1B),
-                ),
-              ),
+              const Text("Soil Compatibility",
+                  style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF1B1B1B))),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFF2E7D32).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Text(
-                  "Good",
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2E7D32),
-                  ),
-                ),
-              ),
+                child: const Text("Good",
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2E7D32))),
+              )
             ],
           ),
           const SizedBox(height: 16),
@@ -284,32 +252,21 @@ class CropOverviewPage extends StatelessWidget {
             children: [
               const Icon(Icons.cloud_outlined, color: Color(0xFF1565C0)),
               const SizedBox(width: 8),
-              const Text(
-                "Climate Suitability",
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF1B1B1B),
-                ),
-              ),
+              const Text("Climate Suitability",
+                  style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF1B1B1B))),
             ],
           ),
           const SizedBox(height: 16),
           Row(
             children: [
               _buildMiniBox(
-                Icons.thermostat,
-                "Temp Match",
-                "Optimal",
-                Colors.orange,
-              ),
+                  Icons.thermostat, "Temp Match", "Optimal", Colors.orange),
               const SizedBox(width: 12),
               _buildMiniBox(
-                Icons.water_drop,
-                "Rainfall",
-                "Adequate",
-                Colors.blue,
-              ),
+                  Icons.water_drop, "Rainfall", "Adequate", Colors.blue),
             ],
           ),
           const SizedBox(height: 16),
@@ -321,25 +278,20 @@ class CropOverviewPage extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(
-                  Icons.wb_twilight_rounded,
-                  size: 20,
-                  color: Color(0xFF1565C0),
-                ),
+                const Icon(Icons.wb_twilight_rounded,
+                    size: 20, color: Color(0xFF1565C0)),
                 const SizedBox(width: 10),
                 Expanded(
                   child: const Text(
-                    "Current weather patterns indicate a highly favorable environment for early germination.",
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF1565C0),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                      "Current weather patterns indicate a highly favorable environment for early germination.",
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF1565C0),
+                          fontWeight: FontWeight.w600)),
                 ),
               ],
             ),
-          ),
+          )
         ],
       ),
     );
@@ -353,38 +305,25 @@ class CropOverviewPage extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.lightbulb_outline_rounded,
-                color: Color(0xFFF57C00),
-              ),
+              const Icon(Icons.lightbulb_outline_rounded,
+                  color: Color(0xFFF57C00)),
               const SizedBox(width: 8),
-              const Text(
-                "Farming Advice",
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF1B1B1B),
-                ),
-              ),
+              const Text("Farming Advice",
+                  style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF1B1B1B))),
             ],
           ),
           const SizedBox(height: 16),
           _buildTipRow(
-            "Fertilizer",
-            "Use NPK 15-15-15 during vegetative stage",
-          ),
+              "Fertilizer", "Use NPK 15-15-15 during vegetative stage"),
           _buildTipRow(
-            "Irrigation",
-            "Drip irrigation recommended for water efficiency",
-          ),
+              "Irrigation", "Drip irrigation recommended for water efficiency"),
           _buildTipRow(
-            "Pest Risk",
-            "Moderate. Watch for early aphid outbreaks",
-          ),
+              "Pest Risk", "Moderate. Watch for early aphid outbreaks"),
           _buildTipRow(
-            "Harvest Duration",
-            "Estimated 80-100 days from planting",
-          ),
+              "Harvest Duration", "Estimated 80-100 days from planting"),
         ],
       ),
     );
@@ -399,27 +338,22 @@ class CropOverviewPage extends StatelessWidget {
           child: ElevatedButton.icon(
             onPressed: () {
               // Usually handled internally via prediction save, but mock UI action here
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Crop details saved to History!")),
-              );
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                  content: Text("Crop details saved to History!")));
             },
             icon: const Icon(Icons.bookmark_added_rounded, color: Colors.white),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF2E7D32),
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+                  borderRadius: BorderRadius.circular(16)),
               elevation: 4,
             ),
-            label: const Text(
-              "Save to History",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            label: const Text("Save to History",
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold)),
           ),
         ),
         const SizedBox(height: 12),
@@ -428,26 +362,19 @@ class CropOverviewPage extends StatelessWidget {
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: () => Navigator.pop(context),
-                icon: const Icon(
-                  Icons.arrow_back_rounded,
-                  color: Color(0xFF2E7D32),
-                  size: 18,
-                ),
+                icon: const Icon(Icons.arrow_back_rounded,
+                    color: Color(0xFF2E7D32), size: 18),
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Color(0xFF2E7D32), width: 1.5),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                      borderRadius: BorderRadius.circular(16)),
                 ),
-                label: const Text(
-                  "Alternative Crops",
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Color(0xFF2E7D32),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                label: const Text("Alternative Crops",
+                    style: TextStyle(
+                        fontSize: 13,
+                        color: Color(0xFF2E7D32),
+                        fontWeight: FontWeight.bold)),
               ),
             ),
             const SizedBox(width: 12),
@@ -456,35 +383,28 @@ class CropOverviewPage extends StatelessWidget {
                 onPressed: () {
                   Navigator.pushNamed(context, '/ai_chat');
                 },
-                icon: const Icon(
-                  Icons.smart_toy_rounded,
-                  color: Colors.white,
-                  size: 18,
-                ),
+                icon: const Icon(Icons.smart_toy_rounded,
+                    color: Colors.white, size: 18),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1B5E20),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                      borderRadius: BorderRadius.circular(16)),
                 ),
-                label: const Text(
-                  "Ask AI About Crop",
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                label: const Text("Ask AI About Crop",
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold)),
               ),
             ),
           ],
-        ),
+        )
       ],
     );
   }
 
-  //  Utility Widgets
+  // ─── Utility Widgets ───
 
   Widget _buildParamRow(IconData icon, String title, String value) {
     return Padding(
@@ -500,23 +420,17 @@ class CropOverviewPage extends StatelessWidget {
             child: Icon(icon, color: const Color(0xFF2E7D32), size: 18),
           ),
           const SizedBox(width: 12),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: Colors.black54,
-            ),
-          ),
+          Text(title,
+              style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black54)),
           const Spacer(),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF1B1B1B),
-            ),
-          ),
+          Text(value,
+              style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF1B1B1B))),
         ],
       ),
     );
@@ -529,22 +443,16 @@ class CropOverviewPage extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: Colors.black87,
-              ),
-            ),
-            Text(
-              "${(progress * 100).toInt()}% Match",
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFF2E7D32),
-              ),
-            ),
+            Text(label,
+                style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.black87)),
+            Text("${(progress * 100).toInt()}% Match",
+                style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF2E7D32))),
           ],
         ),
         const SizedBox(height: 6),
@@ -574,23 +482,17 @@ class CropOverviewPage extends StatelessWidget {
           children: [
             Icon(icon, color: color, size: 24),
             const SizedBox(height: 6),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 11,
-                color: Colors.black54,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            Text(title,
+                style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.black54,
+                    fontWeight: FontWeight.w600)),
             const SizedBox(height: 2),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFF1B1B1B),
-              ),
-            ),
+            Text(value,
+                style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF1B1B1B))),
           ],
         ),
       ),
@@ -617,23 +519,17 @@ class CropOverviewPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1B1B1B),
-                  ),
-                ),
+                Text(title,
+                    style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1B1B1B))),
                 const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.black54,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                Text(subtitle,
+                    style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.black54,
+                        fontWeight: FontWeight.w500)),
               ],
             ),
           ),
@@ -658,10 +554,9 @@ class _GlassCardContainer extends StatelessWidget {
         border: Border.all(color: Colors.white.withValues(alpha: 0.6)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 16,
+              offset: const Offset(0, 6))
         ],
       ),
       child: child,

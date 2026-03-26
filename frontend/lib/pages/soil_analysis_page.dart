@@ -1,3 +1,8 @@
+/// **SoilAnalysisPage**
+/// Responsible for: Providing options for soil analysis methods.
+/// Role: Allows the user to choose between IoT/BLE soil scanning or manual entry.
+/// Dependencies: Navigates to StartScanScreen or ManualSoilAnalysisPage.
+
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
@@ -63,21 +68,15 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
     _phController.addListener(_validateManualInput);
 
     // Initialize BLE logic but only connect if sensor mode is selected, or connect right away
-    _subs.add(
-      BleService().phStream.listen((ph) {
-        if (mounted) setState(() => _livePh = ph);
-      }),
-    );
-    _subs.add(
-      BleService().rawStream.listen((r) {
-        if (mounted) setState(() => _lastReading = r);
-      }),
-    );
-    _subs.add(
-      BleService().statusStream.listen((s) {
-        if (mounted) setState(() => _bleStatus = s);
-      }),
-    );
+    _subs.add(BleService().phStream.listen((ph) {
+      if (mounted) setState(() => _livePh = ph);
+    }));
+    _subs.add(BleService().rawStream.listen((r) {
+      if (mounted) setState(() => _lastReading = r);
+    }));
+    _subs.add(BleService().statusStream.listen((s) {
+      if (mounted) setState(() => _bleStatus = s);
+    }));
 
     // Auto-connect BLE
     BleService().startScanAndConnect();
@@ -93,7 +92,7 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
     super.dispose();
   }
 
-  //  Logic: Image
+  // ─── Logic: Image ───
   Future<void> _pickImage(ImageSource source) async {
     try {
       final XFile? pickedFile = await _picker.pickImage(
@@ -105,7 +104,7 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
       if (pickedFile != null) {
         setState(() {
           _image = File(pickedFile.path);
-          _imageResult = null;
+          _imageResult = null; // Clear previous result
         });
       }
     } catch (e) {
@@ -137,7 +136,7 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
     }
   }
 
-  //  Logic: Manual
+  // ─── Logic: Manual ───
   void _validateManualInput() {
     final text = _phController.text.trim();
     if (text.isEmpty) {
@@ -155,15 +154,15 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
     if (!_isManualValid) return;
     final ph = double.tryParse(_phController.text.trim());
     if (ph != null) {
-      Navigator.pushNamed(
-        context,
-        '/crop-recom',
-        arguments: {'ph': ph, 'soilType': _selectedSoilTexture},
-      );
+      Navigator.pushNamed(context, '/crop-recom', arguments: {
+        'ph': ph,
+        // _selectedSoilTexture is already normalised (e.g. "loamy soil")
+        'soilType': _selectedSoilTexture,
+      });
     }
   }
 
-  //  Main Build
+  // ─── Main Build ───
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
@@ -173,7 +172,7 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
       backgroundColor: const Color(0xFFF2E8D5),
       body: Stack(
         children: [
-          //  Background Fields Image
+          // 🌾 Background Fields Image
           Positioned.fill(
             child: Image.asset(
               'assets/images/bg_fields.png',
@@ -181,7 +180,7 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
             ),
           ),
 
-          // Floating Header
+          // ✅ Floating Header
           Positioned(
             top: MediaQuery.of(context).padding.top + 55,
             left: 20,
@@ -202,10 +201,9 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
                         height: 1.1,
                         shadows: [
                           Shadow(
-                            color: Colors.black45,
-                            blurRadius: 10,
-                            offset: Offset(0, 2),
-                          ),
+                              color: Colors.black45,
+                              blurRadius: 10,
+                              offset: Offset(0, 2))
                         ],
                       ),
                     ),
@@ -218,10 +216,9 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
                         fontWeight: FontWeight.w600,
                         shadows: [
                           Shadow(
-                            color: Colors.black45,
-                            blurRadius: 8,
-                            offset: Offset(0, 1),
-                          ),
+                              color: Colors.black45,
+                              blurRadius: 8,
+                              offset: Offset(0, 1))
                         ],
                       ),
                     ),
@@ -234,17 +231,14 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white.withOpacity(0.4)),
                   ),
-                  child: const Icon(
-                    Icons.eco_rounded,
-                    color: Colors.white,
-                    size: 28,
-                  ),
+                  child: const Icon(Icons.eco_rounded,
+                      color: Colors.white, size: 28),
                 ),
               ],
             ),
           ),
 
-          // Large Wavy Glass Panel
+          // ✅ Large Wavy Glass Panel
           Align(
             alignment: Alignment.bottomCenter,
             child: ClipPath(
@@ -277,7 +271,7 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
             ),
           ),
 
-          //  The Floating Navigation Bar
+          // 🧭 The Floating Navigation Bar
 
           // Full screen loading indicator
           if (_isAnalyzingImage)
@@ -290,14 +284,11 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
                     children: [
                       CircularProgressIndicator(color: Colors.white),
                       SizedBox(height: 16),
-                      Text(
-                        "Analyzing Soil Data...",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      Text("Analyzing Soil Data...",
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
@@ -308,7 +299,7 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
     );
   }
 
-  // Toggle Section
+  // ─── Toggle Section ───
   Widget _buildModeToggle() {
     return _GlassCardContainer(
       padding: const EdgeInsets.all(8),
@@ -316,22 +307,13 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildToggleOption(
-            AnalysisMode.image,
-            "Image",
-            Icons.camera_alt_outlined,
-          ),
+              AnalysisMode.image, "Image", Icons.camera_alt_outlined),
           const SizedBox(width: 8),
           _buildToggleOption(
-            AnalysisMode.manual,
-            "Manual",
-            Icons.edit_note_rounded,
-          ),
+              AnalysisMode.manual, "Manual", Icons.edit_note_rounded),
           const SizedBox(width: 8),
           _buildToggleOption(
-            AnalysisMode.sensor,
-            "Sensor",
-            Icons.sensors_rounded,
-          ),
+              AnalysisMode.sensor, "Sensor", Icons.sensors_rounded),
         ],
       ),
     );
@@ -349,16 +331,12 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
             color: isActive ? const Color(0xFF2E7D32) : Colors.transparent,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isActive ? Colors.transparent : Colors.black12,
-            ),
+                color: isActive ? Colors.transparent : Colors.black12),
           ),
           child: Column(
             children: [
-              Icon(
-                icon,
-                color: isActive ? Colors.white : Colors.black54,
-                size: 20,
-              ),
+              Icon(icon,
+                  color: isActive ? Colors.white : Colors.black54, size: 20),
               const SizedBox(height: 4),
               Text(
                 label,
@@ -375,7 +353,7 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
     );
   }
 
-  // Active Mode Content
+  // ─── Active Mode Content ───
   Widget _buildActiveModeCard() {
     switch (_activeMode) {
       case AnalysisMode.image:
@@ -387,26 +365,21 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
     }
   }
 
-  //  1. Image Mode
+  // ─── 1. Image Mode ───
   Widget _buildImageInputCard() {
     return _GlassCardContainer(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Text(
-            "Image Analysis (CNN Model)",
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF1B1B1B),
-            ),
-          ),
+          const Text("Image Analysis (CNN Model)",
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF1B1B1B))),
           const SizedBox(height: 8),
-          const Text(
-            "Upload a clear photo of your soil.",
-            style: TextStyle(fontSize: 13, color: Colors.black54),
-            textAlign: TextAlign.center,
-          ),
+          const Text("Upload a clear photo of your soil.",
+              style: TextStyle(fontSize: 13, color: Colors.black54),
+              textAlign: TextAlign.center),
           const SizedBox(height: 20),
           GestureDetector(
             onTap: () => _pickImage(ImageSource.gallery),
@@ -417,10 +390,9 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
                 color: Colors.white.withOpacity(0.5),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: const Color(0xFF2E7D32).withOpacity(0.5),
-                  width: 2,
-                  style: BorderStyle.solid,
-                ),
+                    color: const Color(0xFF2E7D32).withOpacity(0.5),
+                    width: 2,
+                    style: BorderStyle.solid),
               ),
               child: _image != null
                   ? ClipRRect(
@@ -430,19 +402,13 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
                   : Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: const [
-                        Icon(
-                          Icons.add_photo_alternate_rounded,
-                          size: 40,
-                          color: Color(0xFF2E7D32),
-                        ),
+                        Icon(Icons.add_photo_alternate_rounded,
+                            size: 40, color: Color(0xFF2E7D32)),
                         SizedBox(height: 8),
-                        Text(
-                          "Tap to upload from Gallery",
-                          style: TextStyle(
-                            color: Color(0xFF2E7D32),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        Text("Tap to upload from Gallery",
+                            style: TextStyle(
+                                color: Color(0xFF2E7D32),
+                                fontWeight: FontWeight.bold)),
                       ],
                     ),
             ),
@@ -453,26 +419,17 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () => _pickImage(ImageSource.camera),
-                  icon: const Icon(
-                    Icons.camera_alt,
-                    color: Color(0xFF2E7D32),
-                    size: 18,
-                  ),
-                  label: const Text(
-                    "Camera",
-                    style: TextStyle(
-                      color: Color(0xFF2E7D32),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  icon: const Icon(Icons.camera_alt,
+                      color: Color(0xFF2E7D32), size: 18),
+                  label: const Text("Camera",
+                      style: TextStyle(
+                          color: Color(0xFF2E7D32),
+                          fontWeight: FontWeight.bold)),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(
-                      color: Color(0xFF2E7D32),
-                      width: 1.5,
-                    ),
+                    side:
+                        const BorderSide(color: Color(0xFF2E7D32), width: 1.5),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+                        borderRadius: BorderRadius.circular(16)),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                 ),
@@ -483,25 +440,20 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _image == null || _isAnalyzingImage
-                  ? null
-                  : _analyzeImage,
+              onPressed:
+                  _image == null || _isAnalyzingImage ? null : _analyzeImage,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF2E7D32),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
+                    borderRadius: BorderRadius.circular(18)),
                 elevation: 4,
               ),
-              child: const Text(
-                "Identify Soil type",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              child: const Text("Identify Soil type",
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -509,25 +461,20 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
     );
   }
 
-  //  2. Manual Mode
+  // ─── 2. Manual Mode ───
   Widget _buildManualInputCard() {
     return _GlassCardContainer(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Manual Data Input",
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF1B1B1B),
-            ),
-          ),
+          const Text("Manual Data Input",
+              style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF1B1B1B))),
           const SizedBox(height: 8),
-          const Text(
-            "Enter field properties manually.",
-            style: TextStyle(fontSize: 13, color: Colors.black54),
-          ),
+          const Text("Enter field properties manually.",
+              style: TextStyle(fontSize: 13, color: Colors.black54)),
           const SizedBox(height: 20),
 
           // Soil Color Dropdown
@@ -535,23 +482,17 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
             initialValue: _selectedSoilColor,
             decoration: InputDecoration(
               labelText: "Soil Color",
-              prefixIcon: const Icon(
-                Icons.palette_outlined,
-                color: Color(0xFF2E7D32),
-              ),
+              prefixIcon:
+                  const Icon(Icons.palette_outlined, color: Color(0xFF2E7D32)),
               filled: true,
               fillColor: Colors.white.withOpacity(0.8),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
-              ),
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none),
             ),
-            items: [
-              'Brown',
-              'Black',
-              'Red',
-              'Yellow',
-            ].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+            items: ['Brown', 'Black', 'Red', 'Yellow']
+                .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                .toList(),
             onChanged: (val) => setState(() => _selectedSoilColor = val!),
           ),
           const SizedBox(height: 16),
@@ -561,30 +502,23 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
             initialValue: _selectedSoilTexture,
             decoration: InputDecoration(
               labelText: "Soil Texture",
-              prefixIcon: const Icon(
-                Icons.landscape_rounded,
-                color: Color(0xFF2E7D32),
-              ),
+              prefixIcon:
+                  const Icon(Icons.landscape_rounded, color: Color(0xFF2E7D32)),
               filled: true,
               fillColor: Colors.white.withOpacity(0.8),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
-              ),
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none),
             ),
             items: const [
-              DropdownMenuItem(value: 'loamy soil', child: Text('Loamy')),
-              DropdownMenuItem(value: 'clay soil', child: Text('Clay')),
-              DropdownMenuItem(value: 'sandy soil', child: Text('Sandy')),
-              DropdownMenuItem(
-                value: 'neutral soil',
-                child: Text('Silt / Neutral'),
-              ),
-              DropdownMenuItem(value: 'acidic soil', child: Text('Acidic')),
+              DropdownMenuItem(value: 'loamy soil',    child: Text('Loamy')),
+              DropdownMenuItem(value: 'clay soil',     child: Text('Clay')),
+              DropdownMenuItem(value: 'sandy soil',    child: Text('Sandy')),
+              DropdownMenuItem(value: 'neutral soil',  child: Text('Silt / Neutral')),
+              DropdownMenuItem(value: 'acidic soil',   child: Text('Acidic')),
               DropdownMenuItem(value: 'alkaline soil', child: Text('Alkaline')),
             ],
-            onChanged: (val) =>
-                setState(() => _selectedSoilTexture = val ?? 'loamy soil'),
+            onChanged: (val) => setState(() => _selectedSoilTexture = val ?? 'loamy soil'),
           ),
           const SizedBox(height: 16),
 
@@ -594,16 +528,13 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             decoration: InputDecoration(
               labelText: "pH Value (0.0 - 14.0)",
-              prefixIcon: const Icon(
-                Icons.science_outlined,
-                color: Color(0xFF2E7D32),
-              ),
+              prefixIcon:
+                  const Icon(Icons.science_outlined, color: Color(0xFF2E7D32)),
               filled: true,
               fillColor: Colors.white.withOpacity(0.8),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
-              ),
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none),
             ),
           ),
           const SizedBox(height: 24),
@@ -616,18 +547,14 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
                 backgroundColor: const Color(0xFF2E7D32),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
+                    borderRadius: BorderRadius.circular(18)),
                 elevation: 4,
               ),
-              child: const Text(
-                "Recommend Crops",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              child: const Text("Recommend Crops",
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -635,7 +562,7 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
     );
   }
 
-  //  3. Sensor Mode
+  // ─── 3. Sensor Mode ───
   Widget _buildSensorInputCard() {
     final st = _bleStatus.state;
     final isConn = st == BleConnectionState.connected;
@@ -669,94 +596,74 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                "ESP32 Sensor Array",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF1B1B1B),
-                ),
-              ),
+              const Text("ESP32 Sensor Array",
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF1B1B1B))),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color:
-                      (isConn || isSim
-                              ? const Color(0xFF2E7D32)
-                              : Colors.redAccent)
-                          .withOpacity(0.15),
+                  color: (isConn || isSim
+                          ? const Color(0xFF2E7D32)
+                          : Colors.redAccent)
+                      .withOpacity(0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
                     Icon(
-                      isConn || isSim
-                          ? Icons.bluetooth_connected
-                          : Icons.bluetooth_disabled,
-                      size: 14,
-                      color: isConn || isSim
-                          ? const Color(0xFF2E7D32)
-                          : Colors.redAccent,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      isConn || isSim ? "Connected" : "Disconnected",
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
+                        isConn || isSim
+                            ? Icons.bluetooth_connected
+                            : Icons.bluetooth_disabled,
+                        size: 14,
                         color: isConn || isSim
                             ? const Color(0xFF2E7D32)
-                            : Colors.redAccent,
-                      ),
-                    ),
+                            : Colors.redAccent),
+                    const SizedBox(width: 4),
+                    Text(isConn || isSim ? "Connected" : "Disconnected",
+                        style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: isConn || isSim
+                                ? const Color(0xFF2E7D32)
+                                : Colors.redAccent)),
                   ],
                 ),
-              ),
+              )
             ],
           ),
           const SizedBox(height: 24),
           if (_livePh != null) ...[
-            Text(
-              _livePh!.toStringAsFixed(2),
-              style: TextStyle(
-                fontSize: 56,
-                fontWeight: FontWeight.w900,
-                color: phColor,
-                letterSpacing: -1,
-              ),
-            ),
+            Text(_livePh!.toStringAsFixed(2),
+                style: TextStyle(
+                    fontSize: 56,
+                    fontWeight: FontWeight.w900,
+                    color: phColor,
+                    letterSpacing: -1)),
             const SizedBox(height: 4),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
               decoration: BoxDecoration(
-                color: phColor.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                category,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: phColor,
-                ),
-              ),
+                  color: phColor.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(20)),
+              child: Text(category,
+                  style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: phColor)),
             ),
           ] else
             const SizedBox(
-              height: 80,
-              child: Center(
-                child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
-              ),
-            ),
+                height: 80,
+                child: Center(
+                    child:
+                        CircularProgressIndicator(color: Color(0xFF2E7D32)))),
           const SizedBox(height: 16),
-          Text(
-            _bleStatus.message,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 12, color: Colors.black54),
-          ),
+          Text(_bleStatus.message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 12, color: Colors.black54)),
           const SizedBox(height: 24),
           Row(
             children: [
@@ -765,26 +672,17 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
                   onPressed: () {
                     BleService().startScanAndConnect();
                   },
-                  icon: const Icon(
-                    Icons.refresh,
-                    color: Color(0xFF2E7D32),
-                    size: 18,
-                  ),
-                  label: const Text(
-                    "Refresh Sensor",
-                    style: TextStyle(
-                      color: Color(0xFF2E7D32),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                  icon: const Icon(Icons.refresh,
+                      color: Color(0xFF2E7D32), size: 18),
+                  label: const Text("Refresh Sensor",
+                      style: TextStyle(
+                          color: Color(0xFF2E7D32),
+                          fontWeight: FontWeight.bold)),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(
-                      color: Color(0xFF2E7D32),
-                      width: 1.5,
-                    ),
+                    side:
+                        const BorderSide(color: Color(0xFF2E7D32), width: 1.5),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+                        borderRadius: BorderRadius.circular(16)),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                 ),
@@ -797,29 +695,23 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
             child: ElevatedButton(
               onPressed: _livePh != null
                   ? () {
-                      Navigator.pushNamed(
-                        context,
-                        '/crop-recom',
-                        arguments: {'ph': _livePh},
-                      );
+                      Navigator.pushNamed(context, '/crop-recom', arguments: {
+                        'ph': _livePh,
+                      });
                     }
                   : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF2E7D32),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
+                    borderRadius: BorderRadius.circular(18)),
                 elevation: 4,
               ),
-              child: const Text(
-                "Recommend Crops",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              child: const Text("Recommend Crops",
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -827,11 +719,11 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
     );
   }
 
-  //  Image Result Card
+  // ─── Image Result Card ───
   Widget _buildImageResultCard() {
     final result = _imageResult!;
-    final soilType = (result['soil_type'] ?? result['texture'] ?? "Unknown")
-        .toString();
+    final soilType =
+        (result['soil_type'] ?? result['texture'] ?? "Unknown").toString();
     final confidence = result['confidence'] != null
         ? (result['confidence'] as num).toDouble()
         : 0.0;
@@ -855,28 +747,22 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
             children: [
               const Icon(Icons.check_circle_rounded, color: Color(0xFF2E7D32)),
               const SizedBox(width: 8),
-              const Text(
-                "Analysis Complete",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF1B1B1B),
-                ),
-              ),
+              const Text("Analysis Complete",
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF1B1B1B))),
             ],
           ),
           const SizedBox(height: 16),
           _buildResultRow("Detected Soil Type", soilType, isBold: true),
           _buildResultRow("Condition", condition, color: condColor),
           const SizedBox(height: 16),
-          const Text(
-            "Soil Health Score",
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: Colors.black54,
-            ),
-          ),
+          const Text("Soil Health Score",
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black54)),
           const SizedBox(height: 6),
           Row(
             children: [
@@ -892,42 +778,31 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
                 ),
               ),
               const SizedBox(width: 12),
-              Text(
-                "${(confidence * 100).toInt()}%",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
-                  color: condColor,
-                ),
-              ),
+              Text("${(confidence * 100).toInt()}%",
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                      color: condColor)),
             ],
           ),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: const Color(0xFF2E7D32).withOpacity(0.08),
-              borderRadius: BorderRadius.circular(12),
-            ),
+                color: const Color(0xFF2E7D32).withOpacity(0.08),
+                borderRadius: BorderRadius.circular(12)),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
-                  Icons.auto_awesome,
-                  color: Color(0xFF2E7D32),
-                  size: 16,
-                ),
+                const Icon(Icons.auto_awesome,
+                    color: Color(0xFF2E7D32), size: 16),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    "AI suggests $soilType soil is often suitable for various crops but requires verification with pH levels.",
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF1B5E20),
-                      height: 1.4,
-                    ),
-                  ),
-                ),
+                      "AI suggests $soilType soil is often suitable for various crops but requires verification with pH levels.",
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF1B5E20), height: 1.4)),
+                )
               ],
             ),
           ),
@@ -946,17 +821,12 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
                 }
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Saved to history")),
-                  );
+                      const SnackBar(content: Text("Saved to history")));
                 }
               },
-              child: const Text(
-                "Save to History",
-                style: TextStyle(
-                  color: Color(0xFF2E7D32),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              child: const Text("Save to History",
+                  style: TextStyle(
+                      color: Color(0xFF2E7D32), fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -964,40 +834,30 @@ class _SoilAnalysisPageState extends State<SoilAnalysisPage> {
     );
   }
 
-  Widget _buildResultRow(
-    String label,
-    String value, {
-    bool isBold = false,
-    Color? color,
-  }) {
+  Widget _buildResultRow(String label, String value,
+      {bool isBold = false, Color? color}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Colors.black54,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 14,
-              color: color ?? const Color(0xFF1B1B1B),
-              fontWeight: isBold ? FontWeight.w900 : FontWeight.bold,
-            ),
-          ),
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 13,
+                  color: Colors.black54,
+                  fontWeight: FontWeight.w600)),
+          Text(value,
+              style: TextStyle(
+                  fontSize: 14,
+                  color: color ?? const Color(0xFF1B1B1B),
+                  fontWeight: isBold ? FontWeight.w900 : FontWeight.bold)),
         ],
       ),
     );
   }
 }
 
-//  Reusable Container
+// ─── Reusable Container ───
 class _GlassCardContainer extends StatelessWidget {
   final Widget child;
   final EdgeInsets? padding;
@@ -1018,7 +878,7 @@ class _GlassCardContainer extends StatelessWidget {
             color: Colors.black.withOpacity(0.05),
             blurRadius: 14,
             offset: const Offset(0, 6),
-          ),
+          )
         ],
       ),
       child: child,
@@ -1026,7 +886,7 @@ class _GlassCardContainer extends StatelessWidget {
   }
 }
 
-//  Clipper
+// ─── Clipper ───
 class _SoilWaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {

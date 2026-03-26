@@ -1,3 +1,9 @@
+/// **ApiService**
+/// Responsible for: All backend API calls in the application.
+/// Role: Encapsulates network requests to the deployed Railway backend,
+///       error handling, and JSON parsing.
+///
+/// Backend base URL: https://agrivora-production-d669.up.railway.app/
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -6,20 +12,30 @@ import 'package:http/http.dart' as http;
 import 'session_service.dart';
 
 class ApiService {
+  // ─────────────────────────────────────────────────────────────
+  // Single production base URL — no discovery logic needed.
+  // ─────────────────────────────────────────────────────────────
   static const String baseUrl =
       'https://agrivora-production-d669.up.railway.app';
 
+  /// Trigger used to notify the UI (HistoryPage) that it needs to refresh.
   static final ValueNotifier<int> historyRefreshTrigger = ValueNotifier(0);
 
+  // ─────────────────────────────────────────────────────────────
+  // Session
+  // ─────────────────────────────────────────────────────────────
   static String? userId;
   static String? userName;
   static String? userEmail;
   static String? userPhone;
 
+  // ─────────────────────────────────────────────────────────────
+  // Helpers
+  // ─────────────────────────────────────────────────────────────
   static Map<String, String> get _headers => {
-    'Content-Type': 'application/json',
-    'Accept': 'application/json',
-  };
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      };
 
   static String _extractErrorMessage(http.Response response) {
     try {
@@ -48,10 +64,11 @@ class ApiService {
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Authentication
+  // ─────────────────────────────────────────────────────────────
   static Future<Map<String, dynamic>> login(
-    String emailOrPhone,
-    String password,
-  ) async {
+      String emailOrPhone, String password) async {
     try {
       final body = {
         'email_or_phone': emailOrPhone.trim(),
@@ -81,9 +98,7 @@ class ApiService {
     } on TimeoutException {
       throw Exception('Connection timed out. Check your internet connection.');
     } on SocketException catch (e) {
-      throw Exception(
-        'Cannot reach backend: ${e.message}. Check your connection.',
-      );
+      throw Exception('Cannot reach backend: ${e.message}. Check your connection.');
     } catch (e) {
       throw Exception('Login error: $e');
     }
@@ -98,8 +113,7 @@ class ApiService {
     try {
       final pw = password.trim();
       debugPrint(
-        'SIGNUP password chars=${pw.length}, bytes=${utf8.encode(pw).length}',
-      );
+          'SIGNUP password chars=${pw.length}, bytes=${utf8.encode(pw).length}');
 
       final body = {
         'full_name': fullName.trim(),
@@ -134,6 +148,9 @@ class ApiService {
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Forgot Password
+  // ─────────────────────────────────────────────────────────────
   static Future<Map<String, dynamic>> requestResetOTP(String email) async {
     try {
       final response = await http
@@ -158,9 +175,7 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> verifyResetOTP(
-    String email,
-    String otp,
-  ) async {
+      String email, String otp) async {
     try {
       final response = await http
           .post(
@@ -187,10 +202,7 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> resetPassword(
-    String email,
-    String otp,
-    String newPassword,
-  ) async {
+      String email, String otp, String newPassword) async {
     try {
       final response = await http
           .post(
@@ -217,6 +229,9 @@ class ApiService {
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Profile / Settings
+  // ─────────────────────────────────────────────────────────────
   static Future<Map<String, dynamic>> updateProfile({
     String? fullName,
     String? phone,
@@ -280,6 +295,7 @@ class ApiService {
     }
   }
 
+  /// Clears the in-memory session AND persisted prefs.
   static Future<void> logout() async {
     userId = null;
     userName = null;
@@ -288,6 +304,9 @@ class ApiService {
     await SessionService.clearSession();
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // History
+  // ─────────────────────────────────────────────────────────────
   static Future<void> saveToHistory(Map<String, dynamic> data) async {
     if (userId == null) return;
     data['userId'] = userId;
@@ -325,6 +344,9 @@ class ApiService {
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Recommendations (manual soil form)
+  // ─────────────────────────────────────────────────────────────
   static Future<Map<String, dynamic>> getRecommendations({
     required String soilType,
     required double ph,
@@ -367,10 +389,11 @@ class ApiService {
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Location Summary (Weather + Soil)
+  // ─────────────────────────────────────────────────────────────
   static Future<Map<String, dynamic>> getLocationSummary(
-    double lat,
-    double lon,
-  ) async {
+      double lat, double lon) async {
     try {
       final response = await http
           .post(
@@ -395,7 +418,11 @@ class ApiService {
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Soil Image Analysis (CNN)
+  // ─────────────────────────────────────────────────────────────
   static Future<Map<String, dynamic>> analyzeSoilImage(File imageFile) async {
+    // TF loads the model on first request — can take 60–90 s on cold start.
     const kAnalysisTimeout = Duration(seconds: 120);
     try {
       final request = http.MultipartRequest(
@@ -419,16 +446,17 @@ class ApiService {
         throw Exception(_extractErrorMessage(response));
       }
     } on TimeoutException {
-      throw Exception(
-        'Analysis timed out after 120 s.\n'
-        'The first scan takes longer while the AI model loads.\n'
-        'Please try again — it will be much faster.',
-      );
+      throw Exception('Analysis timed out after 120 s.\n'
+          'The first scan takes longer while the AI model loads.\n'
+          'Please try again — it will be much faster.');
     } catch (e) {
       throw Exception('Upload error: $e');
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Crop Recommendation (LightGBM)
+  // ─────────────────────────────────────────────────────────────
   static Future<Map<String, dynamic>> predictCropLGBM({
     required double temperature,
     required double humidity,
@@ -460,10 +488,12 @@ class ApiService {
 
       final decoded = _safeJsonDecode(response.body);
       if (response.statusCode == 200 && decoded is Map) {
+        // Standard envelope: { "success": true, "data": {...} }
         if (decoded['success'] == true && decoded['data'] is Map) {
           historyRefreshTrigger.value++;
           return Map<String, dynamic>.from(decoded['data'] as Map);
         }
+        // Fallback: flat response with recommended_crop directly (legacy)
         if (decoded.containsKey('recommended_crop')) {
           historyRefreshTrigger.value++;
           return Map<String, dynamic>.from(decoded);
@@ -479,6 +509,9 @@ class ApiService {
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Chat AI
+  // ─────────────────────────────────────────────────────────────
   static Future<Map<String, dynamic>> askChatAI(String message) async {
     try {
       final response = await http
@@ -508,6 +541,9 @@ class ApiService {
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Sensor (pH / BLE sessions)
+  // ─────────────────────────────────────────────────────────────
   static Future<Map<String, dynamic>> searchDevice() async {
     try {
       final response = await http
@@ -547,6 +583,10 @@ class ApiService {
     }
   }
 
+  // ─────────────────────────────────────────────────────────────
+  // Health check
+  // Compatible with both {"status":"ok"} and {"success":true}
+  // ─────────────────────────────────────────────────────────────
   static Future<bool> checkHealth() async {
     try {
       final response = await http
@@ -555,6 +595,7 @@ class ApiService {
       if (response.statusCode == 200) {
         final decoded = _safeJsonDecode(response.body);
         if (decoded is Map) {
+          // Accept either response shape the backend may return.
           return decoded['success'] == true || decoded['status'] == 'ok';
         }
       }

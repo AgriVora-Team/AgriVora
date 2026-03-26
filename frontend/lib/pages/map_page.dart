@@ -1,3 +1,7 @@
+/// **MapPage**
+/// Responsible for: Rendering an interactive map (e.g. for farm bounds or sensor locations).
+/// Dependency: flutter_map package.
+
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ui'
@@ -36,6 +40,7 @@ class _MapPageState extends State<MapPage> {
   void initState() {
     super.initState();
     _initData();
+    // Hide the "Getting live location" overlay after 7 seconds if GPS takes too long
     _bannerTimer = Timer(const Duration(seconds: 7), () {
       if (mounted) {
         setState(() => _showLiveLocationBanner = false);
@@ -56,34 +61,30 @@ class _MapPageState extends State<MapPage> {
   }
 
   void _startLocationTracking() {
-    _positionStream =
-        Geolocator.getPositionStream(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.high,
-            distanceFilter: 10,
-          ),
-        ).listen((Position position) {
-          if (mounted) {
-            setState(() => _currentLocation = position);
-            if (_mapReady) {
-              try {
-                _mapController.move(
-                  LatLng(position.latitude, position.longitude),
-                  16,
-                );
-              } catch (_) {}
-            }
-          }
-        }, onError: (e) => debugPrint("Location stream error: $e"));
+    _positionStream = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 10,
+      ),
+    ).listen((Position position) {
+      if (mounted) {
+        setState(() => _currentLocation = position);
+        if (_mapReady) {
+          try {
+            _mapController.move(
+                LatLng(position.latitude, position.longitude), 16);
+          } catch (_) {}
+        }
+      }
+    }, onError: (e) => debugPrint("Location stream error: $e"));
   }
 
   void _recenterMap() {
     if (_currentLocation != null && _mapReady) {
       try {
         _mapController.move(
-          LatLng(_currentLocation!.latitude, _currentLocation!.longitude),
-          16,
-        );
+            LatLng(_currentLocation!.latitude, _currentLocation!.longitude),
+            16);
       } catch (_) {}
     } else {
       _getUserLocation();
@@ -91,25 +92,25 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> _getUserLocation() async {
+    // 1. Try last known for instant centering (safely)
     try {
       final lastPos = await Geolocator.getLastKnownPosition();
       if (lastPos != null && mounted) {
         setState(() => _currentLocation = lastPos);
         if (_mapReady) {
           try {
-            _mapController.move(
-              LatLng(lastPos.latitude, lastPos.longitude),
-              16,
-            );
+            _mapController.move(LatLng(lastPos.latitude, lastPos.longitude), 16);
           } catch (_) {}
         }
-        _fetchWeatherData(lastPos);
+        // Fetch weather immediately for this cached coordinate
+        _fetchWeatherData(lastPos); // Don't await here to avoid blocking
       }
     } catch (e) {
       debugPrint("Last known location failed: $e");
     }
 
     try {
+      // Use our new robust service to request permission & get location
       final pos = await LocationService.getCurrentLocation(context);
       if (pos == null) return;
       if (mounted) {
@@ -130,6 +131,7 @@ class _MapPageState extends State<MapPage> {
         if (mounted) setState(() => _locationDenied = true);
         return;
       }
+      // Fallback to medium accuracy if 'best' is taking too long
       try {
         final fallbackPos = await Geolocator.getCurrentPosition(
           desiredAccuracy: LocationAccuracy.medium,
@@ -159,10 +161,8 @@ class _MapPageState extends State<MapPage> {
 
     // ── Try backend first ──────────────────────────────────────────────────
     try {
-      final summary = await ApiService.getLocationSummary(
-        lat,
-        lon,
-      ).timeout(const Duration(seconds: 8));
+      final summary = await ApiService.getLocationSummary(lat, lon)
+          .timeout(const Duration(seconds: 8));
       final weather = summary['weatherSummary'];
       if (mounted && weather != null) {
         setState(() {
@@ -171,11 +171,12 @@ class _MapPageState extends State<MapPage> {
           _humidity = "${weather['humidity'] ?? '--'}%";
           _cityName = summary['location'] ?? "My Fields";
         });
-
+        
+        // If we got temperature, we are satisfied with the summary
         if (weather['temperature'] != null) return;
       }
     } catch (e) {
-      //  Fallback: call Open-Meteo + Nominatim directly
+      // ── Fallback: call Open-Meteo + Nominatim directly ─────────────────────
       await _fetchWeatherDirect(lat, lon);
     }
   }
@@ -190,12 +191,10 @@ class _MapPageState extends State<MapPage> {
 
   Future<void> _fetchWeatherFromOpenMeteo(double lat, double lon) async {
     try {
-      final url = Uri.parse(
-        'https://api.open-meteo.com/v1/forecast'
-        '?latitude=$lat&longitude=$lon'
-        '&current=temperature_2m,relative_humidity_2m,precipitation'
-        '&timezone=auto',
-      );
+      final url = Uri.parse('https://api.open-meteo.com/v1/forecast'
+          '?latitude=$lat&longitude=$lon'
+          '&current=temperature_2m,relative_humidity_2m,precipitation'
+          '&timezone=auto');
       final res = await http.get(url).timeout(const Duration(seconds: 8));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
@@ -215,18 +214,15 @@ class _MapPageState extends State<MapPage> {
 
   Future<void> _fetchNameFromNominatim(double lat, double lon) async {
     try {
-      final url = Uri.parse(
-        'https://nominatim.openstreetmap.org/reverse'
-        '?format=json&lat=$lat&lon=$lon&zoom=10',
-      );
-      final res = await http
-          .get(url, headers: {'User-Agent': 'AgriVoraApp/1.0'})
-          .timeout(const Duration(seconds: 8));
+      final url = Uri.parse('https://nominatim.openstreetmap.org/reverse'
+          '?format=json&lat=$lat&lon=$lon&zoom=10');
+      final res = await http.get(url, headers: {
+        'User-Agent': 'AgriVoraApp/1.0'
+      }).timeout(const Duration(seconds: 8));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         final address = data['address'] ?? {};
-        final name =
-            address['city'] ??
+        final name = address['city'] ??
             address['town'] ??
             address['village'] ??
             address['county'] ??
@@ -247,15 +243,13 @@ class _MapPageState extends State<MapPage> {
       backgroundColor: const Color(0xFFF2E8D5),
       body: Stack(
         children: [
-          // Background
+          // 🌾 Background
           Positioned.fill(
-            child: Image.asset(
-              'assets/images/bg_fields.png',
-              fit: BoxFit.cover,
-            ),
+            child:
+                Image.asset('assets/images/bg_fields.png', fit: BoxFit.cover),
           ),
 
-          //  Top Header (Floating over the image)
+          // ✅ Top Header (Floating over the image)
           Positioned(
             top: MediaQuery.of(context).padding.top + 55,
             left: 24,
@@ -272,10 +266,9 @@ class _MapPageState extends State<MapPage> {
                     height: 1.1,
                     shadows: [
                       Shadow(
-                        color: Colors.black45,
-                        blurRadius: 10,
-                        offset: Offset(0, 2),
-                      ),
+                          color: Colors.black45,
+                          blurRadius: 10,
+                          offset: Offset(0, 2)),
                     ],
                   ),
                 ),
@@ -288,21 +281,17 @@ class _MapPageState extends State<MapPage> {
                     fontWeight: FontWeight.w600,
                     shadows: [
                       Shadow(
-                        color: Colors.black45,
-                        blurRadius: 8,
-                        offset: Offset(0, 1),
-                      ),
+                          color: Colors.black45,
+                          blurRadius: 8,
+                          offset: Offset(0, 1)),
                     ],
                   ),
                 ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    const Icon(
-                      Icons.location_on,
-                      color: Colors.white,
-                      size: 16,
-                    ),
+                    const Icon(Icons.location_on,
+                        color: Colors.white, size: 16),
                     const SizedBox(width: 4),
                     Text(
                       _cityName,
@@ -312,10 +301,9 @@ class _MapPageState extends State<MapPage> {
                         color: Colors.white,
                         shadows: [
                           Shadow(
-                            color: Colors.black45,
-                            blurRadius: 4,
-                            offset: Offset(0, 1),
-                          ),
+                              color: Colors.black45,
+                              blurRadius: 4,
+                              offset: Offset(0, 1)),
                         ],
                       ),
                     ),
@@ -338,9 +326,8 @@ class _MapPageState extends State<MapPage> {
                   padding: EdgeInsets.fromLTRB(16, 140, 16, bottomPad + 130),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF2E8D5).withValues(alpha: 0.65),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.18),
-                    ),
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: 0.18)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -351,154 +338,127 @@ class _MapPageState extends State<MapPage> {
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(30),
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.4),
-                              width: 4,
-                            ),
+                                color: Colors.white.withValues(alpha: 0.4),
+                                width: 4),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withValues(alpha: 0.1),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
-                              ),
+                              )
                             ],
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(26),
                             child: Stack(
                               children: [
-                                // ── FlutterMap rendered unconditionally ─────────────────────
-                                FlutterMap(
-                                  mapController: _mapController,
-                                  options: MapOptions(
-                                    initialCenter: LatLng(
-                                      _currentLocation?.latitude ?? 6.9271,
-                                      _currentLocation?.longitude ?? 79.8612,
+                                  // ── FlutterMap rendered unconditionally ─────────────────────
+                                  FlutterMap(
+                                    mapController: _mapController,
+                                    options: MapOptions(
+                                      initialCenter: LatLng(
+                                          _currentLocation?.latitude ?? 6.9271,
+                                          _currentLocation?.longitude ?? 79.8612),
+                                      initialZoom: _currentLocation != null ? 16 : 10,
+                                      onMapReady: () {
+                                        setState(() => _mapReady = true);
+                                      },
                                     ),
-                                    initialZoom: _currentLocation != null
-                                        ? 16
-                                        : 10,
-                                    onMapReady: () {
-                                      setState(() => _mapReady = true);
-                                    },
-                                  ),
-                                  children: [
-                                    TileLayer(
-                                      urlTemplate:
-                                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                                      userAgentPackageName:
-                                          'com.example.agrivora_ui_test',
-                                    ),
-                                    if (_currentLocation != null)
-                                      MarkerLayer(
-                                        markers: [
-                                          Marker(
-                                            point: LatLng(
-                                              _currentLocation!.latitude,
-                                              _currentLocation!.longitude,
-                                            ),
-                                            width: 60,
-                                            height: 60,
-                                            child: GestureDetector(
-                                              onTap: () =>
-                                                  _showDetailedSoilInsight(
-                                                    context,
-                                                  ),
-                                              child: const Icon(
-                                                Icons.location_on,
-                                                color: Color(0xFFD32F2F),
-                                                size: 50,
+                                    children: [
+                                      TileLayer(
+                                        urlTemplate:
+                                            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                        userAgentPackageName:
+                                            'com.example.agrivora_ui_test',
+                                      ),
+                                      if (_currentLocation != null)
+                                        MarkerLayer(
+                                          markers: [
+                                            Marker(
+                                              point: LatLng(
+                                                  _currentLocation!.latitude,
+                                                  _currentLocation!.longitude),
+                                              width: 60,
+                                              height: 60,
+                                              child: GestureDetector(
+                                                onTap: () =>
+                                                    _showDetailedSoilInsight(context),
+                                                child: const Icon(
+                                                  Icons.location_on,
+                                                  color: Color(0xFFD32F2F),
+                                                  size: 50,
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                        ],
-                                      ),
-                                  ],
-                                ),
-
-                                //  Conditional Loading/Denied Banner Overlay
-                                if (_currentLocation == null &&
-                                    _showLiveLocationBanner)
-                                  Positioned(
-                                    top: 12,
-                                    left: 12,
-                                    right: 12,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                        vertical: 12,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withValues(
-                                          alpha: 0.9,
+                                          ],
                                         ),
-                                        borderRadius: BorderRadius.circular(16),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withValues(
-                                              alpha: 0.1,
-                                            ),
-                                            blurRadius: 10,
-                                            offset: const Offset(0, 4),
-                                          ),
-                                        ],
-                                      ),
-                                      child: _locationDenied
-                                          ? Row(
-                                              children: [
-                                                const Icon(
-                                                  Icons.location_off,
-                                                  color: Color(0xFFD32F2F),
-                                                  size: 24,
-                                                ),
-                                                const SizedBox(width: 12),
-                                                const Expanded(
-                                                  child: Text(
-                                                    "Location access denied.",
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
+                                    ],
+                                  ),
+
+                                  // ── Conditional Loading/Denied Banner Overlay ───────────────
+                                  if (_currentLocation == null && _showLiveLocationBanner)
+                                    Positioned(
+                                      top: 12,
+                                      left: 12,
+                                      right: 12,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 16, vertical: 12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withValues(alpha: 0.9),
+                                          borderRadius: BorderRadius.circular(16),
+                                          boxShadow: [
+                                            BoxShadow(
+                                                color: Colors.black.withValues(
+                                                    alpha: 0.1),
+                                                blurRadius: 10,
+                                                offset: const Offset(0, 4))
+                                          ],
+                                        ),
+                                        child: _locationDenied
+                                            ? Row(
+                                                children: [
+                                                  const Icon(
+                                                      Icons.location_off,
                                                       color: Color(0xFFD32F2F),
-                                                    ),
+                                                      size: 24),
+                                                  const SizedBox(width: 12),
+                                                  const Expanded(
+                                                    child: Text(
+                                                        "Location access denied.",
+                                                        style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFD32F2F),
+                                                        )),
                                                   ),
-                                                ),
-                                                TextButton(
-                                                  onPressed: _getUserLocation,
-                                                  child: const Text(
-                                                    "Enable",
-                                                    style: TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.bold,
+                                                  TextButton(
+                                                      onPressed: _getUserLocation,
+                                                      child: const Text("Enable",
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF2E7D32)))),
+                                                ],
+                                              )
+                                            : Row(
+                                                children: const [
+                                                  SizedBox(
+                                                    width: 18,
+                                                    height: 18,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                      strokeWidth: 2,
                                                       color: Color(0xFF2E7D32),
                                                     ),
                                                   ),
-                                                ),
-                                              ],
-                                            )
-                                          : Row(
-                                              children: const [
-                                                SizedBox(
-                                                  width: 18,
-                                                  height: 18,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                        strokeWidth: 2,
-                                                        color: Color(
-                                                          0xFF2E7D32,
-                                                        ),
-                                                      ),
-                                                ),
-                                                SizedBox(width: 12),
-                                                Text(
-                                                  "Getting live location…",
-                                                  style: TextStyle(
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Color(0xFF2E7D32),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
+                                                  SizedBox(width: 12),
+                                                  Text("Getting live location…",
+                                                      style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2E7D32))),
+                                                ],
+                                              ),
+                                      ),
                                     ),
-                                  ),
 
                                 // Map Overlay Action Buttons
                                 if (_currentLocation != null)
@@ -508,9 +468,7 @@ class _MapPageState extends State<MapPage> {
                                     child: Column(
                                       children: [
                                         _buildMapActionButton(
-                                          Icons.my_location,
-                                          _recenterMap,
-                                        ),
+                                            Icons.my_location, _recenterMap),
                                       ],
                                     ),
                                   ),
@@ -522,7 +480,7 @@ class _MapPageState extends State<MapPage> {
 
                       const SizedBox(height: 15),
 
-                      //  Bottom Info Panel
+                      // ── Bottom Info Panel ───────────────────────────────
                       _buildBottomInfoCard(),
                     ],
                   ),
@@ -553,7 +511,7 @@ class _MapPageState extends State<MapPage> {
                 color: Colors.black.withValues(alpha: 0.10),
                 blurRadius: 18,
                 offset: const Offset(0, 10),
-              ),
+              )
             ],
           ),
           child: Column(
@@ -561,32 +519,24 @@ class _MapPageState extends State<MapPage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    "Soil Condition:",
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 13,
-                      color: Color(0xFF1B1B1B),
-                    ),
-                  ),
+                  const Text("Soil Condition:",
+                      style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                          color: Color(0xFF1B1B1B))),
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
                       color: const Color(0xFF2E7D32).withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Text(
-                      _soilCondition,
-                      style: const TextStyle(
-                        color: Color(0xFF2E7D32),
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
+                    child: Text(_soilCondition,
+                        style: const TextStyle(
+                            color: Color(0xFF2E7D32),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12)),
+                  )
                 ],
               ),
               const SizedBox(height: 12),
@@ -617,10 +567,9 @@ class _MapPageState extends State<MapPage> {
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.1),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 6,
+                offset: const Offset(0, 2))
           ],
         ),
         child: Icon(icon, color: const Color(0xFF2E7D32), size: 22),
@@ -641,9 +590,8 @@ class _MapPageState extends State<MapPage> {
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
               decoration: BoxDecoration(
                 color: const Color(0xFFF2E8D5).withValues(alpha: 0.92),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(28),
-                ),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(28)),
                 border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
               ),
               child: Column(
@@ -661,14 +609,11 @@ class _MapPageState extends State<MapPage> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text(
-                    "Location Insights",
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF1B1B1B),
-                    ),
-                  ),
+                  const Text("Location Insights",
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF1B1B1B))),
                   const SizedBox(height: 16),
                   _buildAnalysisRow("Estimated Soil Type:", _soilType),
                   const SizedBox(height: 10),
@@ -683,25 +628,18 @@ class _MapPageState extends State<MapPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF2E7D32),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: () {
                         Navigator.pop(ctx);
-                        Navigator.pushNamed(
-                          context,
-                          '/crop-recommendation',
-                          arguments: _soilType,
-                        );
+                        Navigator.pushNamed(context, '/crop-recommendation',
+                            arguments: _soilType);
                       },
-                      child: const Text(
-                        "Get Crop Recommendation",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
+                      child: const Text("Get Crop Recommendation",
+                          style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white)),
                     ),
                   ),
                 ],
@@ -717,23 +655,16 @@ class _MapPageState extends State<MapPage> {
     return Row(
       children: [
         Expanded(
-          child: Text(
-            label,
+            child: Text(label,
+                style: const TextStyle(
+                    fontSize: 14,
+                    color: Colors.black87,
+                    fontWeight: FontWeight.bold))),
+        Text(value,
             style: const TextStyle(
-              fontSize: 14,
-              color: Colors.black87,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w900,
-            color: Color(0xFF2E7D32),
-          ),
-        ),
+                fontSize: 15,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF2E7D32))),
       ],
     );
   }
@@ -746,18 +677,14 @@ class _MapPageState extends State<MapPage> {
         Text(
           value,
           style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w900,
-            color: Color(0xFF1B1B1B),
-          ),
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF1B1B1B)),
         ),
         Text(
           label,
           style: const TextStyle(
-            fontSize: 11,
-            color: Colors.black54,
-            fontWeight: FontWeight.w600,
-          ),
+              fontSize: 11, color: Colors.black54, fontWeight: FontWeight.w600),
         ),
       ],
     );

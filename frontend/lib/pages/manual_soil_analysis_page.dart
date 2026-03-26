@@ -37,7 +37,8 @@ class _ManualSoilAnalysisPageState extends State<ManualSoilAnalysisPage> {
 
   Future<void> _fetchWeatherData() async {
     try {
-      final pos = await LocationService.getCurrentLocation();
+      final pos = await LocationService.getCurrentLocation(context);
+      if (pos == null) return;
       final summary =
           await ApiService.getLocationSummary(pos.latitude, pos.longitude);
       final weather = summary['weatherSummary'] ?? {};

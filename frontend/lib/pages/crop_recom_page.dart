@@ -42,7 +42,8 @@ class _CropRecomPageState extends State<CropRecomPage> {
 
       double? temp, humid, rain, carbon;
       try {
-        final pos = await LocationService.getCurrentLocation();
+        final pos = await LocationService.getCurrentLocation(context);
+        if (pos == null) return;
         final summary =
             await ApiService.getLocationSummary(pos.latitude, pos.longitude);
 

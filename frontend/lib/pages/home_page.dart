@@ -30,7 +30,8 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _fetchWeatherData() async {
     try {
-      final pos = await LocationService.getCurrentLocation();
+      final pos = await LocationService.getCurrentLocation(context);
+      if (pos == null) return;
       final lat = pos.latitude;
       final lon = pos.longitude;
 

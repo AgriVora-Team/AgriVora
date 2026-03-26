@@ -57,3 +57,12 @@ jobs:
         with:
           name: agrivora-release-apk
           path: frontend/build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Build release AAB
+        run: flutter build appbundle --release
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: agrivora-release-aab
+          path: frontend/build/app/outputs/bundle/release/app-release.aab

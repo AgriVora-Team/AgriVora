@@ -7,6 +7,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../services/permission_service.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../main.dart'; // ScanSession
 
 class ImageStepScreen extends StatefulWidget {
@@ -40,29 +42,57 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
   }
 
   Future<void> _pickImageFromGallery() async {
-    // You can change to ImageSource.camera later if you want camera instead.
-    final XFile? pickedFile =
-        await _picker.pickImage(source: ImageSource.gallery);
-
-    if (pickedFile == null) {
-      // user cancelled
-      return;
-    }
-
-    setState(() {
-      _selectedImage = File(pickedFile.path);
-      _currentSession = _currentSession.copyWith(
-        imagePath: pickedFile.path,
-      );
-    });
-
-    print('Image selected: ${_currentSession.toJson()}');
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Soil image selected successfully.'),
-      ),
+    // 1. Check permissions first (Photos/Gallery)
+    final hasPerm = await PermissionService.handlePermission(
+      context: context,
+      permission: Permission.photos,
+      title: "Gallery Access",
+      message: "Please allow access to your gallery to upload soil images.",
     );
+
+    if (!hasPerm) return;
+
+    // 2. Pick the image
+    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile == null) return;
+
+    if (mounted) {
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+        _currentSession = _currentSession.copyWith(imagePath: pickedFile.path);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gallery photo selected successfully.')),
+      );
+    }
+  }
+
+  Future<void> _captureFromCamera() async {
+    // 1. Check camera permission
+    final hasPerm = await PermissionService.handlePermission(
+      context: context,
+      permission: Permission.camera,
+      title: "Camera Access",
+      message: "Please allow camera access to capture soil photos.",
+    );
+
+    if (!hasPerm) return;
+
+    // 2. Capture the image
+    final XFile? capturedFile = await _picker.pickImage(source: ImageSource.camera);
+
+    if (capturedFile == null) return;
+
+    if (mounted) {
+      setState(() {
+        _selectedImage = File(capturedFile.path);
+        _currentSession = _currentSession.copyWith(imagePath: capturedFile.path);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Camera photo captured successfully.')),
+      );
+    }
   }
 
   void _goToAnalyze() {
@@ -145,25 +175,49 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
 
             const Spacer(),
 
-            // Pick image button (ALWAYS enabled)
-            SizedBox(
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2E7D32),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+            // Buttons row
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF004D40),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      onPressed: _captureFromCamera,
+                      icon: const Icon(Icons.camera_alt_rounded, color: Colors.white),
+                      label: const Text(
+                        'Camera',
+                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                    ),
                   ),
                 ),
-                onPressed: _pickImageFromGallery,
-                child: const Text(
-                  'Select soil image from gallery',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: SizedBox(
+                    height: 52,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFF004D40), width: 1.5),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      onPressed: _pickImageFromGallery,
+                      icon: const Icon(Icons.photo_library_rounded, color: Color(0xFF004D40)),
+                      label: const Text(
+                        'Gallery',
+                        style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF004D40)),
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
             const SizedBox(height: 12),
 

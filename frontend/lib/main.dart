@@ -4,7 +4,6 @@ import 'services/session_service.dart';
 
 // 🌿 UI pages (your base flow)
 import 'pages/welcome_page.dart';
-import 'pages/permission_page.dart';
 import 'pages/login_page.dart';
 import 'pages/signup_page.dart';
 import 'pages/role_select_page.dart';
@@ -181,7 +180,6 @@ class MyApp extends StatelessWidget {
       routes: {
         // ✅ Base routes
         '/welcome': (_) => const WelcomePage(),
-        '/permission': (_) => const PermissionPage(),
         '/login': (_) => const LoginPage(),
         '/signup': (_) => const SignUpPage(),
         '/role': (_) => const RoleSelectPage(),
@@ -274,16 +272,12 @@ class _SplashRouterState extends State<SplashRouter> {
     if (!mounted) return;
 
     final bool hasSession = results[0] as bool;
-    final bool hasPermissions = results[1] as bool;
 
     if (hasSession) {
       // Fully logged in — go straight to Home, clearing the back-stack
       Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-    } else if (hasPermissions) {
-      // Permissions granted, no session — show Login screen
-      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
     } else {
-      // No active session — show the Get Started screen
+      // No active session — show the Welcome Screen
       Navigator.pushNamedAndRemoveUntil(context, '/welcome', (route) => false);
     }
   }

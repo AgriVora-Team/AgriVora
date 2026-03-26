@@ -1,8 +1,3 @@
-/// **HomePage**
-/// Responsible for: The primary user dashboard.
-/// Role: Displays user greeting, quick action buttons (Soil Analysis, Chat), and status cards.
-/// Dependencies: Navigates to SoilAnalysisPage, AIChatPage, PredictSoilPage.
-
 import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -35,10 +30,12 @@ class _HomePageState extends State<HomePage> {
       final lat = pos.latitude;
       final lon = pos.longitude;
 
-      // ── Try backend first ──────────────────────────────────────────────
+      //  Try backend first
       try {
-        final summary = await ApiService.getLocationSummary(lat, lon)
-            .timeout(const Duration(seconds: 8));
+        final summary = await ApiService.getLocationSummary(
+          lat,
+          lon,
+        ).timeout(const Duration(seconds: 8));
         final weather = summary['weatherSummary'];
         if (mounted && weather != null) {
           setState(() {
@@ -52,12 +49,14 @@ class _HomePageState extends State<HomePage> {
         debugPrint("Backend failed, using direct APIs: $e");
       }
 
-      // ── Fallback: Open-Meteo (free, no API key) ────────────────────────
+      //  Fallback: Open-Meteo
       try {
-        final url = Uri.parse('https://api.open-meteo.com/v1/forecast'
-            '?latitude=$lat&longitude=$lon'
-            '&current=temperature_2m,precipitation'
-            '&timezone=auto');
+        final url = Uri.parse(
+          'https://api.open-meteo.com/v1/forecast'
+          '?latitude=$lat&longitude=$lon'
+          '&current=temperature_2m,precipitation'
+          '&timezone=auto',
+        );
         final res = await http.get(url).timeout(const Duration(seconds: 10));
         if (res.statusCode == 200) {
           final data = jsonDecode(res.body);
@@ -73,17 +72,20 @@ class _HomePageState extends State<HomePage> {
         debugPrint("Open-Meteo direct call failed: $e");
       }
 
-      // ── Fallback: Nominatim reverse geocoding ──────────────────────────
+      //  Fallback: Nominatim reverse geocoding
       try {
-        final url = Uri.parse('https://nominatim.openstreetmap.org/reverse'
-            '?format=json&lat=$lat&lon=$lon&zoom=10');
-        final res = await http.get(url, headers: {
-          'User-Agent': 'AgriVoraApp/1.0'
-        }).timeout(const Duration(seconds: 10));
+        final url = Uri.parse(
+          'https://nominatim.openstreetmap.org/reverse'
+          '?format=json&lat=$lat&lon=$lon&zoom=10',
+        );
+        final res = await http
+            .get(url, headers: {'User-Agent': 'AgriVoraApp/1.0'})
+            .timeout(const Duration(seconds: 10));
         if (res.statusCode == 200) {
           final data = jsonDecode(res.body);
           final address = data['address'] ?? {};
-          final name = address['city'] ??
+          final name =
+              address['city'] ??
               address['town'] ??
               address['village'] ??
               address['county'] ??
@@ -113,8 +115,9 @@ class _HomePageState extends State<HomePage> {
     final bottomPad = MediaQuery.of(context).padding.bottom;
 
     final bool isGuest = ApiService.userId == null;
-    final String displayName =
-        isGuest ? "Guest" : (ApiService.userName?.split(' ')[0] ?? "Farmer");
+    final String displayName = isGuest
+        ? "Guest"
+        : (ApiService.userName?.split(' ')[0] ?? "Farmer");
 
     return Scaffold(
       backgroundColor: const Color(0xFFF2E8D5),
@@ -128,7 +131,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
-          // ✅ Top Greeting (Floating over the image)
+          // Top Greeting
           Positioned(
             top: MediaQuery.of(context).padding.top + 55,
             left: 24,
@@ -145,9 +148,10 @@ class _HomePageState extends State<HomePage> {
                     height: 1.1,
                     shadows: [
                       Shadow(
-                          color: Colors.black45,
-                          blurRadius: 10,
-                          offset: Offset(0, 2)),
+                        color: Colors.black45,
+                        blurRadius: 10,
+                        offset: Offset(0, 2),
+                      ),
                     ],
                   ),
                 ),
@@ -160,9 +164,10 @@ class _HomePageState extends State<HomePage> {
                     fontWeight: FontWeight.w600,
                     shadows: [
                       Shadow(
-                          color: Colors.black45,
-                          blurRadius: 8,
-                          offset: Offset(0, 1)),
+                        color: Colors.black45,
+                        blurRadius: 8,
+                        offset: Offset(0, 1),
+                      ),
                     ],
                   ),
                 ),
@@ -170,7 +175,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
-          // ✅ Main Panel (Glass Background)
+          //  Main Panel
           Align(
             alignment: Alignment.bottomCenter,
             child: ClipPath(
@@ -195,7 +200,8 @@ class _HomePageState extends State<HomePage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const SizedBox(
-                                  height: 20), // Push the top element lower
+                                height: 20,
+                              ), // Push the top element lower
                               // 1. Weather / Location
                               _buildWeatherCard(size),
                               const SizedBox(height: 16),
@@ -222,7 +228,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
-          // ✅ Bottom nav
+          // Bottom nav
         ],
       ),
     );
@@ -247,8 +253,11 @@ class _HomePageState extends State<HomePage> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.location_on,
-                            color: Color(0xFF2E7D32), size: 18),
+                        const Icon(
+                          Icons.location_on,
+                          color: Color(0xFF2E7D32),
+                          size: 18,
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
@@ -270,9 +279,7 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         _Metric(label: "Temp", value: _temperature),
                         _Metric(label: "Rain", value: _rainfall),
-                        const _Metric(
-                            label: "Humid",
-                            value: "82%"), // Ideal farming baseline
+                        const _Metric(label: "Humid", value: "82%"),
                       ],
                     ),
                   ],
@@ -280,7 +287,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          // ✅ Robot
+          // Robot
           Positioned(
             right: -10,
             bottom: -5,
@@ -333,8 +340,11 @@ class _HomePageState extends State<HomePage> {
                 color: const Color(0xFF2E7D32).withOpacity(0.15),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.lightbulb_outline_rounded,
-                  color: Color(0xFF2E7D32), size: 24),
+              child: const Icon(
+                Icons.lightbulb_outline_rounded,
+                color: Color(0xFF2E7D32),
+                size: 24,
+              ),
             ),
             const SizedBox(width: 16),
             const Expanded(
@@ -342,21 +352,28 @@ class _HomePageState extends State<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text("Today's Insight",
-                      style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF1B5E20))),
+                  Text(
+                    "Today's Insight",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF1B5E20),
+                    ),
+                  ),
                   SizedBox(height: 4),
                   Text(
-                      "Rainfall expected later. Consider delaying irrigation to conserve water.",
-                      style: TextStyle(
-                          fontSize: 12, color: Colors.black87, height: 1.3),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis),
+                    "Rainfall expected later. Consider delaying irrigation to conserve water.",
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.black87,
+                      height: 1.3,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -375,20 +392,29 @@ class _HomePageState extends State<HomePage> {
           children: [
             Row(
               children: [
-                const Icon(Icons.location_on_rounded,
-                    color: Color(0xFFD32F2F), size: 18),
+                const Icon(
+                  Icons.location_on_rounded,
+                  color: Color(0xFFD32F2F),
+                  size: 18,
+                ),
                 const SizedBox(width: 6),
-                const Text("Location-Based Insight",
-                    style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF1B1B1B))),
+                const Text(
+                  "Location-Based Insight",
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF1B1B1B),
+                  ),
+                ),
                 const Spacer(),
-                Text(_cityName,
-                    style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF2E7D32))),
+                Text(
+                  _cityName,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    color: Color(0xFF2E7D32),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 14),
@@ -407,15 +433,19 @@ class _HomePageState extends State<HomePage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text("Common Soil: Reddish Brown Earth",
-                          style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF1B1B1B))),
+                      Text(
+                        "Common Soil: Reddish Brown Earth",
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF1B1B1B),
+                        ),
+                      ),
                       SizedBox(height: 4),
-                      Text("Best Seasonal Crops: Chili, Onion",
-                          style:
-                              TextStyle(fontSize: 12, color: Colors.black87)),
+                      Text(
+                        "Best Seasonal Crops: Chili, Onion",
+                        style: TextStyle(fontSize: 12, color: Colors.black87),
+                      ),
                     ],
                   ),
                 ),
@@ -427,7 +457,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  /// ✅ Bottom sheet: choose how to get pH for Crop Recommendation
   void _showCropRecomChoiceSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -441,8 +470,9 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
               decoration: BoxDecoration(
                 color: const Color(0xFFF2E8D5).withOpacity(0.92),
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(28)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
                 border: Border.all(color: Colors.white.withOpacity(0.22)),
               ),
               child: Column(
@@ -472,7 +502,10 @@ class _HomePageState extends State<HomePage> {
                   const Text(
                     "Choose how you want to provide your soil pH:",
                     style: TextStyle(
-                        fontSize: 13, color: Colors.black54, height: 1.4),
+                      fontSize: 13,
+                      color: Colors.black54,
+                      height: 1.4,
+                    ),
                   ),
                   const SizedBox(height: 20),
                   // Option 1: BLE Sensor
@@ -484,8 +517,11 @@ class _HomePageState extends State<HomePage> {
                         "Connect to your ESP32 pH sensor for live readings",
                     onTap: () {
                       Navigator.pop(ctx);
-                      Navigator.pushNamed(context, '/soil-analysis',
-                          arguments: {'mode': 'sensor'});
+                      Navigator.pushNamed(
+                        context,
+                        '/soil-analysis',
+                        arguments: {'mode': 'sensor'},
+                      );
                     },
                   ),
                   const SizedBox(height: 12),
@@ -511,7 +547,6 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-/// ✅ Choice option tile used in the bottom sheet
 class _ChoiceOption extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
@@ -590,7 +625,7 @@ class _ChoiceOption extends StatelessWidget {
   }
 }
 
-/// ✅ Wavy clipper
+///  Wavy clipper
 class _HomeWaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
@@ -637,7 +672,7 @@ class _GlassCard extends StatelessWidget {
                 color: Colors.black.withOpacity(0.10),
                 blurRadius: 18,
                 offset: const Offset(0, 10),
-              )
+              ),
             ],
           ),
           child: child,
@@ -719,9 +754,10 @@ class _FeatureGridCard extends StatelessWidget {
               Text(
                 title,
                 style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF1B1B1B)),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF1B1B1B),
+                ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -749,14 +785,19 @@ class _MiniStat extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(value,
-            style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFF1B1B1B))),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF1B1B1B),
+          ),
+        ),
         const SizedBox(height: 2),
-        Text(label,
-            style: const TextStyle(fontSize: 11, color: Colors.black54)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, color: Colors.black54),
+        ),
       ],
     );
   }

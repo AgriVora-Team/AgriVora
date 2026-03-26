@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class PermissionService {
-  /// Generic handler for any permission.
-  /// Returns true if granted, false otherwise.
   static Future<bool> handlePermission({
     required BuildContext context,
     required Permission permission,
@@ -23,7 +21,7 @@ class PermissionService {
 
     // Request it
     final result = await permission.request();
-    
+
     if (result.isGranted) return true;
 
     if (result.isPermanentlyDenied) {
@@ -31,17 +29,21 @@ class PermissionService {
         _showSettingsDialog(context, title, message);
       }
     } else if (result.isDenied) {
-       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("$title permission denied.")),
-        );
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("$title permission denied.")));
       }
     }
 
     return result.isGranted;
   }
 
-  static void _showSettingsDialog(BuildContext context, String title, String message) {
+  static void _showSettingsDialog(
+    BuildContext context,
+    String title,
+    String message,
+  ) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(

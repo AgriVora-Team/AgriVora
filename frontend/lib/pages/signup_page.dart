@@ -1,8 +1,3 @@
-/// **SignUpPage**
-/// Responsible for: New user registration.
-/// Role: Collects user details, validates form input, and hits the signup endpoint.
-/// API Dependency: /api/auth/signup
-
 import 'dart:ui';
 import 'dart:convert'; // ✅ added for utf8.encode
 import 'package:flutter/material.dart';
@@ -42,7 +37,6 @@ class _SignUpPageState extends State<SignUpPage> {
     super.dispose();
   }
 
-  // ✅ FIXED SIGNUP METHOD (debug bytes + cleaner error display)
   Future<void> _signup() async {
     final name = _nameController.text.trim();
     final email = _emailController.text.trim();
@@ -50,9 +44,9 @@ class _SignUpPageState extends State<SignUpPage> {
     final password = _passwordController.text.trim();
 
     if (name.isEmpty || email.isEmpty || phone.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all fields')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
       return;
     }
 
@@ -63,9 +57,7 @@ class _SignUpPageState extends State<SignUpPage> {
       return;
     }
 
-    // ✅ DEBUG: bcrypt limit is 72 BYTES (not characters)
     final pwBytes = utf8.encode(password).length;
-    // ignore: avoid_print
     print("SIGNUP password chars=${password.length}, bytes=$pwBytes");
 
     setState(() => _isLoading = true);
@@ -86,17 +78,14 @@ class _SignUpPageState extends State<SignUpPage> {
         ),
       );
 
-      Navigator.pop(context); // Go back to login
+      Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
 
       final msg = e.toString().replaceAll('Exception: ', '');
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(msg),
-          duration: const Duration(seconds: 4),
-        ),
+        SnackBar(content: Text(msg), duration: const Duration(seconds: 4)),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -112,7 +101,7 @@ class _SignUpPageState extends State<SignUpPage> {
       backgroundColor: const Color(0xFFF2E8D5),
       body: Stack(
         children: [
-          // ✅ background
+          // background
           Positioned.fill(
             child: Image.asset(
               'assets/images/bg_fields.png',
@@ -120,7 +109,7 @@ class _SignUpPageState extends State<SignUpPage> {
             ),
           ),
 
-          // ✅ logo
+          //  logo
           SafeArea(
             child: Align(
               alignment: Alignment.topCenter,
@@ -135,7 +124,7 @@ class _SignUpPageState extends State<SignUpPage> {
             ),
           ),
 
-          // ✅ bottom wavy panel (animated)
+          //  bottom wavy panel (animated)
           AnimatedPositioned(
             duration: const Duration(milliseconds: 750),
             curve: Curves.easeOutQuart,
@@ -237,8 +226,9 @@ class _SignUpPageState extends State<SignUpPage> {
                                   borderRadius: BorderRadius.circular(34),
                                 ),
                                 elevation: 10,
-                                shadowColor:
-                                    const Color(0xFF004D40).withOpacity(0.35),
+                                shadowColor: const Color(
+                                  0xFF004D40,
+                                ).withOpacity(0.35),
                               ),
                               child: _isLoading
                                   ? const SizedBox(
@@ -262,8 +252,10 @@ class _SignUpPageState extends State<SignUpPage> {
                           const SizedBox(height: 16),
                           const Text(
                             "Already have an account?",
-                            style:
-                                TextStyle(color: Colors.black54, fontSize: 14),
+                            style: TextStyle(
+                              color: Colors.black54,
+                              fontSize: 14,
+                            ),
                           ),
                           TextButton(
                             onPressed: () => Navigator.pop(context),
@@ -290,7 +282,7 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 }
 
-/// ✅ same wavy top style as login
+///  login
 class _TopWaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
@@ -308,7 +300,7 @@ class _TopWaveClipper extends CustomClipper<Path> {
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
 
-/// ✅ same input style as login (icon in circle + soft green field)
+/// same input style as login
 class _SoftInput extends StatelessWidget {
   final IconData icon;
   final String hint;

@@ -1,8 +1,3 @@
-/// **WelcomePage**
-/// Responsible for: Initial landing screen of the app.
-/// Role: Displays branding, logo, and provides navigation options (Sign Up, Login).
-/// Dependencies: Navigation routes defined in main.dart.
-
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../services/session_service.dart';
@@ -86,7 +81,7 @@ class _WelcomePageState extends State<WelcomePage>
             ),
           ),
 
-          // ✅ Bottom Glass Panel (same theme as Login)
+          // Bottom Glass Panel
           Align(
             alignment: Alignment.bottomCenter,
             child: ClipPath(
@@ -152,8 +147,9 @@ class _WelcomePageState extends State<WelcomePage>
                                   borderRadius: BorderRadius.circular(34),
                                 ),
                                 elevation: 10,
-                                shadowColor:
-                                    const Color(0xFF004D40).withOpacity(0.35),
+                                shadowColor: const Color(
+                                  0xFF004D40,
+                                ).withOpacity(0.35),
                               ),
                               child: const Text(
                                 'Get Started',

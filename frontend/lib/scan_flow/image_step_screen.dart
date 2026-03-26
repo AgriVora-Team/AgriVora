@@ -1,7 +1,3 @@
-/// **ImageStepScreen**
-/// Responsible for: Capturing or uploading soil image for CNN texture analysis.
-/// API Dependency: /image/texture
-
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -14,10 +10,7 @@ import '../main.dart'; // ScanSession
 class ImageStepScreen extends StatefulWidget {
   final ScanSession session;
 
-  const ImageStepScreen({
-    super.key,
-    required this.session,
-  });
+  const ImageStepScreen({super.key, required this.session});
 
   @override
   State<ImageStepScreen> createState() => _ImageStepScreenState();
@@ -35,14 +28,13 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
     super.initState();
     _currentSession = widget.session;
 
-    // If session already had an imagePath, restore preview
     if (_currentSession.imagePath != null) {
       _selectedImage = File(_currentSession.imagePath!);
     }
   }
 
   Future<void> _pickImageFromGallery() async {
-    // 1. Check permissions first (Photos/Gallery)
+    // 1. Check permissions first
     final hasPerm = await PermissionService.handlePermission(
       context: context,
       permission: Permission.photos,
@@ -53,7 +45,9 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
     if (!hasPerm) return;
 
     // 2. Pick the image
-    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    final XFile? pickedFile = await _picker.pickImage(
+      source: ImageSource.gallery,
+    );
 
     if (pickedFile == null) return;
 
@@ -80,14 +74,18 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
     if (!hasPerm) return;
 
     // 2. Capture the image
-    final XFile? capturedFile = await _picker.pickImage(source: ImageSource.camera);
+    final XFile? capturedFile = await _picker.pickImage(
+      source: ImageSource.camera,
+    );
 
     if (capturedFile == null) return;
 
     if (mounted) {
       setState(() {
         _selectedImage = File(capturedFile.path);
-        _currentSession = _currentSession.copyWith(imagePath: capturedFile.path);
+        _currentSession = _currentSession.copyWith(
+          imagePath: capturedFile.path,
+        );
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Camera photo captured successfully.')),
@@ -107,9 +105,7 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
 
     // TODO: navigate to Analyze/Results step with _currentSession
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Ready for Analyze step – TODO.'),
-      ),
+      const SnackBar(content: Text('Ready for Analyze step – TODO.')),
     );
   }
 
@@ -130,10 +126,7 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
           children: [
             const Text(
               'Capture / Upload Soil Image',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             const Text(
@@ -189,10 +182,16 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
                         ),
                       ),
                       onPressed: _captureFromCamera,
-                      icon: const Icon(Icons.camera_alt_rounded, color: Colors.white),
+                      icon: const Icon(
+                        Icons.camera_alt_rounded,
+                        color: Colors.white,
+                      ),
                       label: const Text(
                         'Camera',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
@@ -203,16 +202,25 @@ class _ImageStepScreenState extends State<ImageStepScreen> {
                     height: 52,
                     child: OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFF004D40), width: 1.5),
+                        side: const BorderSide(
+                          color: Color(0xFF004D40),
+                          width: 1.5,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
                       onPressed: _pickImageFromGallery,
-                      icon: const Icon(Icons.photo_library_rounded, color: Color(0xFF004D40)),
+                      icon: const Icon(
+                        Icons.photo_library_rounded,
+                        color: Color(0xFF004D40),
+                      ),
                       label: const Text(
                         'Gallery',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF004D40)),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF004D40),
+                        ),
                       ),
                     ),
                   ),

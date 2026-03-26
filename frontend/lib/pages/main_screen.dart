@@ -1,8 +1,3 @@
-/// **MainScreen (Container)**
-/// Responsible for: Base shell containing the Bottom Navigation Bar.
-/// Role: Manages a PageView to switch between HomePage, HistoryPage, and ProfilePage without losing state.
-/// UI Component: Uses AgriBottomNavBar.
-
 import 'package:flutter/material.dart';
 import '../widgets/agri_bottom_nav_bar.dart';
 import 'home_page.dart';
@@ -43,9 +38,9 @@ class _MainScreenState extends State<MainScreen> {
       setState(() {
         _tabHistory.removeLast();
       });
-      return false; // Prevent backing out, we popped a tab
+      return false;
     }
-    return true; // We are at the root Home tab, allow app exit
+    return true;
   }
 
   @override
@@ -56,14 +51,8 @@ class _MainScreenState extends State<MainScreen> {
         extendBody: true,
         body: Stack(
           children: [
-            IndexedStack(
-              index: _currentIndex,
-              children: _pages,
-            ),
-            AgriBottomNavBar(
-              activeIndex: _currentIndex,
-              onTap: _onTabTapped,
-            ),
+            IndexedStack(index: _currentIndex, children: _pages),
+            AgriBottomNavBar(activeIndex: _currentIndex, onTap: _onTabTapped),
           ],
         ),
       ),

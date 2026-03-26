@@ -1,7 +1,3 @@
-/// **BleService**
-/// Responsible for: Bluetooth Low Energy communication.
-/// Role: Scanning for IoT sensors, connecting, and reading pH data.
-
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
@@ -9,57 +5,44 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-/// BLE Service – handles scanning, connecting, subscribing,
-/// JSON/CSV decoding, noise filtering, probe-stabilization, and simulation.
 class BleService {
-  // ─── Singleton ────────────────────────────────────────────────────
   static final BleService _instance = BleService._internal();
   factory BleService() => _instance;
   BleService._internal();
 
-  // ─── ESP32 BLE identifiers ────────────────────────────────────────
   static const String deviceName = 'AgriVora_pH_ESP32';
   static const String serviceUuid = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
   static const String phCharUuid = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
 
-  // ─── BLE handles ─────────────────────────────────────────────────
   BluetoothDevice? _device;
   BluetoothCharacteristic? _phChar;
   StreamSubscription? _scanSub;
   StreamSubscription? _connSub;
   StreamSubscription? _valueSub;
 
-  // ─── Moving-average noise filter (5 samples) ─────────────────────
   final List<double> _phBuffer = [];
   static const int _filterSize = 5;
 
-  // ─── Probe stabilisation ──────────────────────────────────────────
   int _stabilizingSec = 0;
   bool _probeStable = false;
 
-  // ─── State ───────────────────────────────────────────────────────
   bool _isConnected = false;
   bool _scanning = false;
   Timer? _simTimer;
   Timer? _stabilizeTimer;
 
-  // ─── Public streams ───────────────────────────────────────────────
   final _phCtrl = StreamController<double?>.broadcast();
   final _rawCtrl = StreamController<PhReading?>.broadcast();
   final _statusCtrl = StreamController<BleStatus>.broadcast();
 
-  /// Filtered pH value (moving average, null until first reading)
   Stream<double?> get phStream => _phCtrl.stream;
 
-  /// Full reading – pH, voltage, temperature, timestamp
   Stream<PhReading?> get rawStream => _rawCtrl.stream;
 
-  /// Status updates (connection state + message)
   Stream<BleStatus> get statusStream => _statusCtrl.stream;
 
   bool get isConnected => _isConnected;
 
-  // ─── Internal helpers ─────────────────────────────────────────────
   void _emit(String msg,
       {BleConnectionState state = BleConnectionState.scanning}) {
     debugPrint('[BLE] $msg');
@@ -67,10 +50,6 @@ class BleService {
     _isConnected = (state == BleConnectionState.connected);
   }
 
-  // ─── Decode data from ESP32 ───────────────────────────────────────
-  /// Supports two formats from ESP32:
-  ///   JSON : {"ph":6.73,"v":2.41,"t":26.5,"ts":1700000000}
-  ///   CSV  : 6.73   or   6.73,2.41,26.5
   PhReading? _decode(List<int> bytes) {
     try {
       final raw = utf8.decode(bytes).trim();
@@ -99,9 +78,7 @@ class BleService {
     }
   }
 
-  /// Apply moving-average filter and return smoothed pH
   double? _filter(double rawPh) {
-    // Range validation – pH sensor should never read outside 0–14
     if (rawPh < 0 || rawPh > 14) return null;
 
     _phBuffer.add(rawPh);
@@ -111,7 +88,6 @@ class BleService {
     return double.parse(avg.toStringAsFixed(2));
   }
 
-  // ─── Probe stabilisation timer (20 seconds) ───────────────────────
   void _startStabilisationTimer() {
     _probeStable = false;
     _stabilizingSec = 0;
@@ -129,8 +105,7 @@ class BleService {
       }
     });
   }
-
-  // ─── Simulation fallback ──────────────────────────────────────────
+─
   void _startSimulation() {
     _simTimer?.cancel();
     final rand = Random();
@@ -154,14 +129,11 @@ class BleService {
     });
   }
 
-  // ─── PUBLIC API ───────────────────────────────────────────────────
-
   Future<void> startScanAndConnect({String? targetMac}) async {
     if (_scanning) return;
     _scanning = true;
     await disconnect(emitStatus: false);
 
-    // ── Runtime permissions (Android 12+) ──────────────────────────
     if (defaultTargetPlatform == TargetPlatform.android) {
       final statuses = await [
         Permission.location,
@@ -177,8 +149,6 @@ class BleService {
         return;
       }
     }
-
-    // ── Check adapter ──────────────────────────────────────────────
     if (!await FlutterBluePlus.isSupported) {
       _emit('Bluetooth not supported', state: BleConnectionState.error);
       _scanning = false;
@@ -296,7 +266,6 @@ class BleService {
             final reading = _decode(bytes);
             if (reading == null) return;
 
-            // Jump detection – ignore if unrealistic spike (>1.0 in one step)
             if (_phBuffer.isNotEmpty &&
                 (reading.ph - _phBuffer.last).abs() > 1.0) {
               debugPrint('[BLE] spike ignored: ${reading.ph}');
@@ -344,8 +313,6 @@ class BleService {
     }
   }
 }
-
-// ─── Data models ───────────────────────────────────────────────────────────
 
 enum BleConnectionState {
   scanning,

@@ -1,7 +1,3 @@
-/// **PermissionPage**
-/// Responsible for: Requesting mandatory local permissions (Location, Bluetooth, Camera).
-/// Dependency: permission_handler.
-
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../services/session_service.dart';
@@ -24,7 +20,7 @@ class _PermissionPageState extends State<PermissionPage> {
     });
   }
 
-  // ✅ Shared navigation logic — persists the permission grant
+  // Shared navigation logic — persists the permission grant
   void _onContinue() async {
     // Save the flag so we never show this screen again
     await SessionService.markPermissionsGranted();
@@ -49,7 +45,7 @@ class _PermissionPageState extends State<PermissionPage> {
       backgroundColor: const Color(0xFFF2E8D5),
       body: Stack(
         children: [
-          // 🌾 Background
+          // Background
           Positioned.fill(
             child: Image.asset(
               'assets/images/bg_fields.png',
@@ -57,7 +53,7 @@ class _PermissionPageState extends State<PermissionPage> {
             ),
           ),
 
-          // 🌿 Logo (top)
+          // Logo (top)
           SafeArea(
             child: Align(
               alignment: Alignment.topCenter,
@@ -72,7 +68,7 @@ class _PermissionPageState extends State<PermissionPage> {
             ),
           ),
 
-          // 🟫 Glass permission card (slide up)
+          // Glass permission card (slide up)
           AnimatedPositioned(
             duration: const Duration(milliseconds: 850),
             curve: Curves.easeOutQuart,
@@ -112,7 +108,6 @@ class _PermissionPageState extends State<PermissionPage> {
                       ),
                       const SizedBox(height: 16),
 
-                      // ✅ Static Column instead of ListView for perfect alignment
                       Expanded(
                         child: Column(
                           children: const [
@@ -139,7 +134,7 @@ class _PermissionPageState extends State<PermissionPage> {
 
                       const SizedBox(height: 12),
 
-                      // ✅ Allow All -> Next Step
+                      // Allow All -> Next Step
                       SizedBox(
                         width: double.infinity,
                         height: 58,
@@ -151,8 +146,9 @@ class _PermissionPageState extends State<PermissionPage> {
                               borderRadius: BorderRadius.circular(34),
                             ),
                             elevation: 10,
-                            shadowColor:
-                                const Color(0xFF004D40).withOpacity(0.35),
+                            shadowColor: const Color(
+                              0xFF004D40,
+                            ).withOpacity(0.35),
                           ),
                           child: const Text(
                             'Allow All',
@@ -192,7 +188,7 @@ class _PermissionPageState extends State<PermissionPage> {
   }
 }
 
-// 🌊 Same smooth wave top
+//  Same smooth wave top
 class SoilWaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
@@ -210,7 +206,6 @@ class SoilWaveClipper extends CustomClipper<Path> {
   bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
 
-// ✅ Static Permission item with no animations and better resizing
 class PermissionTile extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -228,7 +223,6 @@ class PermissionTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        // ✅ soft “field” tile look (not pure white)
         color: const Color(0xFFEAF3E6).withOpacity(0.65),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.black.withOpacity(0.08)),
@@ -242,7 +236,6 @@ class PermissionTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // ✅ round icon bubble like your permission page style
           Container(
             width: 44,
             height: 44,
@@ -250,11 +243,7 @@ class PermissionTile extends StatelessWidget {
               color: Colors.white.withOpacity(0.85),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              color: const Color(0xFF004D40),
-              size: 24,
-            ),
+            child: Icon(icon, color: const Color(0xFF004D40), size: 24),
           ),
           const SizedBox(width: 14),
           Expanded(

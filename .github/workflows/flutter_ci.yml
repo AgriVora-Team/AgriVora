@@ -2,14 +2,15 @@ name: Flutter CI
 
 on:
   push:
-    branches: [ main, feature/kerthikan ]
+    branches: [main]
     paths:
       - 'frontend/**'
       - '.github/workflows/flutter_ci.yml'
   pull_request:
-    branches: [ main ]
+    branches: [main]
     paths:
       - 'frontend/**'
+      - '.github/workflows/flutter_ci.yml'
 
 jobs:
   build:
@@ -33,6 +34,9 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
+
+      - name: Check Flutter version
+        run: flutter --version
 
       - name: Get dependencies
         run: flutter pub get

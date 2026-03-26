@@ -1,8 +1,3 @@
-/// **PredictSoilPage**
-/// Responsible for: Location-based soil prediction fetching.
-/// Role: Grabs current GPS, fetches soil grids data via backend, and provides automated crop recommendations.
-/// API Dependency: /location/summary, /recommend
-
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -29,32 +24,32 @@ class _PredictSoilPageState extends State<PredictSoilPage> {
   @override
   void initState() {
     super.initState();
-    // Step 1: Initiate BLE hardware scan and attempt connection to paired ESP32 sensor
     BleService().startScanAndConnect();
 
-    // Step 2: Register stream listeners for live pH values
-    _subs.add(BleService().phStream.listen((ph) {
-      if (mounted) setState(() => _livePh = ph);
-    }));
+    _subs.add(
+      BleService().phStream.listen((ph) {
+        if (mounted) setState(() => _livePh = ph);
+      }),
+    );
 
-    // Step 3: Register stream listeners for complete reading payloads (including voltage and temperature)
-    _subs.add(BleService().rawStream.listen((r) {
-      if (mounted) setState(() => _lastReading = r);
-    }));
+    _subs.add(
+      BleService().rawStream.listen((r) {
+        if (mounted) setState(() => _lastReading = r);
+      }),
+    );
 
-    // Step 4: Register stream listeners for connection status updates
-    _subs.add(BleService().statusStream.listen((s) {
-      if (mounted) setState(() => _bleStatus = s);
-    }));
+    _subs.add(
+      BleService().statusStream.listen((s) {
+        if (mounted) setState(() => _bleStatus = s);
+      }),
+    );
   }
 
   @override
   void dispose() {
-    // Step 5: Clean up all stream subscriptions to avoid memory leaks
     for (final s in _subs) {
       s.cancel();
     }
-    // Step 6: Disconnect from BLE to save battery and free the sensor
     BleService().disconnect();
     super.dispose();
   }
@@ -110,29 +105,42 @@ class _PredictSoilPageState extends State<PredictSoilPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(children: [
-                  const Icon(Icons.science_rounded,
-                      color: Color(0xFF2E7D32), size: 24),
-                  const SizedBox(width: 8),
-                  const Text('Live pH Reading',
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.science_rounded,
+                      color: Color(0xFF2E7D32),
+                      size: 24,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Live pH Reading',
                       style: TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF1B1B1B))),
-                ]),
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF1B1B1B),
+                      ),
+                    ),
+                  ],
+                ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: badgeColor.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: badgeColor.withOpacity(0.4)),
                   ),
-                  child: Text(badgeLabel,
-                      style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: badgeColor)),
+                  child: Text(
+                    badgeLabel,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: badgeColor,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -141,30 +149,37 @@ class _PredictSoilPageState extends State<PredictSoilPage> {
               Text(
                 _livePh!.toStringAsFixed(2),
                 style: TextStyle(
-                    fontSize: 56,
-                    fontWeight: FontWeight.w900,
-                    color: phColor,
-                    letterSpacing: -1),
+                  fontSize: 56,
+                  fontWeight: FontWeight.w900,
+                  color: phColor,
+                  letterSpacing: -1,
+                ),
               ),
               const SizedBox(height: 4),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: phColor.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(category,
-                    style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: phColor)),
+                child: Text(
+                  category,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: phColor,
+                  ),
+                ),
               ),
             ] else
               const SizedBox(
                 height: 56,
                 child: Center(
-                    child: CircularProgressIndicator(color: Color(0xFF2E7D32))),
+                  child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
+                ),
               ),
             const SizedBox(height: 12),
             if (_lastReading != null)
@@ -172,29 +187,47 @@ class _PredictSoilPageState extends State<PredictSoilPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   if (_lastReading!.temperature != null) ...[
-                    const Icon(Icons.thermostat_outlined,
-                        size: 14, color: Colors.black45),
+                    const Icon(
+                      Icons.thermostat_outlined,
+                      size: 14,
+                      color: Colors.black45,
+                    ),
                     const SizedBox(width: 3),
-                    Text('${_lastReading!.temperature!.toStringAsFixed(1)}°C',
-                        style: const TextStyle(
-                            fontSize: 12, color: Colors.black54)),
+                    Text(
+                      '${_lastReading!.temperature!.toStringAsFixed(1)}°C',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.black54,
+                      ),
+                    ),
                     const SizedBox(width: 12),
                   ],
                   if (_lastReading!.voltage != null) ...[
-                    const Icon(Icons.electric_bolt_outlined,
-                        size: 14, color: Colors.black45),
+                    const Icon(
+                      Icons.electric_bolt_outlined,
+                      size: 14,
+                      color: Colors.black45,
+                    ),
                     const SizedBox(width: 3),
-                    Text('${_lastReading!.voltage!.toStringAsFixed(2)} V',
-                        style: const TextStyle(
-                            fontSize: 12, color: Colors.black54)),
+                    Text(
+                      '${_lastReading!.voltage!.toStringAsFixed(2)} V',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.black54,
+                      ),
+                    ),
                     const SizedBox(width: 12),
                   ],
-                  const Icon(Icons.access_time_rounded,
-                      size: 14, color: Colors.black45),
+                  const Icon(
+                    Icons.access_time_rounded,
+                    size: 14,
+                    color: Colors.black45,
+                  ),
                   const SizedBox(width: 3),
-                  Text(_fmtTime(_lastReading!.timestamp),
-                      style:
-                          const TextStyle(fontSize: 12, color: Colors.black54)),
+                  Text(
+                    _fmtTime(_lastReading!.timestamp),
+                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  ),
                 ],
               ),
             const SizedBox(height: 8),
@@ -237,22 +270,19 @@ class _PredictSoilPageState extends State<PredictSoilPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Step 7: Build the full view starting with screen size calculation
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF2E8D5),
       body: Stack(
         children: [
-          // Step 8: Apply dynamic background image cover
           Positioned.fill(
             child: Image.asset(
               'assets/images/bg_fields.png',
               fit: BoxFit.cover,
             ),
           ),
-          
-          // Step 9: Render curved frosted glass bottom sheet 
+
           Align(
             alignment: Alignment.bottomCenter,
             child: ClipPath(
@@ -312,10 +342,7 @@ class _PredictSoilPageState extends State<PredictSoilPage> {
                       SizedBox(height: 12),
                       SizedBox(
                         width: 230,
-                        child: Divider(
-                          thickness: 2,
-                          color: Color(0xFF2E7D32),
-                        ),
+                        child: Divider(thickness: 2, color: Color(0xFF2E7D32)),
                       ),
                     ],
                   ),
@@ -336,15 +363,18 @@ class _PredictSoilPageState extends State<PredictSoilPage> {
                             onPressed: () {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content:
-                                      Text('Reconnecting to ESP32 sensor...'),
+                                  content: Text(
+                                    'Reconnecting to ESP32 sensor...',
+                                  ),
                                   backgroundColor: Color(0xFF2E7D32),
                                 ),
                               );
                               BleService().startScanAndConnect();
                             },
-                            icon: const Icon(Icons.bluetooth_connected,
-                                color: Colors.white),
+                            icon: const Icon(
+                              Icons.bluetooth_connected,
+                              color: Colors.white,
+                            ),
                             label: const Text(
                               "Reconnect ESP32 Device",
                               style: TextStyle(
@@ -356,8 +386,9 @@ class _PredictSoilPageState extends State<PredictSoilPage> {
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF1565C0),
                               elevation: 10,
-                              shadowColor:
-                                  const Color(0xFF1565C0).withOpacity(0.35),
+                              shadowColor: const Color(
+                                0xFF1565C0,
+                              ).withOpacity(0.35),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(34),
                               ),
@@ -370,14 +401,18 @@ class _PredictSoilPageState extends State<PredictSoilPage> {
                           height: 50,
                           child: ElevatedButton(
                             onPressed: () {
-                              Navigator.pushNamed(context, '/crop-recom',
-                                  arguments: {'ph': _livePh});
+                              Navigator.pushNamed(
+                                context,
+                                '/crop-recom',
+                                arguments: {'ph': _livePh},
+                              );
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF2E7D32),
                               elevation: 10,
-                              shadowColor:
-                                  const Color(0xFF2E7D32).withOpacity(0.35),
+                              shadowColor: const Color(
+                                0xFF2E7D32,
+                              ).withOpacity(0.35),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(34),
                               ),
@@ -395,13 +430,18 @@ class _PredictSoilPageState extends State<PredictSoilPage> {
                         const SizedBox(height: 16),
                         TextButton(
                           onPressed: () {
-                            Navigator.pushNamed(context, '/manual-soil',
-                                arguments: {'ph': _livePh});
+                            Navigator.pushNamed(
+                              context,
+                              '/manual-soil',
+                              arguments: {'ph': _livePh},
+                            );
                           },
                           style: TextButton.styleFrom(
                             foregroundColor: const Color(0xFF2E7D32),
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 12),
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
                           ),
                           child: const Text(
                             "Continue with manual input soil pH\nto predict crops",
@@ -468,7 +508,7 @@ class _GlassCard extends StatelessWidget {
                 color: Colors.black.withOpacity(0.08),
                 blurRadius: 18,
                 offset: const Offset(0, 10),
-              )
+              ),
             ],
           ),
           child: child,
@@ -483,8 +523,11 @@ class _TipBanner extends StatelessWidget {
   final Color color;
   final String text;
 
-  const _TipBanner(
-      {required this.icon, required this.color, required this.text});
+  const _TipBanner({
+    required this.icon,
+    required this.color,
+    required this.text,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -501,12 +544,15 @@ class _TipBanner extends StatelessWidget {
           Icon(icon, color: color, size: 18),
           const SizedBox(width: 8),
           Expanded(
-            child: Text(text,
-                style: TextStyle(
-                    fontSize: 12,
-                    color: color,
-                    fontWeight: FontWeight.w600,
-                    height: 1.4)),
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 12,
+                color: color,
+                fontWeight: FontWeight.w600,
+                height: 1.4,
+              ),
+            ),
           ),
         ],
       ),

@@ -5,26 +5,23 @@ import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class LocationService {
-  /// Get current position safely with a single dialog handler for permissions.
   static Future<Position?> getCurrentLocation(BuildContext? context) async {
-    // 1. Check if GPS service is ON
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       if (context != null && context.mounted) {
-         _showServiceDialog(context);
+        _showServiceDialog(context);
       }
       return null;
     }
 
-    // 2. Check and request permissions
     LocationPermission permission = await Geolocator.checkPermission();
-    
+
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
     }
 
     if (permission == LocationPermission.denied) {
-       if (context != null && context.mounted) {
+      if (context != null && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Location permission denied.")),
         );
@@ -34,12 +31,11 @@ class LocationService {
 
     if (permission == LocationPermission.deniedForever) {
       if (context != null && context.mounted) {
-         _showDeniedForeverDialog(context);
+        _showDeniedForeverDialog(context);
       }
       return null;
     }
 
-    // 3. Finally get position
     try {
       return await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
@@ -56,7 +52,9 @@ class LocationService {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text("Location Services Disabled"),
-        content: const Text("Please turn on GPS on your device to use this feature."),
+        content: const Text(
+          "Please turn on GPS on your device to use this feature.",
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -86,7 +84,7 @@ class LocationService {
               Geolocator.openAppSettings();
               Navigator.pop(ctx);
             },
-             style: ElevatedButton.styleFrom(
+            style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF004D40),
               foregroundColor: Colors.white,
             ),

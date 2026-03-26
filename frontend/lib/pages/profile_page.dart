@@ -1,8 +1,3 @@
-/// **ProfilePage**
-/// Responsible for: Rendering the user profile and account details.
-/// Role: Displays logged-in user summary and allows navigation to account settings or logout.
-/// Dependency: SessionService for current user state.
-
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -112,7 +107,8 @@ class _ProfilePageState extends State<ProfilePage> {
             } else if (firstItem['createdAt'] is Map &&
                 firstItem['createdAt']['_seconds'] != null) {
               DateTime dt = DateTime.fromMillisecondsSinceEpoch(
-                  firstItem['createdAt']['_seconds'] * 1000);
+                firstItem['createdAt']['_seconds'] * 1000,
+              );
               lastSync = "${dt.day}/${dt.month}/${dt.year}";
             }
           } catch (_) {}
@@ -155,7 +151,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
 
-          // ✅ Top Header
+          // Top Header
           Positioned(
             top: MediaQuery.of(context).padding.top + 55,
             left: 24,
@@ -176,9 +172,10 @@ class _ProfilePageState extends State<ProfilePage> {
                         height: 1.1,
                         shadows: [
                           Shadow(
-                              color: Colors.black45,
-                              blurRadius: 10,
-                              offset: Offset(0, 2))
+                            color: Colors.black45,
+                            blurRadius: 10,
+                            offset: Offset(0, 2),
+                          ),
                         ],
                       ),
                     ),
@@ -191,9 +188,10 @@ class _ProfilePageState extends State<ProfilePage> {
                         fontWeight: FontWeight.w600,
                         shadows: [
                           Shadow(
-                              color: Colors.black45,
-                              blurRadius: 8,
-                              offset: Offset(0, 1))
+                            color: Colors.black45,
+                            blurRadius: 8,
+                            offset: Offset(0, 1),
+                          ),
                         ],
                       ),
                     ),
@@ -206,14 +204,17 @@ class _ProfilePageState extends State<ProfilePage> {
                     shape: BoxShape.circle,
                     border: Border.all(color: Colors.white.withOpacity(0.4)),
                   ),
-                  child: const Icon(Icons.settings_outlined,
-                      color: Colors.white, size: 28),
+                  child: const Icon(
+                    Icons.settings_outlined,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                 ),
               ],
             ),
           ),
 
-          // ✅ Large Wavy Glass Panel
+          // Large Wavy Glass Panel
           Align(
             alignment: Alignment.bottomCenter,
             child: ClipPath(
@@ -254,7 +255,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
 
-          // 🧭 The Floating Navigation Bar
+          //  The Floating Navigation Bar
         ],
       ),
     );
@@ -278,9 +279,10 @@ class _ProfilePageState extends State<ProfilePage> {
                         border: Border.all(color: Colors.white, width: 3),
                         boxShadow: [
                           BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4)),
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
                         ],
                       ),
                       child: CircleAvatar(
@@ -297,7 +299,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                     ? Icons.no_accounts_rounded
                                     : Icons.person_rounded,
                                 size: 40,
-                                color: Colors.white)
+                                color: Colors.white,
+                              )
                             : null,
                       ),
                     ),
@@ -309,12 +312,16 @@ class _ProfilePageState extends State<ProfilePage> {
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 4)
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4,
+                            ),
                           ],
                         ),
-                        child: const Icon(Icons.camera_alt,
-                            color: Color(0xFF2E7D32), size: 14),
+                        child: const Icon(
+                          Icons.camera_alt,
+                          color: Color(0xFF2E7D32),
+                          size: 14,
+                        ),
                       ),
                   ],
                 ),
@@ -329,48 +336,61 @@ class _ProfilePageState extends State<ProfilePage> {
                           ? "Guest User"
                           : (ApiService.userName ?? "AgriVora Farmer"),
                       style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                          color: Color(0xFF1B1B1B)),
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF1B1B1B),
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       isGuest ? "Guest Access" : "Registered Farmer",
                       style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: isGuest
-                              ? Colors.grey.shade600
-                              : const Color(0xFF2E7D32)),
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: isGuest
+                            ? Colors.grey.shade600
+                            : const Color(0xFF2E7D32),
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: const [
-                        Icon(Icons.location_on_rounded,
-                            size: 14, color: Colors.black54),
+                        Icon(
+                          Icons.location_on_rounded,
+                          size: 14,
+                          color: Colors.black54,
+                        ),
                         SizedBox(width: 4),
-                        Text("Colombo, Sri Lanka",
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.black54,
-                                fontWeight: FontWeight.w600)),
+                        Text(
+                          "Colombo, Sri Lanka",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.black54,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ],
                     ),
                   ],
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.green.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Text("Active",
-                    style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green)),
+                child: const Text(
+                  "Active",
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.green,
+                  ),
+                ),
               ),
             ],
           ),
@@ -379,29 +399,38 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // 2. Personal Information Card
+  // Personal Information Card
   Widget _buildPersonalInfoCard() {
     return _buildGlassElevatedCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Personal Details",
-              style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF1B1B1B))),
+          const Text(
+            "Personal Details",
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF1B1B1B),
+            ),
+          ),
           const SizedBox(height: 16),
-          _buildInfoRow(Icons.email_outlined, "Email",
-              isGuest ? "Not available" : (ApiService.userEmail ?? "-")),
-          _buildInfoRow(Icons.phone_outlined, "Phone",
-              isGuest ? "Not available" : (ApiService.userPhone ?? "-"),
-              noDivider: true),
+          _buildInfoRow(
+            Icons.email_outlined,
+            "Email",
+            isGuest ? "Not available" : (ApiService.userEmail ?? "-"),
+          ),
+          _buildInfoRow(
+            Icons.phone_outlined,
+            "Phone",
+            isGuest ? "Not available" : (ApiService.userPhone ?? "-"),
+            noDivider: true,
+          ),
         ],
       ),
     );
   }
 
-  // 3. Farm Insights Summary (Mini Dashboard)
+  // Farm Insights Summary (Mini Dashboard)
   Widget _buildFarmInsightsSummary() {
     if (isGuest) return const SizedBox.shrink();
 
@@ -409,41 +438,62 @@ class _ProfilePageState extends State<ProfilePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Farm Insights Summary",
-              style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF1B1B1B))),
+          const Text(
+            "Farm Insights Summary",
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF1B1B1B),
+            ),
+          ),
           const SizedBox(height: 14),
           if (_isLoadingHistory)
             const Center(
-                child: Padding(
-                    padding: EdgeInsets.all(20),
-                    child: CircularProgressIndicator(color: Color(0xFF2E7D32))))
+              child: Padding(
+                padding: EdgeInsets.all(20),
+                child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
+              ),
+            )
           else
             Column(
               children: [
                 Row(
                   children: [
                     Expanded(
-                        child: _buildMiniStatCard(Icons.analytics,
-                            "Total Predicts", _totalPredictions.toString())),
+                      child: _buildMiniStatCard(
+                        Icons.analytics,
+                        "Total Predicts",
+                        _totalPredictions.toString(),
+                      ),
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
-                        child: _buildMiniStatCard(
-                            Icons.eco, "Top Crop", _topCrop)),
+                      child: _buildMiniStatCard(
+                        Icons.eco,
+                        "Top Crop",
+                        _topCrop,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 10),
                 Row(
                   children: [
                     Expanded(
-                        child: _buildMiniStatCard(
-                            Icons.healing, "Avg Health", _avgHealth)),
+                      child: _buildMiniStatCard(
+                        Icons.healing,
+                        "Avg Health",
+                        _avgHealth,
+                      ),
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
-                        child: _buildMiniStatCard(
-                            Icons.event, "Last Analysis", _lastAnalysis)),
+                      child: _buildMiniStatCard(
+                        Icons.event,
+                        "Last Analysis",
+                        _lastAnalysis,
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -466,35 +516,44 @@ class _ProfilePageState extends State<ProfilePage> {
         children: [
           Icon(icon, color: const Color(0xFF2E7D32), size: 18),
           const SizedBox(height: 8),
-          Text(title,
-              style: const TextStyle(
-                  fontSize: 11,
-                  color: Colors.black54,
-                  fontWeight: FontWeight.bold)),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Colors.black54,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(value,
-              style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF1B1B1B)),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF1B1B1B),
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );
   }
 
-  // 4. Settings & Controls
+  // Settings & Controls
   Widget _buildSettingsCard() {
     return _buildGlassElevatedCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Settings & Controls",
-              style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF1B1B1B))),
+          const Text(
+            "Settings & Controls",
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF1B1B1B),
+            ),
+          ),
           const SizedBox(height: 12),
           _buildActionRow(Icons.person_outline, "Account Settings", () {
             if (!isGuest) {
@@ -505,21 +564,27 @@ class _ProfilePageState extends State<ProfilePage> {
           }),
           _buildActionRow(Icons.lock_outline, "Privacy Policy", () async {
             final url = Uri.parse(
-                'https://github.com/AgriVora-Team/AgriVora/blob/main/docs/AgriVora_Privacy_Policy.md');
+              'https://github.com/AgriVora-Team/AgriVora/blob/main/docs/AgriVora_Privacy_Policy.md',
+            );
             launchUrl(url, mode: LaunchMode.externalApplication);
           }),
-          _buildActionRow(Icons.description_outlined, "Terms & Conditions",
-              () async {
-            final url = Uri.parse(
-                'https://github.com/AgriVora-Team/AgriVora/blob/main/docs/AgriVora_Terms_and_Conditions.pdf');
-            launchUrl(url, mode: LaunchMode.externalApplication);
-          }, noDivider: true),
+          _buildActionRow(
+            Icons.description_outlined,
+            "Terms & Conditions",
+            () async {
+              final url = Uri.parse(
+                'https://github.com/AgriVora-Team/AgriVora/blob/main/docs/AgriVora_Terms_and_Conditions.pdf',
+              );
+              launchUrl(url, mode: LaunchMode.externalApplication);
+            },
+            noDivider: true,
+          ),
         ],
       ),
     );
   }
 
-  // 5. Action Section
+  // Action Section
   Widget _buildActionSection() {
     if (isGuest) {
       return SizedBox(
@@ -527,19 +592,26 @@ class _ProfilePageState extends State<ProfilePage> {
         child: ElevatedButton.icon(
           onPressed: () {
             Navigator.pushNamedAndRemoveUntil(
-                context, '/welcome', (route) => false);
+              context,
+              '/welcome',
+              (route) => false,
+            );
           },
           icon: const Icon(Icons.login, color: Colors.white, size: 20),
-          label: const Text("Sign In / Create Account",
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold)),
+          label: const Text(
+            "Sign In / Create Account",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF2E7D32),
             padding: const EdgeInsets.symmetric(vertical: 16),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(22),
+            ),
             elevation: 4,
             shadowColor: const Color(0xFF2E7D32).withOpacity(0.4),
           ),
@@ -553,21 +625,31 @@ class _ProfilePageState extends State<ProfilePage> {
             await ApiService.logout();
             if (!mounted) return;
             Navigator.pushNamedAndRemoveUntil(
-                context, '/welcome', (route) => false);
+              context,
+              '/welcome',
+              (route) => false,
+            );
           },
-          icon: const Icon(Icons.logout_rounded,
-              color: Colors.redAccent, size: 20),
-          label: const Text("Log Out",
-              style: TextStyle(
-                  color: Colors.redAccent,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold)),
+          icon: const Icon(
+            Icons.logout_rounded,
+            color: Colors.redAccent,
+            size: 20,
+          ),
+          label: const Text(
+            "Log Out",
+            style: TextStyle(
+              color: Colors.redAccent,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.white.withOpacity(0.8),
             padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(22),
-                side: const BorderSide(color: Colors.redAccent, width: 1.5)),
+              borderRadius: BorderRadius.circular(22),
+              side: const BorderSide(color: Colors.redAccent, width: 1.5),
+            ),
             elevation: 0,
           ),
         ),
@@ -575,7 +657,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  // ─── Shared UI Helpers ───
+  //  Shared UI Helpers
 
   Widget _buildGlassElevatedCard({required Widget child}) {
     return Container(
@@ -587,17 +669,22 @@ class _ProfilePageState extends State<ProfilePage> {
         border: Border.all(color: Colors.white.withOpacity(0.4)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 14,
-              offset: const Offset(0, 6)),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
         ],
       ),
       child: child,
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String label, String value,
-      {bool noDivider = false}) {
+  Widget _buildInfoRow(
+    IconData icon,
+    String label,
+    String value, {
+    bool noDivider = false,
+  }) {
     return Column(
       children: [
         Row(
@@ -607,33 +694,44 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(width: 12),
             Expanded(
               flex: 2,
-              child: Text(label,
-                  style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.black54,
-                      fontWeight: FontWeight.w600)),
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Colors.black54,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
             Expanded(
               flex: 3,
-              child: Text(value,
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF1B1B1B),
-                      fontWeight: FontWeight.w700)),
+              child: Text(
+                value,
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFF1B1B1B),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ],
         ),
         if (!noDivider)
           const Padding(
-              padding: EdgeInsets.symmetric(vertical: 12),
-              child: Divider(color: Colors.black12, height: 1)),
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Divider(color: Colors.black12, height: 1),
+          ),
       ],
     );
   }
 
-  Widget _buildActionRow(IconData icon, String label, VoidCallback onTap,
-      {bool noDivider = false}) {
+  Widget _buildActionRow(
+    IconData icon,
+    String label,
+    VoidCallback onTap, {
+    bool noDivider = false,
+  }) {
     return Column(
       children: [
         InkWell(
@@ -647,27 +745,36 @@ class _ProfilePageState extends State<ProfilePage> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                      color: const Color(0xFF2E7D32).withOpacity(0.1),
-                      shape: BoxShape.circle),
+                    color: const Color(0xFF2E7D32).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
                   child: Icon(icon, size: 18, color: const Color(0xFF2E7D32)),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
-                    child: Text(label,
-                        style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF1B1B1B)))),
-                const Icon(Icons.chevron_right_rounded,
-                    size: 18, color: Colors.black45),
+                  child: Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1B1B1B),
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  size: 18,
+                  color: Colors.black45,
+                ),
               ],
             ),
           ),
         ),
         if (!noDivider)
           const Padding(
-              padding: EdgeInsets.only(left: 44),
-              child: Divider(color: Colors.black12, height: 1)),
+            padding: EdgeInsets.only(left: 44),
+            child: Divider(color: Colors.black12, height: 1),
+          ),
       ],
     );
   }

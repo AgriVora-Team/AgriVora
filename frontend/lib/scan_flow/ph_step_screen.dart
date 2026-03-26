@@ -1,6 +1,3 @@
-/// **PhStepScreen**
-/// Responsible for: Getting pH value either manually or via BLE connected sensor.
-
 import 'package:flutter/material.dart';
 
 import '../main.dart'; // ScanSession
@@ -9,10 +6,7 @@ import 'image_step_screen.dart';
 class PhStepScreen extends StatefulWidget {
   final ScanSession session;
 
-  const PhStepScreen({
-    super.key,
-    required this.session,
-  });
+  const PhStepScreen({super.key, required this.session});
 
   @override
   State<PhStepScreen> createState() => _PhStepScreenState();
@@ -40,18 +34,16 @@ class _PhStepScreenState extends State<PhStepScreen> {
   void _saveAndContinue() {
     final text = _phController.text.trim();
     if (text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a pH value.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please enter a pH value.')));
       return;
     }
 
     final value = double.tryParse(text);
     if (value == null || value < 0 || value > 14) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid pH between 0–14.'),
-        ),
+        const SnackBar(content: Text('Please enter a valid pH between 0–14.')),
       );
       return;
     }
@@ -82,10 +74,7 @@ class _PhStepScreenState extends State<PhStepScreen> {
           children: [
             const Text(
               'Enter Soil pH',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             const Text(
@@ -96,8 +85,9 @@ class _PhStepScreenState extends State<PhStepScreen> {
             const SizedBox(height: 24),
             TextField(
               controller: _phController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: const InputDecoration(
                 labelText: 'pH value',
                 hintText: 'e.g. 6.5',
@@ -117,10 +107,7 @@ class _PhStepScreenState extends State<PhStepScreen> {
                 onPressed: _saveAndContinue,
                 child: const Text(
                   'Next – Image step',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ),

@@ -1,8 +1,3 @@
-/// **RoleSelectPage**
-/// Responsible for: User role selection during onboarding.
-/// Role: Lets the user choose between roles like Farmer or Agronomist before proceeding to permission or dashboard.
-/// Next step: Navigates to PermissionPage.
-
 import 'dart:ui';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -30,7 +25,7 @@ class _RoleSelectPageState extends State<RoleSelectPage> {
     });
   }
 
-  // ✅ Continue -> Home page
+  // Continue -> Home page
   void _continue() async {
     final args = ModalRoute.of(context)?.settings.arguments;
     if (args is String && args.toLowerCase() == 'guest') {
@@ -63,10 +58,10 @@ class _RoleSelectPageState extends State<RoleSelectPage> {
 
     if (userName.toLowerCase() == "guest") {
       displayGreeting = "Hi Guest";
-      userName = ""; // so it doesn't show "Hi Guest Guest"
+      userName = "";
     } else {
       displayGreeting = "Hi $userName";
-      userName = ""; // already included in greeting
+      userName = "";
     }
 
     final canContinue = _selectedRole != null && _agreeTerms;
@@ -197,8 +192,9 @@ class _RoleSelectPageState extends State<RoleSelectPage> {
                                       ),
                                       children: [
                                         const TextSpan(
-                                            text:
-                                                "By continuing, you agree to our "),
+                                          text:
+                                              "By continuing, you agree to our ",
+                                        ),
                                         TextSpan(
                                           text: "Terms & Conditions",
                                           style: const TextStyle(
@@ -210,16 +206,22 @@ class _RoleSelectPageState extends State<RoleSelectPage> {
                                           recognizer: TapGestureRecognizer()
                                             ..onTap = () async {
                                               final Uri url = Uri.parse(
-                                                  'https://github.com/AgriVora-Team/AgriVora/blob/main/docs/AgriVora_Terms_and_Conditions.pdf');
-                                              if (!await launchUrl(url,
-                                                  mode: LaunchMode
-                                                      .externalApplication)) {
+                                                'https://github.com/AgriVora-Team/AgriVora/blob/main/docs/AgriVora_Terms_and_Conditions.pdf',
+                                              );
+                                              if (!await launchUrl(
+                                                url,
+                                                mode: LaunchMode
+                                                    .externalApplication,
+                                              )) {
                                                 if (mounted) {
-                                                  ScaffoldMessenger.of(context)
-                                                      .showSnackBar(
+                                                  ScaffoldMessenger.of(
+                                                    context,
+                                                  ).showSnackBar(
                                                     const SnackBar(
-                                                        content: Text(
-                                                            'Could not launch Terms & Conditions')),
+                                                      content: Text(
+                                                        'Could not launch Terms & Conditions',
+                                                      ),
+                                                    ),
                                                   );
                                                 }
                                               }
@@ -240,14 +242,16 @@ class _RoleSelectPageState extends State<RoleSelectPage> {
                               onPressed: canContinue ? _continue : null,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF004D40),
-                                disabledBackgroundColor:
-                                    const Color(0xFF004D40).withOpacity(0.35),
+                                disabledBackgroundColor: const Color(
+                                  0xFF004D40,
+                                ).withOpacity(0.35),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(34),
                                 ),
                                 elevation: 10,
-                                shadowColor:
-                                    const Color(0xFF004D40).withOpacity(0.35),
+                                shadowColor: const Color(
+                                  0xFF004D40,
+                                ).withOpacity(0.35),
                               ),
                               child: const Text(
                                 "Continue",

@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'services/session_service.dart';
 
-// 🌿 UI pages (your base flow)
+// UI pages
 import 'pages/welcome_page.dart';
 import 'pages/login_page.dart';
 import 'pages/signup_page.dart';
@@ -13,10 +13,9 @@ import 'pages/soil_analysis_page.dart';
 import 'pages/manual_soil_analysis_page.dart';
 import 'pages/predict_soil.dart';
 
-// 🧪 Dev1 scan flow
+//Dev1 scan flow
 import 'scan_flow/start_scan_screen.dart';
 
-// ✅ Added pages from main2.dart (CHANGE paths if your files are in another folder)
 import 'pages/crop_recom_page.dart';
 import 'pages/history_page.dart';
 import 'pages/profile_page.dart';
@@ -26,9 +25,6 @@ import 'pages/ai_chat_page.dart';
 import 'pages/forgot_password_page.dart';
 import 'pages/account_settings_page.dart';
 
-/// ------------------
-/// ScanSession model
-/// ------------------
 class ScanSession {
   final String scanId;
   final DateTime timestamp;
@@ -70,14 +66,11 @@ class ScanSession {
     this.weather,
     List<RecommendationResult>? results,
     List<String>? tips,
-  })  : results = results ?? const [],
-        tips = tips ?? const [];
+  }) : results = results ?? const [],
+       tips = tips ?? const [];
 
   factory ScanSession.empty(String scanId) {
-    return ScanSession(
-      scanId: scanId,
-      timestamp: DateTime.now(),
-    );
+    return ScanSession(scanId: scanId, timestamp: DateTime.now());
   }
 
   ScanSession copyWith({
@@ -141,17 +134,10 @@ class RecommendationResult {
   });
 
   Map<String, dynamic> toJson() {
-    return {
-      'crop': crop,
-      'score': score,
-      'reasons': reasons,
-    };
+    return {'crop': crop, 'score': score, 'reasons': reasons};
   }
 }
 
-/// ------------------
-/// ENTRY POINT
-/// ------------------
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
@@ -166,19 +152,15 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'AgriVora',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2E7D32),
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF2E7D32)),
         useMaterial3: true,
         fontFamily: 'Roboto',
       ),
-
-      // Startup router decides: Home / Login / Welcome
       home: const SplashRouter(),
 
-      // Routes (merged)
+      // Routes
       routes: {
-        // ✅ Base routes
+        // Base routes
         '/welcome': (_) => const WelcomePage(),
         '/login': (_) => const LoginPage(),
         '/signup': (_) => const SignUpPage(),
@@ -192,7 +174,7 @@ class MyApp extends StatelessWidget {
         '/predict-soil': (_) => const PredictSoilPage(),
         '/start-scan': (_) => const StartScanScreen(),
 
-        // ✅ Added routes from main2.dart (aliases too)
+        // Added routes from main2.dart (aliases too)
         '/crop-recom': (_) => const CropRecomPage(),
         '/crop_recom_page': (_) => const CropRecomPage(),
 
@@ -225,21 +207,12 @@ class MyApp extends StatelessWidget {
             image: args?['image'] ?? 'assets/images/tomato.png',
           );
         },
-
-        // Alias to keep compatibility with main2 naming
         '/soil_analysis': (_) => const SoilAnalysisPage(),
       },
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SplashRouter — shown on every cold start.
-// Performs the async session check and routes accordingly:
-//   • Logged-in session found  →  /home  (skip Welcome + Permissions + Login)
-//   • Permissions granted, no session  →  /login  (skip Welcome + Permissions)
-//   • Fresh install / no history  →  WelcomePage
-// ─────────────────────────────────────────────────────────────────────────────
 class SplashRouter extends StatefulWidget {
   const SplashRouter({super.key});
 
@@ -253,16 +226,13 @@ class _SplashRouterState extends State<SplashRouter> {
   @override
   void initState() {
     super.initState();
-    // Fade in the logo immediately
     Future.microtask(() {
       if (mounted) setState(() => _visible = true);
     });
-    // Start the session check
     _checkSession();
   }
 
   Future<void> _checkSession() async {
-    // Small minimum display time so the splash doesn't flash too fast
     final results = await Future.wait([
       SessionService.restoreSession(),
       SessionService.hasGrantedPermissions(),
@@ -274,10 +244,8 @@ class _SplashRouterState extends State<SplashRouter> {
     final bool hasSession = results[0] as bool;
 
     if (hasSession) {
-      // Fully logged in — go straight to Home, clearing the back-stack
       Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
     } else {
-      // No active session — show the Welcome Screen
       Navigator.pushNamedAndRemoveUntil(context, '/welcome', (route) => false);
     }
   }

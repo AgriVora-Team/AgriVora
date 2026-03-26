@@ -1,7 +1,4 @@
-"""
-**Chat AI Endpoint**
-Responsible for: Handling conversational questions using an LLM.
-"""
+"""AI Chatbot endpoint for agricultural inquiries."""
 
 import os
 
@@ -13,10 +10,6 @@ from pydantic import BaseModel
 load_dotenv(override=True)
 
 router = APIRouter()
-
-# Initialize OpenAI client
-# It's better to do this inside the function if you want to handle missing API key gracefully during startup
-# or just ensure it's in .env
 
 class ChatRequest(BaseModel):
     message: str

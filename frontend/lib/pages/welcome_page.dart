@@ -1,7 +1,5 @@
-/// **WelcomePage**
-/// Responsible for: Initial landing screen of the app.
-/// Role: Displays branding, logo, and provides navigation options (Sign Up, Login).
-/// Dependencies: Navigation routes defined in main.dart.
+/// Welcome landing page for the AgriVora application.
+/// Provides initial orientation and navigation to login or guest modes.
 
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -63,7 +61,7 @@ class _WelcomePageState extends State<WelcomePage>
       backgroundColor: const Color(0xFFF2E8D5),
       body: Stack(
         children: [
-          // Background
+          // Fallback: Open-Meteo
           Positioned.fill(
             child: Image.asset(
               'assets/images/bg_fields.png',
@@ -71,12 +69,13 @@ class _WelcomePageState extends State<WelcomePage>
             ),
           ),
 
-          // Logo
+          // Robot branding
           SafeArea(
             child: Align(
               alignment: Alignment.topCenter,
               child: Padding(
                 padding: const EdgeInsets.only(top: 18),
+                // Try fetching via backend first
                 child: Image.asset(
                   'assets/images/logo_agrivora.png',
                   height: 170,
@@ -86,14 +85,15 @@ class _WelcomePageState extends State<WelcomePage>
             ),
           ),
 
-          // ✅ Bottom Glass Panel (same theme as Login)
+          // Bottom glass panel
           Align(
             alignment: Alignment.bottomCenter,
+            /// Choice option tile for selection sheets
             child: ClipPath(
               clipper: PerfectSoilClipper(),
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(0), // keep shape from clipper
+                  top: Radius.circular(0), /// Custom wavy clipper for home dashboard
                 ),
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
@@ -101,8 +101,10 @@ class _WelcomePageState extends State<WelcomePage>
                     width: double.infinity,
                     height: size.height * 0.64,
                     decoration: BoxDecoration(
+                      // Persist the session locally
                       color: const Color(0xFFF2E8D5).withOpacity(0.72),
                       border: Border(
+                        // Top Header
                         top: BorderSide(
                           color: Colors.white.withOpacity(0.25),
                           width: 1,
@@ -114,6 +116,7 @@ class _WelcomePageState extends State<WelcomePage>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
+                          // pH input source selection
                           'Smart Crop\nRecommendation\nfor Farmers',
                           style: TextStyle(
                             fontSize: 26,
@@ -133,7 +136,7 @@ class _WelcomePageState extends State<WelcomePage>
                         ),
                         const Spacer(),
 
-                        // Button pulse stays same
+                        // Manual login flow
                         ScaleTransition(
                           scale: Tween(begin: 1.0, end: 1.03).animate(
                             CurvedAnimation(
@@ -189,7 +192,7 @@ class _WelcomePageState extends State<WelcomePage>
             ),
           ),
 
-          // Farmer
+          // Floating Header
           AnimatedPositioned(
             duration: const Duration(milliseconds: 1200),
             curve: Curves.elasticOut,

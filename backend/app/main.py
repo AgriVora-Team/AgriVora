@@ -1,19 +1,19 @@
 """
-**Main Entrypoint**
-Responsible for: Initializing the FastAPI application.
+AgriVora Backend Entrypoint
+Initializes the FastAPI application and mounts routers.
 
-Route Summary (all relative to https://agrivora-production.up.railway.app):
-  ✅ LIVE (no Firebase needed):
+Route Overview (https://agrivora-production.up.railway.app):
+  Standalone Endpoints (No Firebase dependency):
       GET  /              → root
       GET  /health        → health check
-      POST /chat          → AI chatbot (OpenAI / g4f fallback)
+      POST /chat          → AI chatbot
       POST /location/summary
-      POST /recommend     → manual soil form (RandomForest)
-      POST /crop/recommend → LightGBM crop predictor
-      POST /image/texture → soil CNN (lazy model load via MODEL_URL)
-      GET/POST /ph/*      → sensor/pH session endpoints
+      POST /recommend     → manual soil form
+      POST /crop/recommend → crop predictor
+      POST /image/texture → soil texture analysis
+      GET/POST /ph/*      → sensor session endpoints
 
-  ⚠️  FIREBASE-DEPENDENT (requires FIREBASE_CREDENTIALS_JSON env var on Railway):
+  Firebase-Dependent Endpoints (Requires FIREBASE_CREDENTIALS_JSON):
       POST /api/auth/signup
       POST /api/auth/login
       POST /api/auth/forgot-password/request-otp
@@ -33,7 +33,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# ─── Always-safe imports ───────────────────────────────────────────────────────
+# Router imports
 from app.api.api_v1.endpoints import chat, location, recommend, sensor
 from app.api.crop_lgbm_api import router as crop_lgbm_router
 from app.api.api_v1.endpoints import image as image_router
@@ -46,7 +46,7 @@ app = FastAPI(
     description="Backend for AgriVora mobile application — deployed on Railway",
 )
 
-# ─── CORS ──────────────────────────────────────────────────────────────────────
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -55,7 +55,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ─── Always-enabled routers (no Firebase required) ────────────────────────────
+# Routers that do not require authentication or database access
 app.include_router(chat.router,          tags=["Chat"])
 app.include_router(location.router,      tags=["Location"])
 app.include_router(recommend.router,     tags=["Recommend"])
@@ -63,9 +63,8 @@ app.include_router(sensor.router,        tags=["Sensor"])
 app.include_router(crop_lgbm_router)
 app.include_router(image_router.router,  tags=["Image"])
 
-# ─── Firebase-dependent routers ───────────────────────────────────────────────
-# These are mounted only when FIREBASE_CREDENTIALS_JSON (or a key file) is present.
-# Auth, History, and User profile all talk to Firestore.
+# Routers that depend on Firestore for persistence and authentication.
+# Only loaded if the environment provides valid credentials.
 _firebase_available = False
 try:
     from app.utils.firestore import db  # will raise if credentials are missing
@@ -130,7 +129,7 @@ else:
     app.include_router(_stub)
 
 
-# ─── Root & Health endpoints ──────────────────────────────────────────────────
+# Base endpoints
 
 @app.get("/")
 def root():

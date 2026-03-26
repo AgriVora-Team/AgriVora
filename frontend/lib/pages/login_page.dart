@@ -1,7 +1,5 @@
-/// **LoginPage**
-/// Responsible for: User authentication (login).
-/// Role: Captures email/phone and password, calls ApiService.login(), uses SessionService to save session state.
-/// API Dependency: /api/auth/login
+/// User authentication and session management.
+/// Handles login validation and persistence via SessionService.
 
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -38,7 +36,7 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  // ✅ Log in -> Role select page
+  // Manual login flow
   Future<void> _login() async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
@@ -62,7 +60,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final response = await ApiService.login(email, password);
       if (mounted) {
-        // ✅ Persist the session so next cold-start skips onboarding
+        // Persist the session locally
         await SessionService.saveSession(
           userId: ApiService.userId ?? '',
           userName: ApiService.userName ?? '',

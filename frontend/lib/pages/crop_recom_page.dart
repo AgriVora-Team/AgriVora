@@ -1,7 +1,5 @@
-/// **CropRecomPage**
-/// Responsible for: Displaying crop recommendations.
-/// Role: Receives recommendation results and displays ranked list of crops suitable for the analyzed soil.
-/// Navigation: Pushed after LightGBM or Random Forest API calls succeed.
+/// Display page for ranked crop recommendations.
+/// Presents AI-driven suggestions based on analyzed soil and climate data.
 
 import 'dart:ui';
 import 'package:flutter/material.dart';

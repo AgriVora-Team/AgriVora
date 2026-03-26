@@ -1,7 +1,5 @@
-/// **ManualSoilAnalysisPage**
-/// Responsible for: Manual input of soil metrics (pH, Nitrogen, etc.).
-/// Role: Collects manual entries to trigger crop recommendation by calling ApiService.predictCropLGBM().
-/// API Dependency: /crop/recommend (LightGBM)
+/// Manual soil data input for crop recommendations.
+/// Allows users to enter parameters like pH manually for ML analysis.
 
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -122,7 +120,7 @@ class _ManualSoilAnalysisPageState extends State<ManualSoilAnalysisPage> {
       backgroundColor: const Color(0xFFF2E8D5),
       body: Stack(
         children: [
-          // 🌾 Background Imagery
+          // Background imagery
           Positioned.fill(
             child: Image.asset(
               'assets/images/bg_fields.png',
@@ -130,7 +128,7 @@ class _ManualSoilAnalysisPageState extends State<ManualSoilAnalysisPage> {
             ),
           ),
 
-          // ✅ Floating Header
+          // Floating header
           Positioned(
             top: MediaQuery.of(context).padding.top + 55,
             left: 20,
@@ -188,7 +186,7 @@ class _ManualSoilAnalysisPageState extends State<ManualSoilAnalysisPage> {
             ),
           ),
 
-          // ✅ Large Wavy Glass Panel
+          // Large wavy glass panel
           Align(
             alignment: Alignment.bottomCenter,
             child: ClipPath(

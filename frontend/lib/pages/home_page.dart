@@ -1,7 +1,5 @@
-/// **HomePage**
-/// Responsible for: The primary user dashboard.
-/// Role: Displays user greeting, quick action buttons (Soil Analysis, Chat), and status cards.
-/// Dependencies: Navigates to SoilAnalysisPage, AIChatPage, PredictSoilPage.
+/// Primary dashboard for user interaction and farm overview.
+/// Merges weather data, quick actions, and localized agricultural insights.
 
 import 'dart:convert';
 import 'dart:ui';
@@ -35,7 +33,7 @@ class _HomePageState extends State<HomePage> {
       final lat = pos.latitude;
       final lon = pos.longitude;
 
-      // ── Try backend first ──────────────────────────────────────────────
+      // Try fetching via backend first
       try {
         final summary = await ApiService.getLocationSummary(lat, lon)
             .timeout(const Duration(seconds: 8));
@@ -52,7 +50,7 @@ class _HomePageState extends State<HomePage> {
         debugPrint("Backend failed, using direct APIs: $e");
       }
 
-      // ── Fallback: Open-Meteo (free, no API key) ────────────────────────
+      // Fallback: Open-Meteo
       try {
         final url = Uri.parse('https://api.open-meteo.com/v1/forecast'
             '?latitude=$lat&longitude=$lon'
@@ -73,7 +71,7 @@ class _HomePageState extends State<HomePage> {
         debugPrint("Open-Meteo direct call failed: $e");
       }
 
-      // ── Fallback: Nominatim reverse geocoding ──────────────────────────
+      // Fallback: Nominatim reverse geocoding
       try {
         final url = Uri.parse('https://nominatim.openstreetmap.org/reverse'
             '?format=json&lat=$lat&lon=$lon&zoom=10');
@@ -128,7 +126,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
-          // ✅ Top Greeting (Floating over the image)
+          // Header greeting
           Positioned(
             top: MediaQuery.of(context).padding.top + 55,
             left: 24,
@@ -170,7 +168,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
-          // ✅ Main Panel (Glass Background)
+          // Main dashboard panel
           Align(
             alignment: Alignment.bottomCenter,
             child: ClipPath(
@@ -280,7 +278,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          // ✅ Robot
+          // Robot branding
           Positioned(
             right: -10,
             bottom: -5,
@@ -427,7 +425,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  /// ✅ Bottom sheet: choose how to get pH for Crop Recommendation
+  // pH input source selection
   void _showCropRecomChoiceSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -511,7 +509,7 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-/// ✅ Choice option tile used in the bottom sheet
+/// Choice option tile for selection sheets
 class _ChoiceOption extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
@@ -590,7 +588,7 @@ class _ChoiceOption extends StatelessWidget {
   }
 }
 
-/// ✅ Wavy clipper
+/// Custom wavy clipper for home dashboard
 class _HomeWaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {

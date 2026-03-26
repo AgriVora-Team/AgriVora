@@ -1,15 +1,4 @@
-"""
-**Image Processing Endpoint**
-Responsible for: Receiving image uploads and triggering soil texture classification.
-Inputs/Outputs: Takes multipart file upload (field name: "file"), returns predicted
-                soil texture (CNN model) and confidence score.
-Dependencies: cnn_service.py
-
-Route: POST /image/texture
-Response envelope:
-  Success:  { "success": true,  "data": { "soil_type": "...", "texture": "...", "confidence": 0.xx, "probs": {...} }, "error": null }
-  Failure:  { "success": false, "data": null, "error": "<reason>" }
-"""
+"""Image texture analysis endpoint for soil classification."""
 
 import traceback
 
@@ -21,11 +10,7 @@ from app.services.cnn_service import predict_soil_type
 router = APIRouter()
 
 
-# =====================================================
-# IMAGE TEXTURE PREDICTION  (POST /image/texture)
-# =====================================================
-# Called by Flutter frontend via ApiService.analyzeSoilImage()
-# Multipart field name must be "file" (matches Flutter's MultipartFile)
+# Image texture prediction endpoint
 
 @router.post("/image/texture")
 async def predict_texture(file: UploadFile = File(...)):

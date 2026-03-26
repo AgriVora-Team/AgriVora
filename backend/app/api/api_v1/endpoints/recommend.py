@@ -1,7 +1,4 @@
-"""
-**Recommend Endpoint**
-Responsible for: Providing crop recommendations using standard logic/models (RandomForest or basic metrics).
-"""
+"""Crop recommendation endpoint using soil and weather parameters."""
 
 from datetime import datetime
 from typing import Any, Optional
@@ -15,9 +12,7 @@ from app.services.recommend_service import recommend_crops
 router = APIRouter()
 
 
-# =====================================================
-# REQUEST SCHEMA — accepts both camelCase and snake_case
-# =====================================================
+# Request schema
 
 class RecommendRequest(BaseModel):
     userId: Optional[str] = None
@@ -40,9 +35,7 @@ class RecommendRequest(BaseModel):
         return values
 
 
-# =====================================================
-# MANUAL SOIL RECOMMENDATION
-# =====================================================
+# Manual soil recommendation logic
 
 @router.post("/recommend")
 def recommend(data: RecommendRequest):

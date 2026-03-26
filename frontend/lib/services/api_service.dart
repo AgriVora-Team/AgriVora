@@ -1,9 +1,5 @@
-/// **ApiService**
-/// Responsible for: All backend API calls in the application.
-/// Role: Encapsulates network requests to the deployed Railway backend,
-///       error handling, and JSON parsing.
-///
-/// Backend base URL: https://agrivora-production-d669.up.railway.app/
+/// ApiService handles all backend communication for the AgriVora application.
+/// It centralizes API requests, error handling, and session synchronization.
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -12,26 +8,20 @@ import 'package:http/http.dart' as http;
 import 'session_service.dart';
 
 class ApiService {
-  // ─────────────────────────────────────────────────────────────
-  // Single production base URL — no discovery logic needed.
-  // ─────────────────────────────────────────────────────────────
+  // Base URL for the production environment
   static const String baseUrl =
       'https://agrivora-production-d669.up.railway.app';
 
   /// Trigger used to notify the UI (HistoryPage) that it needs to refresh.
   static final ValueNotifier<int> historyRefreshTrigger = ValueNotifier(0);
 
-  // ─────────────────────────────────────────────────────────────
-  // Session
-  // ─────────────────────────────────────────────────────────────
+  // Session state
   static String? userId;
   static String? userName;
   static String? userEmail;
   static String? userPhone;
 
-  // ─────────────────────────────────────────────────────────────
-  // Helpers
-  // ─────────────────────────────────────────────────────────────
+  // Internal helpers
   static Map<String, String> get _headers => {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -64,9 +54,7 @@ class ApiService {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Authentication
-  // ─────────────────────────────────────────────────────────────
+  // Authentication endpoints
   static Future<Map<String, dynamic>> login(
       String emailOrPhone, String password) async {
     try {
@@ -148,9 +136,7 @@ class ApiService {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Forgot Password
-  // ─────────────────────────────────────────────────────────────
+  // Forgot password flow
   static Future<Map<String, dynamic>> requestResetOTP(String email) async {
     try {
       final response = await http
@@ -229,9 +215,7 @@ class ApiService {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Profile / Settings
-  // ─────────────────────────────────────────────────────────────
+  // Profile and user settings
   static Future<Map<String, dynamic>> updateProfile({
     String? fullName,
     String? phone,
@@ -304,9 +288,7 @@ class ApiService {
     await SessionService.clearSession();
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // History
-  // ─────────────────────────────────────────────────────────────
+  // Scan history
   static Future<void> saveToHistory(Map<String, dynamic> data) async {
     if (userId == null) return;
     data['userId'] = userId;
@@ -344,9 +326,7 @@ class ApiService {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Recommendations (manual soil form)
-  // ─────────────────────────────────────────────────────────────
+  // Crop recommendations
   static Future<Map<String, dynamic>> getRecommendations({
     required String soilType,
     required double ph,
@@ -389,9 +369,7 @@ class ApiService {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Location Summary (Weather + Soil)
-  // ─────────────────────────────────────────────────────────────
+  // Location and weather summaries
   static Future<Map<String, dynamic>> getLocationSummary(
       double lat, double lon) async {
     try {
@@ -418,9 +396,7 @@ class ApiService {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Soil Image Analysis (CNN)
-  // ─────────────────────────────────────────────────────────────
+  // Visual soil analysis
   static Future<Map<String, dynamic>> analyzeSoilImage(File imageFile) async {
     // TF loads the model on first request — can take 60–90 s on cold start.
     const kAnalysisTimeout = Duration(seconds: 120);
@@ -454,9 +430,7 @@ class ApiService {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Crop Recommendation (LightGBM)
-  // ─────────────────────────────────────────────────────────────
+  // Machine learning predictions
   static Future<Map<String, dynamic>> predictCropLGBM({
     required double temperature,
     required double humidity,
@@ -509,9 +483,7 @@ class ApiService {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Chat AI
-  // ─────────────────────────────────────────────────────────────
+  // AI Chat Assistant
   static Future<Map<String, dynamic>> askChatAI(String message) async {
     try {
       final response = await http
@@ -541,9 +513,7 @@ class ApiService {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Sensor (pH / BLE sessions)
-  // ─────────────────────────────────────────────────────────────
+  // Sensor data
   static Future<Map<String, dynamic>> searchDevice() async {
     try {
       final response = await http
@@ -583,10 +553,7 @@ class ApiService {
     }
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // Health check
-  // Compatible with both {"status":"ok"} and {"success":true}
-  // ─────────────────────────────────────────────────────────────
+  // Backend health status
   static Future<bool> checkHealth() async {
     try {
       final response = await http

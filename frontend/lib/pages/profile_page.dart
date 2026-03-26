@@ -1,7 +1,5 @@
-/// **ProfilePage**
-/// Responsible for: Rendering the user profile and account details.
-/// Role: Displays logged-in user summary and allows navigation to account settings or logout.
-/// Dependency: SessionService for current user state.
+/// User profile and account management overview.
+/// Summarizes farm insights and provides access to account settings.
 
 import 'dart:io';
 import 'dart:ui';
@@ -147,7 +145,7 @@ class _ProfilePageState extends State<ProfilePage> {
       backgroundColor: const Color(0xFFF2E8D5),
       body: Stack(
         children: [
-          // 🌾 Background
+          // Background
           Positioned.fill(
             child: Image.asset(
               'assets/images/bg_fields.png',
@@ -155,7 +153,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
 
-          // ✅ Top Header
+          // Top header
           Positioned(
             top: MediaQuery.of(context).padding.top + 55,
             left: 24,
@@ -213,7 +211,7 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ),
 
-          // ✅ Large Wavy Glass Panel
+          // Large wavy glass panel
           Align(
             alignment: Alignment.bottomCenter,
             child: ClipPath(

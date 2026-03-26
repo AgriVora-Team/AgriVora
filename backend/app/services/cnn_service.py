@@ -1,7 +1,4 @@
-"""
-**CNN Service**
-Responsible for: Loading and running inference on the TensorFlow Keras CNN soil texture model (.h5).
-"""
+"""Service for loading and running inference on the TensorFlow CNN soil model."""
 
 import io
 import os
@@ -37,7 +34,7 @@ def _load_labels():
 LABELS = _load_labels()
 
 
-# ─── Image size auto-detection ────────────────────────────────────────────────
+# Image size detection
 
 def _detect_img_size(keras_model) -> int:
     try:
@@ -56,7 +53,7 @@ def _detect_img_size(keras_model) -> int:
     return 224
 
 
-# ─── Google Drive URL helper ──────────────────────────────────────────────────
+# Google Drive download helpers
 
 def _to_direct_gdrive_url(url: str) -> str:
     """
@@ -74,7 +71,7 @@ def _to_direct_gdrive_url(url: str) -> str:
     return url
 
 
-# ─── Robust downloader ────────────────────────────────────────────────────────
+# Model file downloader
 
 def download_file(url: str, dest: Path):
     """
@@ -140,7 +137,7 @@ def download_file(url: str, dest: Path):
     print(f"[CNN] Download complete: {bytes_written / 1024 / 1024:.2f} MB → {dest}")
 
 
-# ─── Model lifecycle ──────────────────────────────────────────────────────────
+# Model lifecycle management
 
 def ensure_model():
     global MODEL_URL
@@ -178,7 +175,7 @@ def load_model_once():
     return model
 
 
-# ─── Background inference thread ─────────────────────────────────────────────
+# Background inference worker
 
 _task_queue       = queue.Queue()
 _result_store     = {}
@@ -237,7 +234,7 @@ _worker_thread = threading.Thread(target=_worker, daemon=True, name="cnn-worker"
 _worker_thread.start()
 
 
-# ─── Public API ───────────────────────────────────────────────────────────────
+# Public inference API
 
 def predict_soil_type(img_bytes: bytes) -> dict:
     """

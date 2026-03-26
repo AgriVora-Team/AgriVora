@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'services/session_service.dart';
 
-// 🌿 UI pages (your base flow)
+// UI Pages
 import 'pages/welcome_page.dart';
 import 'pages/login_page.dart';
 import 'pages/signup_page.dart';
@@ -13,10 +13,10 @@ import 'pages/soil_analysis_page.dart';
 import 'pages/manual_soil_analysis_page.dart';
 import 'pages/predict_soil.dart';
 
-// 🧪 Dev1 scan flow
+// Scanning process flow
 import 'scan_flow/start_scan_screen.dart';
 
-// ✅ Added pages from main2.dart (CHANGE paths if your files are in another folder)
+// Additional features
 import 'pages/crop_recom_page.dart';
 import 'pages/history_page.dart';
 import 'pages/profile_page.dart';
@@ -26,33 +26,31 @@ import 'pages/ai_chat_page.dart';
 import 'pages/forgot_password_page.dart';
 import 'pages/account_settings_page.dart';
 
-/// ------------------
-/// ScanSession model
-/// ------------------
+// ScanSession model
 class ScanSession {
   final String scanId;
   final DateTime timestamp;
 
-  // GPS
+  // Location
   final double? latitude;
   final double? longitude;
 
-  // pH
+  // pH level
   final double? ph;
 
-  // Image
+  // Image data
   final String? imagePath;
   final String? imageUrl;
 
-  // CNN texture output
+  // CNN texture analysis
   final String? textureLabel;
   final double? textureConfidence;
 
-  // External APIs
+  // Environmental data
   final Map<String, dynamic>? soilgrids;
   final Map<String, dynamic>? weather;
 
-  // RF recommender output
+  // Recommendation engine output
   final List<RecommendationResult> results;
   final List<String> tips;
 
@@ -149,9 +147,7 @@ class RecommendationResult {
   }
 }
 
-/// ------------------
-/// ENTRY POINT
-/// ------------------
+// App entry point
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
@@ -173,12 +169,12 @@ class MyApp extends StatelessWidget {
         fontFamily: 'Roboto',
       ),
 
-      // Startup router decides: Home / Login / Welcome
+      // Initial router logic
       home: const SplashRouter(),
 
-      // Routes (merged)
+      // Route definitions
       routes: {
-        // ✅ Base routes
+        // Core routes
         '/welcome': (_) => const WelcomePage(),
         '/login': (_) => const LoginPage(),
         '/signup': (_) => const SignUpPage(),
@@ -192,7 +188,7 @@ class MyApp extends StatelessWidget {
         '/predict-soil': (_) => const PredictSoilPage(),
         '/start-scan': (_) => const StartScanScreen(),
 
-        // ✅ Added routes from main2.dart (aliases too)
+        // Feature and alias routes
         '/crop-recom': (_) => const CropRecomPage(),
         '/crop_recom_page': (_) => const CropRecomPage(),
 
@@ -226,20 +222,15 @@ class MyApp extends StatelessWidget {
           );
         },
 
-        // Alias to keep compatibility with main2 naming
+        // Legacy compatibility alias
         '/soil_analysis': (_) => const SoilAnalysisPage(),
       },
     );
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SplashRouter — shown on every cold start.
-// Performs the async session check and routes accordingly:
-//   • Logged-in session found  →  /home  (skip Welcome + Permissions + Login)
-//   • Permissions granted, no session  →  /login  (skip Welcome + Permissions)
-//   • Fresh install / no history  →  WelcomePage
-// ─────────────────────────────────────────────────────────────────────────────
+// SplashRouter handles initialization and routing on startup.
+// It checks for existing sessions or granted permissions to skip onboarding.
 class SplashRouter extends StatefulWidget {
   const SplashRouter({super.key});
 
@@ -253,16 +244,16 @@ class _SplashRouterState extends State<SplashRouter> {
   @override
   void initState() {
     super.initState();
-    // Fade in the logo immediately
+    // Animate logo on mount
     Future.microtask(() {
       if (mounted) setState(() => _visible = true);
     });
-    // Start the session check
+    // Verify active session
     _checkSession();
   }
 
   Future<void> _checkSession() async {
-    // Small minimum display time so the splash doesn't flash too fast
+    // Enforce minimum display time for the splash screen
     final results = await Future.wait([
       SessionService.restoreSession(),
       SessionService.hasGrantedPermissions(),
@@ -274,10 +265,10 @@ class _SplashRouterState extends State<SplashRouter> {
     final bool hasSession = results[0] as bool;
 
     if (hasSession) {
-      // Fully logged in — go straight to Home, clearing the back-stack
+      // Active session found - redirect to dashboard
       Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
     } else {
-      // No active session — show the Welcome Screen
+      // No session - redirect to onboarding
       Navigator.pushNamedAndRemoveUntil(context, '/welcome', (route) => false);
     }
   }

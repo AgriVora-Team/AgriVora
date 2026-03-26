@@ -1,46 +1,40 @@
 /*
  * AgriVora pH Sensor Firmware for ESP32
- * ──────────────────────────────────────
- * Reads analog pH sensor, broadcasts via BLE to the AgriVora Flutter app.
- * 
- * Required libraries (install via Arduino Library Manager):
- *   - NimBLE-Arduino  (by h2zero) — lightweight BLE stack
+ * Reads analog pH sensor data and broadcasts via BLE to the AgriVora app.
  *
- * Board: ESP32 Dev Module (or equivalent)
- * Pin:   GPIO 34 (ADC1_CH6) for analog pH sensor
- *
- * BLE UUIDs must match BleService.dart exactly:
- *   Service:        4fafc201-1fb5-459e-8fcc-c5c9c331914b
- *   Characteristic: beb5483e-36e1-4688-b7f5-ea07361b26a8
+ * Requirements:
+ * - NimBLE-Arduino library
+ * - Board: ESP32 Dev Module
+ * - Sensor: Analog pH sensor on GPIO 34
  */
 
 #include <NimBLEDevice.h>
 #include <ArduinoJson.h>
 
-// ─── BLE Configuration ─────────────────────────────────────────────────────
+// BLE Configuration
 #define DEVICE_NAME        "AgriVora_pH_ESP32"
 #define SERVICE_UUID       "4fafc201-1fb5-459e-8fcc-c5c9c331914b"
 #define PH_CHAR_UUID       "beb5483e-36e1-4688-b7f5-ea07361b26a8"
 
-// ─── Hardware Configuration ────────────────────────────────────────────────
+// Hardware Configuration
 #define PH_ANALOG_PIN      34        // ADC pin connected to pH sensor module
 #define ADC_VREF           3.3f      // Reference voltage
 #define ADC_RESOLUTION     4095.0f   // 12-bit ADC
 
-// ─── pH Calibration ────────────────────────────────────────────────────────
+// pH Calibration Settings
 // Adjust these for your specific pH probe + module after calibration
 #define PH_NEUTRAL_VOLTAGE 2.5f      // Voltage at pH 7.0 (neutral)
 #define PH_PER_VOLT        3.5f      // pH units change per volt
 
-// ─── Timing ────────────────────────────────────────────────────────────────
+// Timing
 #define SAMPLE_INTERVAL_MS 2000      // Read and transmit every 2 seconds
 
-// ─── Globals ───────────────────────────────────────────────────────────────
+// Globals
 NimBLEServer*         pServer   = nullptr;
 NimBLECharacteristic* pPhChar   = nullptr;
 bool deviceConnected = false;
 
-// ─── BLE Connection Callbacks ──────────────────────────────────────────────
+// BLE Connection Callbacks
 class ServerCallbacks : public NimBLEServerCallbacks {
   void onConnect(NimBLEServer* pSrv) override {
     deviceConnected = true;
@@ -53,7 +47,7 @@ class ServerCallbacks : public NimBLEServerCallbacks {
   }
 };
 
-// ─── pH Reading ────────────────────────────────────────────────────────────
+// pH Sensor Reading logic
 float readPh() {
   // Average 10 samples to reduce noise
   long sum = 0;
@@ -67,7 +61,7 @@ float readPh() {
   return constrain(ph, 0.0f, 14.0f);
 }
 
-// ─── Setup ─────────────────────────────────────────────────────────────────
+// Initialization
 void setup() {
   Serial.begin(115200);
   analogReadResolution(12);   // 12-bit ADC (0–4095)
@@ -100,7 +94,7 @@ void setup() {
   Serial.println("[AgriVora] BLE advertising started — waiting for connection...");
 }
 
-// ─── Loop ──────────────────────────────────────────────────────────────────
+// Main Loop
 void loop() {
   if (deviceConnected) {
     float ph = readPh();

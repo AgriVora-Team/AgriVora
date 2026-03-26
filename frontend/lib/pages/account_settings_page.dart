@@ -1,6 +1,5 @@
-/// **AccountSettingsPage**
-/// Responsible for: Profile editing and password updates.
-/// API Dependency: PUT /api/users/profile, /api/users/change-password
+/// Account settings page for profile management and password updates.
+/// Dependencies: ApiService for user updates, SessionService for local persistence.
 
 import 'dart:convert';
 import 'dart:io';
@@ -40,7 +39,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     _refreshProfileSilently();
   }
 
-  /// Silently re-fetches profile from backend so the UI shows the latest name/phone
+  /// Re-fetches the user profile from the backend to ensure data is up to date.
   Future<void> _refreshProfileSilently() async {
     if (ApiService.userId == null) return;
     try {
@@ -63,7 +62,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
           }
         }
       }
-    } catch (_) {} // silent — non-critical
+    } catch (_) {} // Handle silently as this is a non-critical background refresh
   }
 
   Future<void> _loadProfilePic() async {
@@ -171,9 +170,9 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                             await ApiService.updateProfile(
                                 fullName: name.isNotEmpty ? name : null,
                                 phone: phone.isNotEmpty ? phone : null);
-                            // Close the dialog first
+                            // Close the dialog and refresh the local state
                             if (ctx.mounted) Navigator.pop(ctx);
-                            // Then rebuild the page to show updated name/phone
+                            // Rebuild to reflect the updated profile information
                             if (mounted) {
                               setState(() {});
                               ScaffoldMessenger.of(context)
@@ -299,12 +298,12 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
                           }
 
                           setDialogState(() => _isLoadingPassword = true);
-                          // Capture ScaffoldMessenger before async gap
+                          // Cache messenger reference to avoid use across async gaps
                           final messenger = ScaffoldMessenger.of(context);
                           try {
                             await ApiService.changePassword(
                                 oldPassword: oldPw, newPassword: newPw);
-                            // Close first, then show snackbar
+                            // Success feedback after closing the dialog
                             if (ctx.mounted) Navigator.pop(ctx);
                             messenger.showSnackBar(const SnackBar(
                               content: Text('Password changed successfully!'),
@@ -384,7 +383,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
       backgroundColor: const Color(0xFFF2E8D5),
       body: Stack(
         children: [
-          // 🌾 Background Fields Image
+          // Background image
           Positioned.fill(
             child: Image.asset(
               'assets/images/bg_fields.png',
@@ -392,7 +391,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
             ),
           ),
 
-          // ✅ Top Header (Floating over the image)
+          // Header section
           Positioned(
             top: MediaQuery.of(context).padding.top + 55,
             left: 20,
@@ -463,7 +462,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
             ),
           ),
 
-          // ✅ Large Wavy Glass Panel
+          // Settings panel with glassmorphism effect
           Align(
             alignment: Alignment.bottomCenter,
             child: ClipPath(
@@ -498,14 +497,13 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
             ),
           ),
 
-          // 🧭 Optional: Keep standard nav? Usually settings doesn't need floating nav,
-          // but we follow "maintain bottom navigation consistency".
+          // Optional: Bottom navigation placeholder if needed for consistency
         ],
       ),
     );
   }
 
-  // ─── 1. Profile Overview Card ───
+  // Profile Overview Section
   Widget _buildProfileOverviewCard() {
     return _GlassCardContainer(
       child: Row(
@@ -628,7 +626,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     );
   }
 
-  // ─── 2. Account Section ───
+  // Account Management Section
   Widget _buildAccountSectionCard() {
     return _GlassCardContainer(
       child: Column(
@@ -646,7 +644,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     );
   }
 
-  // ─── 5. Security & Privacy ───
+  // Security and Privacy Section
   Widget _buildSecurityCard() {
     return _GlassCardContainer(
       child: Column(
@@ -675,7 +673,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     );
   }
 
-  // ─── 6. Logout Section ───
+  // Logout Action Section
   Widget _buildLogoutSection() {
     return Container(
       width: double.infinity,
@@ -700,7 +698,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
     );
   }
 
-  // ─── Shared UI Helpers ───
+  // UI Helper Components
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -797,7 +795,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
   }
 }
 
-// ─── Custom Global Card Container for Sections ───────────────────────────────
+// Reusable glassmorphic card container
 class _GlassCardContainer extends StatelessWidget {
   final Widget child;
 
@@ -825,7 +823,7 @@ class _GlassCardContainer extends StatelessWidget {
   }
 }
 
-// ─── Shared Clipper ──────────────────────────────────────────────────────────
+// Custom wave clipper for the settings background
 class _SettingsWaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {

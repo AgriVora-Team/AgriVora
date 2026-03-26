@@ -51,3 +51,9 @@ jobs:
 
       - name: Build release APK
         run: flutter build apk --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: agrivora-release-apk
+          path: frontend/build/app/outputs/flutter-apk/app-release.apk

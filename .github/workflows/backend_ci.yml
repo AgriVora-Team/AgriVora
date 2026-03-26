@@ -37,5 +37,6 @@ jobs:
       - name: Check Python syntax
         run: python -m compileall .
 
-      - name: Run tests
-        run: pytest || true
+      - name: Run tests (allow failure)
+        run: |
+          pytest || echo "Tests failed but pipeline continues"

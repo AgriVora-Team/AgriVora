@@ -2,7 +2,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
-
+# Request schema for crop prediction
 class CropLGBMRequest(BaseModel):
     user_id: Optional[str] = None
     ph: float
@@ -13,10 +13,12 @@ class CropLGBMRequest(BaseModel):
     carbon: Optional[float] = 1.2
     soil_type: Optional[str] = "loamy soil"
 
+# Individual crop recommendation
 class CropRecommendation(BaseModel):
     crop: str
     confidence: float
 
+# Response schema for crop prediction
 class CropLGBMResponse(BaseModel):
     recommended_crop: str
     confidence: Optional[float] = None

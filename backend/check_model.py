@@ -4,6 +4,7 @@ import tensorflow as tf
 import numpy as np
 
 MODEL_PATH = "app/models/soil_cnn/soil_model.h5"
+# Load model
 m = tf.keras.models.load_model(MODEL_PATH)
 
 lines = []
@@ -12,6 +13,7 @@ lines.append(f"Output shape: {m.output_shape}")
 lines.append(f"Layer count: {len(m.layers)}")
 lines.append("")
 
+# List layers
 for layer in m.layers:
     try:
         lines.append(f"  {layer.name} | {type(layer).__name__} | output: {layer.output_shape}")
@@ -20,6 +22,7 @@ for layer in m.layers:
 
 lines.append("")
 lines.append("=== TRYING INPUT SIZES ===")
+# Test different input sizes
 for sz in [64, 100, 128, 150, 172, 224, 256, 300]:
     try:
         dummy = np.zeros((1, sz, sz, 3), dtype="float32")
@@ -28,6 +31,7 @@ for sz in [64, 100, 128, 150, 172, 224, 256, 300]:
     except Exception as e:
         lines.append(f"  FAIL {sz}x{sz} => {str(e)[:120]}")
 
+# Save output to file
 with open("model_info.txt", "w", encoding="utf-8") as f:
     f.write("\n".join(lines))
 

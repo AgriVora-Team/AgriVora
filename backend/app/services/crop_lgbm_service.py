@@ -1,7 +1,4 @@
-"""
-**Crop LGBM Service**
-Responsible for: Loading and formatting input for the LightGBM crop prediction model (.pkl).
-"""
+
 
 import os
 import re
@@ -10,6 +7,7 @@ import joblib
 import pandas as pd
 from pathlib import Path
 
+# Paths for model and feature columns
 BASE_DIR  = os.path.dirname(os.path.dirname(__file__))   # backend/app
 MODEL_DIR = Path(BASE_DIR) / "models" / "crop_lgbm"
 
@@ -23,7 +21,7 @@ _model        = None
 _feature_cols = None
 _load_error   = None
 
-# Approximate ideal pH ranges for common crops in ML datasets
+#Ideal pH ranges per crop
 IDEAL_PH = {
     "Rice": (5.5, 7.5), "Maize": (5.5, 7.5), "Jute": (6.0, 7.5), "Cotton": (5.8, 8.0),
     "Coconut": (5.0, 8.0), "Papaya": (6.0, 7.0), "Orange": (5.5, 7.5), "Apple": (5.5, 6.5),
@@ -34,7 +32,7 @@ IDEAL_PH = {
     "Chickpea": (5.5, 7.0), "Coffee": (5.5, 7.0), "Peas": (6.0, 7.5),
 }
 
-# Maps user-facing texture labels from Flutter → internal soil column names
+# Normalize soil types
 _SOIL_TYPE_NORMALISE = {
     "loamy":          "loamy soil",
     "loamy soil":     "loamy soil",
@@ -53,7 +51,7 @@ _SOIL_TYPE_NORMALISE = {
     "peaty soil":     "peaty soil",
 }
 
-
+# Convert Google Drive URL to direct download
 def _to_direct_gdrive_url(url: str) -> str:
     match = re.search(r"/file/d/([a-zA-Z0-9_-]+)", url)
     if match:
@@ -69,7 +67,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
+# Download file from URL
 def download_file(url: str, dest: Path):
     download_url = _to_direct_gdrive_url(url)
     logger.info(f"[LGBM] Starting download. Destination: {dest.name}")
@@ -84,7 +82,7 @@ def download_file(url: str, dest: Path):
 
         content_type = resp.headers.get("Content-Type", "")
         logger.info(f"[LGBM] Response details: Content-Type='{content_type}', Size='{resp.headers.get('Content-Length', 'unknown')}'")
-
+# Handle Google Drive HTML response 
         if "text/html" in content_type:
             try:
                 from bs4 import BeautifulSoup
@@ -114,11 +112,11 @@ def download_file(url: str, dest: Path):
         logger.error(f"[LGBM] Download failed for {dest.name}: {e}")
         raise e
 
-
+# Ensure model and columns exist
 def ensure_model_files():
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Check model file
+    
     if not MODEL_PATH.exists() or MODEL_PATH.stat().st_size < 1024:
         url = LGBM_MODEL_URL or os.getenv("LGBM_MODEL_URL")
         logger.info(f"[LGBM] Model URL detected: {url}")
@@ -131,7 +129,7 @@ def ensure_model_files():
     else:
         logger.info(f"[LGBM] Local model found on disk ({MODEL_PATH.stat().st_size} bytes)")
 
-    # Check columns file
+    
     if not COLS_PATH.exists() or COLS_PATH.stat().st_size < 10:
         url = LGBM_COLS_URL or os.getenv("LGBM_COLS_URL")
         logger.info(f"[LGBM] Columns URL detected: {url}")
@@ -144,7 +142,7 @@ def ensure_model_files():
     else:
         logger.info(f"[LGBM] Local feature columns found on disk ({COLS_PATH.stat().st_size} bytes)")
 
-
+# Load model once
 def _load_once():
     global _model, _feature_cols, _load_error
     if _model is not None:
@@ -175,26 +173,20 @@ def _load_once():
         raise RuntimeError(_load_error)
         raise RuntimeError(_load_error)
 
-
+# Normalize soil input
 def _normalise_soil(soil_type: str) -> str:
-    """
-    Convert any soil-type string from the frontend into the canonical
-    internal column name used during model training.
-
-    Flutter sends "Loamy", "Sandy", "Clay", "Silt" etc.
-    The model expects "loamy soil", "acidic soil", "neutral soil", etc.
-    """
+    
     key = soil_type.lower().strip()
-    # Direct lookup
+    
     if key in _SOIL_TYPE_NORMALISE:
         return _SOIL_TYPE_NORMALISE[key]
-    # Fuzzy keyword match
+    
     for keyword, mapped in _SOIL_TYPE_NORMALISE.items():
         if keyword in key:
             return mapped
     return "loamy soil"   # safe default
 
-
+# Predict crop
 def predict_crop(payload: dict) -> dict:
     _load_once()
 
@@ -205,11 +197,11 @@ def predict_crop(payload: dict) -> dict:
     nitrogen  = float(payload.get("nitrogen",    40.0))
     carbon    = float(payload.get("carbon",       1.2))
 
-    # Normalise soil_type from Flutter label → internal representation
+    
     raw_soil  = str(payload.get("soil_type", "loamy soil"))
     soil_type = _normalise_soil(raw_soil)
 
-    # Step 5: Engineer interaction features
+   #Feature engineering
     row = {
         "temperature": temp,
         "humidity":    humidity,
@@ -224,7 +216,7 @@ def predict_crop(payload: dict) -> dict:
         "nitrogen_carbon_ratio":   nitrogen / carbon if carbon != 0 else 0,
     }
 
-    # Step 6: One-hot encode soil type
+    # One-hot encode soil type
     soil_cols = [
         "soil_acidic soil", "soil_alkaline soil", "soil_loamy soil",
         "soil_neutral soil", "soil_peaty soil",
@@ -237,14 +229,15 @@ def predict_crop(payload: dict) -> dict:
     else:
         row["soil_loamy soil"] = 1   # safe fallback
 
-    # Step 8: Convert to dataframe aligned to training features
+
     df = pd.DataFrame([row])
+    # Align with trained feature columns
     for col in _feature_cols:
         if col not in df.columns:
             df[col] = 0
     df = df[_feature_cols]
 
-    # Step 10: Run inference
+    # Predict
     pred = _model.predict(df)
 
     recommendations = []
@@ -257,7 +250,7 @@ def predict_crop(payload: dict) -> dict:
             crop_name = classes[i].title()
             base_prob = float(p)
 
-            # pH heuristic penalty
+            
             penalty = 1.0
             ideal   = IDEAL_PH.get(crop_name)
             if ideal is not None:

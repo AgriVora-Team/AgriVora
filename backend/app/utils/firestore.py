@@ -1,13 +1,4 @@
-"""
-**Firestore DB Utility**
-Responsible for: Maintaining the Firebase Admin initialization and establishing the NoSQL database connection.
 
-On Railway: set the FIREBASE_CREDENTIALS_JSON environment variable to the contents of your
-firebase-key.json file (as a single-line JSON string) to enable Firestore-backed features.
-
-If credentials are missing, `db` will be None and the caller (main.py) will register
-503-stub routes instead, so the app still starts and all non-Firebase features work.
-"""
 
 import json
 import logging
@@ -19,23 +10,23 @@ from dotenv import load_dotenv
 logger = logging.getLogger(__name__)
 load_dotenv()
 
-db = None  # Will be set below if credentials are available.
+db = None  # Firestore client
 
-# ─── Attempt to initialise Firestore ─────────────────────────────────────────
+# Firestore client
 key_path = os.getenv("FIREBASE_KEY_PATH", "firebase-key.json")
 firebase_cred_json = os.getenv("FIREBASE_CREDENTIALS_JSON")
 
 try:
     from google.cloud import firestore
     from google.oauth2 import service_account
-
+    # Use JSON credentials from environment
     if firebase_cred_json and firebase_cred_json.strip():
         logger.info("🔒 Authenticating Firestore via FIREBASE_CREDENTIALS_JSON env var")
         cred_info = json.loads(firebase_cred_json)
         cred = service_account.Credentials.from_service_account_info(cred_info)
         db = firestore.Client(credentials=cred)
         logger.info("✅ Firestore connected successfully (env var).")
-
+    # Use local key file
     elif os.path.exists(key_path):
         logger.info(f"🔒 Authenticating Firestore via key file: {key_path}")
         cred = service_account.Credentials.from_service_account_file(key_path)
@@ -58,14 +49,15 @@ except Exception as e:
     db = None
 
 
-# ─── Helpers (safe to call; return gracefully if db is None) ─────────────────
+
 
 def save_scan_history(data: dict) -> bool:
+    # Save scan data to Firestore   
     if db is None:
         logger.warning("save_scan_history: Firestore not available.")
         return False
     try:
-        data["createdAt"] = datetime.utcnow()
+        data["createdAt"] = datetime.utcnow()  # Add timestamp
         db.collection("scan_history").add(data)
         logger.debug("Scan saved to Firestore.")
         return True
@@ -75,6 +67,7 @@ def save_scan_history(data: dict) -> bool:
 
 
 def get_scan_history(user_id: str) -> list:
+     # Fetch scan history for a user
     if db is None:
         logger.warning("get_scan_history: Firestore not available.")
         return []
@@ -90,7 +83,7 @@ def get_scan_history(user_id: str) -> list:
             item = doc.to_dict()
             item["id"] = doc.id
             results.append(item)
-
+        # Sort by createdAt (latest first)
         def get_sort_key(x):
             ts = x.get("createdAt")
             if ts is None:

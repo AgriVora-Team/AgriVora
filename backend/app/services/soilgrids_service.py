@@ -1,7 +1,4 @@
-"""
-**SoilGrids Service**
-Responsible for: Making external API calls to the ISRIC SoilGrids REST API to fetch soil properties (pH, organic carbon, nitrogen) via GPS coordinates.
-"""
+
 
 import requests
 
@@ -11,7 +8,7 @@ SOILGRIDS_URL = "https://rest.isric.org/soilgrids/v2.0/properties/query"
 
 def fetch_soil_data(lat: float, lon: float):
     try:
-        # --- Cache key (rounded to reduce duplicates)
+        # Check cache
         cache_key = f"soil:{round(lat,3)}:{round(lon,3)}"
         cached = get_cache(cache_key)
 
@@ -20,7 +17,7 @@ def fetch_soil_data(lat: float, lon: float):
             return cached, None
 
         print("SOIL API CALL")
-
+        # Call SoilGrids API 
         params = {
             "lat": lat,
             "lon": lon,
@@ -39,7 +36,7 @@ def fetch_soil_data(lat: float, lon: float):
             "clay": None,
             "organicCarbon": None
         }
-
+        # Extract soil values
         for layer in layers:
             name = layer.get("name")
             mean = layer.get("depths", [{}])[0].get("values", {}).get("mean")
@@ -53,7 +50,7 @@ def fetch_soil_data(lat: float, lon: float):
                 soil["clay"] = round(mean / 10, 2)          # %
             elif name == "soc":
                 soil["organicCarbon"] = round(mean / 100, 2)
-
+        # Store in cache
         set_cache(cache_key, soil)
         return soil, None
 

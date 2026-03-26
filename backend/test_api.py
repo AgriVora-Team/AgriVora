@@ -3,10 +3,12 @@ import time
 
 url = "http://localhost:8000/sensor/ph/123"
 
+# Fetch sensor data multiple times
 for _ in range(3):
     try:
         r = requests.get(url)
         print(r.json())
     except Exception as e:
+        # Handle request errors
         print("Error:", e)
     time.sleep(2)

@@ -3,6 +3,7 @@ import requests, json, sys, os
 BASE = "http://127.0.0.1:8000"
 results = []
 
+# Helper to log test results
 def check(name, ok, detail=""):
     status = "PASS" if ok else "FAIL"
     print(f"  [{status}] {name}")
@@ -10,7 +11,7 @@ def check(name, ok, detail=""):
         print(f"         {detail[:200]}")
     results.append((name, ok))
 
-# ─── 1. Health ─────────────────────────────────────────────
+
 print("\n=== 1. Health Check ===")
 try:
     r = requests.get(f"{BASE}/health", timeout=10)
@@ -20,10 +21,11 @@ try:
 except Exception as e:
     check("GET /health", False, str(e))
 
-# ─── 2. Auth ───────────────────────────────────────────────
+
 print("\n=== 2. Auth Endpoints ===")
 email = "testcheck_agrivora@example.com"
 pw = "TestPass123!"
+# Signup
 try:
     r = requests.post(f"{BASE}/api/auth/signup", json={
         "full_name": "Test", "email": email,
@@ -35,6 +37,7 @@ except Exception as e:
     check("POST /api/auth/signup", False, str(e))
 
 uid = None
+# Login
 try:
     r = requests.post(f"{BASE}/api/auth/login", json={
         "email_or_phone": email, "password": pw
@@ -48,9 +51,11 @@ try:
 except Exception as e:
     check("POST /api/auth/login", False, str(e))
 
-# ─── 3. User Profile ───────────────────────────────────────
+
+
 print("\n=== 3. User Profile ===")
 if uid:
+    # Update profile
     try:
         r = requests.put(f"{BASE}/api/users/profile/{uid}", json={"full_name": "Updated Name"}, timeout=20)
         d = r.json()
@@ -58,6 +63,7 @@ if uid:
     except Exception as e:
         check("PUT /api/users/profile/{uid}", False, str(e))
 
+    # Change password
     try:
         r = requests.put(f"{BASE}/api/users/{uid}/change-password", json={
             "old_password": pw, "new_password": pw
@@ -69,9 +75,11 @@ if uid:
 else:
     print("  [SKIP] No uid from login - skipping profile tests")
 
-# ─── 4. History ────────────────────────────────────────────
+
+
 print("\n=== 4. History Endpoints ===")
 test_uid = uid or "fake-test-uid"
+# Get history
 try:
     r = requests.get(f"{BASE}/history/{test_uid}", timeout=15)
     d = r.json()
@@ -80,6 +88,7 @@ try:
 except Exception as e:
     check("GET /history/{uid}", False, str(e))
 
+# Get latest
 try:
     r = requests.get(f"{BASE}/history/latest/{test_uid}", timeout=15)
     d = r.json()
@@ -87,6 +96,7 @@ try:
 except Exception as e:
     check("GET /history/latest/{uid}", False, str(e))
 
+# Save history
 try:
     r = requests.post(f"{BASE}/history/save", json={
         "userId": test_uid, "ph": 6.5, "results": ["Rice"], "createdAt": "2026-01-01"
@@ -96,8 +106,10 @@ try:
 except Exception as e:
     check("POST /history/save", False, str(e))
 
-# ─── 5. /recommend camelCase (what backend expects) ────────
+
+
 print("\n=== 5a. POST /recommend (camelCase - what backend expects) ===")
+# Backend expects camelCase
 try:
     r = requests.post(f"{BASE}/recommend", json={
         "userId": test_uid, "soilType": "Loamy",
@@ -122,8 +134,10 @@ try:
 except Exception as e:
     check("POST /recommend (snake_case)", False, str(e))
 
-# ─── 6. LightGBM /crop/recommend ──────────────────────────
+
+
 print("\n=== 6. POST /crop/recommend (LightGBM) ===")
+# LightGBM model
 try:
     r = requests.post(f"{BASE}/crop/recommend", json={
         "user_id": test_uid, "temperature": 26.0, "humidity": 65.0,
@@ -136,8 +150,9 @@ try:
 except Exception as e:
     check("POST /crop/recommend", False, str(e))
 
-# ─── 7. Soil CNN /soil/predict ─────────────────────────────
+
 print("\n=== 7. POST /soil/predict (CNN) ===")
+# CNN model
 try:
     path = "test_soil.jpg"
     if os.path.exists(path):
@@ -151,8 +166,9 @@ try:
 except Exception as e:
     check("POST /soil/predict", False, str(e))
 
-# ─── 8. Image texture /image/texture ──────────────────────
+
 print("\n=== 8. POST /image/texture (App soil scan) ===")
+# Soil texture endpoint
 try:
     path = "test_soil.jpg"
     if os.path.exists(path):
@@ -166,8 +182,9 @@ try:
 except Exception as e:
     check("POST /image/texture", False, str(e))
 
-# ─── 9. Location Summary ───────────────────────────────────
+
 print("\n=== 9. POST /location/summary ===")
+# Location data
 try:
     r = requests.post(f"{BASE}/location/summary", json={"lat": 12.9716, "lon": 77.5946}, timeout=30)
     d = r.json()
@@ -176,8 +193,9 @@ try:
 except Exception as e:
     check("POST /location/summary", False, str(e))
 
-# ─── 10. Chat AI ───────────────────────────────────────────
+
 print("\n=== 10. POST /chat (AI) ===")
+# AI endpoint
 try:
     r = requests.post(f"{BASE}/chat", json={"message": "Best crop for sandy soil?"}, timeout=60)
     d = r.json()
@@ -186,21 +204,23 @@ try:
 except Exception as e:
     check("POST /chat", False, str(e))
 
-# ─── 11. Sensor ────────────────────────────────────────────
+
 print("\n=== 11. Sensor Endpoints ===")
+# Sensor APIs
 try:
     r = requests.get(f"{BASE}/ph/search_device", timeout=15)
     check("GET /ph/search_device", r.status_code in (200, 404, 500), r.text[:100])
 except Exception as e:
     check("GET /ph/search_device", False, str(e))
 
+# Final summary
 try:
     r = requests.get(f"{BASE}/ph/live/guest", timeout=15)
     check("GET /ph/live/guest", r.status_code in (200, 404, 500), r.text[:100])
 except Exception as e:
     check("GET /ph/live/guest", False, str(e))
 
-# ─── Summary ───────────────────────────────────────────────
+
 print("\n" + "="*55)
 print("FINAL SUMMARY")
 print("="*55)

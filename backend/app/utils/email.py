@@ -1,23 +1,20 @@
-"""
-**Email Utility**
-Responsible for: Sending emails (e.g., OTP codes) using SMTP.
-"""
+
 
 import os
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-# 🌿 Email Configuration
-# You should set these in your environment variables for security
+# SMTP config
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-# USER: PLEASE FILL THESE OR SET ENV VARS
+
+# Load credentials from env
 SENDER_EMAIL = os.getenv("SENDER_EMAIL", "your-email@gmail.com")
 SENDER_PASSWORD = os.getenv("SENDER_PASSWORD", "your-app-password")
 
 def send_otp_email(receiver_email: str, otp: str):
-    # 🧪 DEBUG MODE: If credentials aren't set, print to terminal so you can test!
+    # Debug mode if credentials not set
     if SENDER_EMAIL == "your-email@gmail.com" or SENDER_PASSWORD == "your-app-password":
         print("\n" + "="*50)
         print("DEBUG: SMTP Credentials not set in email.py")
@@ -26,6 +23,7 @@ def send_otp_email(receiver_email: str, otp: str):
         return True
 
     try:
+        # Debug mode if credentials not set
         msg = MIMEMultipart()
         msg['From'] = f"AgriVora Support <{SENDER_EMAIL}>"
         msg['To'] = receiver_email
@@ -49,7 +47,7 @@ def send_otp_email(receiver_email: str, otp: str):
         </html>
         """
         msg.attach(MIMEText(body, 'html'))
-
+         # Send email
         server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
         server.starttls()
         server.login(SENDER_EMAIL, SENDER_PASSWORD)

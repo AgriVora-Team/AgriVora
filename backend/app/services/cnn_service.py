@@ -1,7 +1,4 @@
-"""
-**CNN Service**
-Responsible for: Loading and running inference on the TensorFlow Keras CNN soil texture model (.h5).
-"""
+
 
 import io
 import os
@@ -14,6 +11,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
+# Paths for model and labels
 BASE_DIR    = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # backend/app
 LABELS_PATH = os.path.join(BASE_DIR, "models", "soil_cnn", "labels.txt")
 
@@ -25,7 +23,7 @@ model = None
 img_h = 224
 img_w = 224
 
-
+# Load class labels
 def _load_labels():
     try:
         with open(LABELS_PATH, "r") as f:
@@ -37,8 +35,8 @@ def _load_labels():
 LABELS = _load_labels()
 
 
-# ─── Image size auto-detection ────────────────────────────────────────────────
 
+# Detect input image size from model
 def _detect_img_size(keras_model) -> int:
     try:
         inp = keras_model.input_shape
@@ -56,15 +54,10 @@ def _detect_img_size(keras_model) -> int:
     return 224
 
 
-# ─── Google Drive URL helper ──────────────────────────────────────────────────
 
+# Convert Google Drive link to direct download
 def _to_direct_gdrive_url(url: str) -> str:
-    """
-    Convert any Google Drive share link to a direct download URL.
-    - /file/d/<id>/view  →  /uc?export=download&id=<id>&confirm=t
-    - /uc?id=<id>        →  adds &confirm=t if missing
-    - anything else      →  returned unchanged
-    """
+    
     match = re.search(r"/file/d/([a-zA-Z0-9_-]+)", url)
     if match:
         fid = match.group(1)
@@ -74,15 +67,10 @@ def _to_direct_gdrive_url(url: str) -> str:
     return url
 
 
-# ─── Robust downloader ────────────────────────────────────────────────────────
 
+# Download model file
 def download_file(url: str, dest: Path):
-    """
-    Download *url* to *dest*.
-    Handles Google Drive virus-scan confirmation pages and validates that
-    the result is not just an HTML error page.
-    Raises RuntimeError with a user-friendly message on failure.
-    """
+   
     download_url = _to_direct_gdrive_url(url)
     print(f"[CNN] Downloading from: {download_url}")
 
@@ -94,9 +82,9 @@ def download_file(url: str, dest: Path):
 
     content_type = resp.headers.get("Content-Type", "")
 
-    # Google Drive may still serve an HTML confirmation page for large files
+    # Handle Google Drive HTML response
     if "text/html" in content_type:
-        # Parse the form and resubmit
+        
         try:
             from bs4 import BeautifulSoup
             soup = BeautifulSoup(resp.text, "html.parser")
@@ -112,7 +100,7 @@ def download_file(url: str, dest: Path):
                 resp.raise_for_status()
                 content_type = resp.headers.get("Content-Type", "")
         except ImportError:
-            pass  # beautifulsoup4 not installed; fall through
+            pass  
 
         if "text/html" in content_type:
             raise RuntimeError(
@@ -129,7 +117,7 @@ def download_file(url: str, dest: Path):
                 f.write(chunk)
                 bytes_written += len(chunk)
 
-    # Sanity-check: a valid .h5 is several MB at minimum
+     # Validate file size
     if bytes_written < 10_240:  # < 10 KB → almost certainly an error page
         dest.unlink(missing_ok=True)
         raise RuntimeError(
@@ -140,8 +128,8 @@ def download_file(url: str, dest: Path):
     print(f"[CNN] Download complete: {bytes_written / 1024 / 1024:.2f} MB → {dest}")
 
 
-# ─── Model lifecycle ──────────────────────────────────────────────────────────
 
+# Ensure model exists locally
 def ensure_model():
     global MODEL_URL
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
@@ -160,7 +148,7 @@ def ensure_model():
     print(f"[CNN] Fetching model …")
     download_file(MODEL_URL, MODEL_PATH)
 
-
+# Load model once (singleton)
 def load_model_once():
     global model, img_h, img_w
     if model is None:
@@ -171,28 +159,24 @@ def load_model_once():
         img_w = img_h
         print(f"[CNN] Model loaded — input {img_h}x{img_w}x3.")
 
-        # Warm-up pass so the first real request isn't slow
+        
         dummy = np.zeros((1, img_h, img_w, 3), dtype="float32")
         _ = model(tf.constant(dummy), training=False)
         print("[CNN] Warm-up done.", flush=True)
     return model
 
 
-# ─── Background inference thread ─────────────────────────────────────────────
 
+# Queue + threading for async processing
 _task_queue       = queue.Queue()
 _result_store     = {}
 _store_lock       = threading.Lock()
 _task_counter     = 0
 _task_counter_lock = threading.Lock()
 
-
+# Worker thread to process prediction tasks
 def _worker():
-    """
-    Single dedicated background thread for TensorFlow inference.
-    Lazy-loads the model on the first request so the app starts fast.
-    All TF graph ops stay in one thread — avoids cross-thread session issues.
-    """
+   
     os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
 
     while True:
@@ -232,22 +216,17 @@ def _worker():
         finally:
             event.set()
 
-
+# Start worker thread
 _worker_thread = threading.Thread(target=_worker, daemon=True, name="cnn-worker")
 _worker_thread.start()
 
 
-# ─── Public API ───────────────────────────────────────────────────────────────
 
+# Start worker thread
 def predict_soil_type(img_bytes: bytes) -> dict:
-    """
-    Submit image bytes to the CNN worker and block until the result is ready.
-    Thread-safe — safe to call from async FastAPI route handlers.
-
-    Returns a dict:  { soil_type, confidence, probs }
-    Raises RuntimeError with a clear message on any failure.
-    """
+    
     global _task_counter
+    # Generate task ID
     with _task_counter_lock:
         _task_counter += 1
         tid = _task_counter
@@ -255,7 +234,7 @@ def predict_soil_type(img_bytes: bytes) -> dict:
     event = threading.Event()
     _task_queue.put((tid, img_bytes, event))
 
-    # 500 s — generous to allow model download on first cold start
+    
     if not event.wait(timeout=500):
         with _store_lock:
             _result_store.pop(tid, None)

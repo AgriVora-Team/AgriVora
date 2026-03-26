@@ -1,29 +1,18 @@
-"""
-**Recommend Service**
-Responsible for: Providing crop recommendations for the /recommend endpoint.
-Routes calls through the existing LightGBM model since rf_model.pkl is not available.
-"""
+
 
 from app.services.crop_lgbm_service import predict_crop as _lgbm_predict
 
 
 def recommend_crops(features: dict):
-    """
-    Translate /recommend endpoint input format into LightGBM payload
-    and return a list of crop dicts compatible with the recommend endpoint.
+   
 
-    features = {
-        "soil": {"sand": float, "clay": float, "organicCarbon": float},
-        "weather": {"temperature": float, "rainfall": float, "humidity": float},
-        "ph": float
-    }
-    """
     try:
+         # Extract inputs
         soil = features.get("soil", {})
         weather = features.get("weather", {})
         ph = float(features.get("ph", 6.5))
 
-        # Map soil composition % to a categorical soil_type for LightGBM
+        # Determine soil type from composition
         sand = soil.get("sand") or 0
         clay = soil.get("clay") or 0
         if sand >= 60:
@@ -33,6 +22,7 @@ def recommend_crops(features: dict):
         else:
             soil_type = "loamy soil"
 
+        # Prepare model input
         payload = {
             "temperature": weather.get("temperature") or 27.0,
             "humidity": weather.get("humidity") or 65.0,
@@ -43,9 +33,10 @@ def recommend_crops(features: dict):
             "soil_type": soil_type,
         }
 
+        # Get predictions
         result = _lgbm_predict(payload)
 
-        # Convert LightGBM output to the format expected by /recommend endpoint
+       # Format recommendations for frontend
         recommendations = []
         for r in result.get("recommendations", []):
             recommendations.append({
@@ -58,4 +49,5 @@ def recommend_crops(features: dict):
         return recommendations, None
 
     except Exception as e:
+        # Handle errors
         return None, str(e)

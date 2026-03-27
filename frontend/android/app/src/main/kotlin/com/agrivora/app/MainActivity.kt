@@ -1,4 +1,4 @@
-package com.example.agrivora_ui_test
+package com.agrivora.app
 
 import io.flutter.embedding.android.FlutterActivity
 

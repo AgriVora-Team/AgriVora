@@ -8,4 +8,4 @@ AgriVora is a mobile + IoT + AI-powered crop recommendation system for Sri Lanka
 - `ml/` - ML models
 - `iot/` - ESP32 + pH sensor integration
 - `docs/` - Diagrams, reports, references
-- `.github/workflows/` - CI/CD workflows (later)
+- `.github/workflows/` - CI/CD workflows 

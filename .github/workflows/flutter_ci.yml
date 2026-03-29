@@ -49,6 +49,22 @@ jobs:
         run: flutter test
         continue-on-error: true
 
+      - name: Setup keystore for signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+        run: |
+          KEYSTORE_PATH="${GITHUB_WORKSPACE}/frontend/android/app/upload-keystore.jks"
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          {
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+            echo "storeFile=$KEYSTORE_PATH"
+            echo "storePassword=$STORE_PASSWORD"
+          } > "${GITHUB_WORKSPACE}/frontend/android/key.properties"
+
       - name: Build release APK
         run: flutter build apk --release
 
